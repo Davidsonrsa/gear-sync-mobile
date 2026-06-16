@@ -14,16 +14,188 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      equipamento_fotos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          equipamento_id: string
+          id: string
+          storage_path: string
+          uploaded_by: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          equipamento_id: string
+          id?: string
+          storage_path: string
+          uploaded_by: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          equipamento_id?: string
+          id?: string
+          storage_path?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipamento_fotos_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "equipamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipamentos: {
+        Row: {
+          afericao_taco: string | null
+          ano: string | null
+          cartao_ticket: string | null
+          cl: string | null
+          cnh: string | null
+          created_at: string
+          data_horimetro_atual: string | null
+          data_ultima_revisao: string | null
+          h_revisao: number | null
+          horimetro_atual: number | null
+          hr_rodado: number | null
+          id: string
+          identificacao: string | null
+          item: number | null
+          localizacao: string | null
+          numero: string
+          observacoes: string | null
+          operador_contato: string | null
+          placa: string | null
+          proxima_revisao_horimetro: number | null
+          status: string | null
+          telefone: string | null
+          u_revisao: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          afericao_taco?: string | null
+          ano?: string | null
+          cartao_ticket?: string | null
+          cl?: string | null
+          cnh?: string | null
+          created_at?: string
+          data_horimetro_atual?: string | null
+          data_ultima_revisao?: string | null
+          h_revisao?: number | null
+          horimetro_atual?: number | null
+          hr_rodado?: number | null
+          id?: string
+          identificacao?: string | null
+          item?: number | null
+          localizacao?: string | null
+          numero: string
+          observacoes?: string | null
+          operador_contato?: string | null
+          placa?: string | null
+          proxima_revisao_horimetro?: number | null
+          status?: string | null
+          telefone?: string | null
+          u_revisao?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          afericao_taco?: string | null
+          ano?: string | null
+          cartao_ticket?: string | null
+          cl?: string | null
+          cnh?: string | null
+          created_at?: string
+          data_horimetro_atual?: string | null
+          data_ultima_revisao?: string | null
+          h_revisao?: number | null
+          horimetro_atual?: number | null
+          hr_rodado?: number | null
+          id?: string
+          identificacao?: string | null
+          item?: number | null
+          localizacao?: string | null
+          numero?: string
+          observacoes?: string | null
+          operador_contato?: string | null
+          placa?: string | null
+          proxima_revisao_horimetro?: number | null
+          status?: string | null
+          telefone?: string | null
+          u_revisao?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "colaborador"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +322,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "colaborador"],
+    },
   },
 } as const
