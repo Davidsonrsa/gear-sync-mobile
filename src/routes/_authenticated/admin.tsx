@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { adminCreateUser, adminListUsers, adminDeleteUser } from "@/lib/admin.functions";
 import { toast } from "sonner";
 import { UserPlus, Plus, Trash2, ShieldCheck, User } from "lucide-react";
+import { ImportEquipamentos } from "@/components/ImportEquipamentos";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -35,7 +36,7 @@ function AdminPage() {
           <TabsTrigger value="equipamentos">Equipamentos</TabsTrigger>
           <TabsTrigger value="usuarios">Usuários</TabsTrigger>
         </TabsList>
-        <TabsContent value="equipamentos"><NewEquipamento /></TabsContent>
+        <TabsContent value="equipamentos" className="space-y-3"><ImportEquipamentos /><NewEquipamento /></TabsContent>
         <TabsContent value="usuarios"><Usuarios /></TabsContent>
       </Tabs>
     </div>
