@@ -92,7 +92,7 @@ export function ImportEquipamentos() {
       let ok = 0;
       for (let i = 0; i < records.length; i += batch) {
         const slice = records.slice(i, i + batch);
-        const { error } = await supabase.from("equipamentos").insert(slice);
+        const { error } = await supabase.from("equipamentos").insert(slice as never);
         if (error) throw error;
         ok += slice.length;
       }
