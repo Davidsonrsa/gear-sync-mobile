@@ -51,7 +51,7 @@ function EquipamentoDetail() {
     queryKey: ["fotos", id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("equipamento_fotos").select("id, storage_path, uploaded_by, created_at")
+        .from("equipamento_fotos").select("id, storage_path, uploaded_by, caption, created_at")
         .eq("equipamento_id", id).order("created_at", { ascending: false });
       if (error) throw error;
       const withUrl = await Promise.all((data ?? []).map(async (f) => {
@@ -101,19 +101,21 @@ function EquipamentoDetail() {
   async function handleUpload(files: FileList | null) {
     if (!files?.length || !userId) return;
     const file = files[0];
+    const caption = window.prompt("Observação da foto (opcional):", "") ?? "";
     const ext = file.name.split(".").pop() || "jpg";
     const path = `${id}/${crypto.randomUUID()}.${ext}`;
     const { error: upErr } = await supabase.storage.from("equipamento-fotos")
       .upload(path, file, { contentType: file.type, upsert: false });
     if (upErr) return toast.error(upErr.message);
     const { error: insErr } = await supabase.from("equipamento_fotos")
-      .insert({ equipamento_id: id, storage_path: path, uploaded_by: userId });
+      .insert({ equipamento_id: id, storage_path: path, uploaded_by: userId, caption: caption || null });
     if (insErr) return toast.error(insErr.message);
     toast.success("Foto enviada");
     qc.invalidateQueries({ queryKey: ["fotos", id] });
   }
 
   async function deletePhoto(photoId: string, path: string) {
+    if (!isAdmin) return toast.error("Somente administrador pode excluir fotos");
     await supabase.storage.from("equipamento-fotos").remove([path]);
     const { error } = await supabase.from("equipamento_fotos").delete().eq("id", photoId);
     if (error) return toast.error(error.message);
@@ -186,15 +188,33 @@ function EquipamentoDetail() {
             <span className="text-xs">Toque para adicionar a primeira foto</span>
           </button>
         ) : (
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {fotos.map((f) => (
-              <div key={f.id} className="relative aspect-square rounded-md overflow-hidden bg-muted group">
-                <img src={f.url} alt="" className="w-full h-full object-cover" loading="lazy" />
-                {(isAdmin || f.uploaded_by === userId) && (
-                  <button onClick={() => deletePhoto(f.id, f.storage_path)}
-                    className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-90">
-                    <Trash2 className="w-3 h-3" />
-                  </button>
+              <div key={f.id} className="relative rounded-md overflow-hidden bg-muted border border-border">
+                <div className="aspect-square">
+                  <img src={f.url} alt={f.caption ?? ""} className="w-full h-full object-cover" loading="lazy" />
+                </div>
+                {isAdmin && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1.5 shadow">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir foto?</AlertDialogTitle>
+                        <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deletePhoto(f.id, f.storage_path)}>Excluir</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+                {f.caption && (
+                  <p className="text-[11px] px-2 py-1 bg-card text-foreground border-t border-border line-clamp-2">{f.caption}</p>
                 )}
               </div>
             ))}
