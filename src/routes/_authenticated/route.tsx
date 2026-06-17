@@ -1,8 +1,9 @@
 import { createFileRoute, Outlet, redirect, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { Gauge, LogOut, Settings, List } from "lucide-react";
+import { LogOut, Settings, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logo from "@/assets/logo-sph.jpg.asset.json";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -30,7 +31,9 @@ function AuthenticatedLayout() {
     <div className="min-h-[100dvh] flex flex-col bg-background pb-20">
       <header className="sticky top-0 z-30 bg-primary text-primary-foreground shadow-md">
         <div className="px-4 py-3 flex items-center gap-3" style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}>
-          <Gauge className="w-6 h-6 text-accent shrink-0" />
+          <div className="w-9 h-9 rounded-lg bg-white p-0.5 shrink-0 flex items-center justify-center overflow-hidden">
+            <img src={logo.url} alt="SPH JHM Mafra" className="w-full h-full object-contain" />
+          </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-sm font-bold leading-tight truncate">Controle de Horímetros</h1>
             <p className="text-[11px] opacity-80 truncate">{fullName || "—"} · {isAdmin ? "Admin" : "Colaborador"}</p>
