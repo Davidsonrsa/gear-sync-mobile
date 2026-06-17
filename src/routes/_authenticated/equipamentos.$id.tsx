@@ -294,11 +294,14 @@ function EquipamentoDetail() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Hr rodado"><Input type="number" value={form.hr_rodado ?? ""} readOnly={ro}
-            onChange={(e) => setForm({ ...form, hr_rodado: e.target.value === "" ? null : Number(e.target.value) })} /></Field>
+          <Field label="Hr rodado (calculado)">
+            <Input type="number" value={hrRodadoCalc ?? ""} readOnly
+              className={overdue ? "blink-overdue border-destructive text-destructive font-semibold" : ""} />
+          </Field>
           <Field label="Status"><Input value={form.status ?? ""} readOnly={ro}
             onChange={(e) => setForm({ ...form, status: e.target.value })} /></Field>
         </div>
+
 
         {isAdmin && (
           <div className="flex gap-2 pt-2">
