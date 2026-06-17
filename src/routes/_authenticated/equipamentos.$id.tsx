@@ -128,6 +128,12 @@ function EquipamentoDetail() {
   }
 
   const ro = !isAdmin; // colaborador: campos readonly exceto os 3 permitidos
+  const hrRodadoCalc = (form.horimetro_atual != null && form.h_revisao != null)
+    ? Math.max(0, Number(form.horimetro_atual) - Number(form.h_revisao))
+    : null;
+  const overdue = form.horimetro_atual != null && form.proxima_revisao_horimetro != null
+    && Number(form.horimetro_atual) >= Number(form.proxima_revisao_horimetro);
+
 
   return (
     <div className="px-3 py-3 max-w-md mx-auto w-full space-y-3">
