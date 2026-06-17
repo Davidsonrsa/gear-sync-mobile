@@ -6,17 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Gauge } from "lucide-react";
+import logo from "@/assets/logo-sph.jpg.asset.json";
+import { matToEmail } from "@/lib/mat";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Entrar — Controle de Horímetros" }] }),
+  head: () => ({ meta: [{ title: "Entrar — SPH JHM Mafra" }] }),
   component: AuthPage,
 });
 
 function AuthPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"login" | "first">("login");
-  const [email, setEmail] = useState("");
+  const [mat, setMat] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,10 +27,8 @@ function AuthPage() {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/equipamentos", replace: true });
     });
-    // Detecta se ainda não existe nenhum usuário
     supabase.from("user_roles").select("user_id", { count: "exact", head: true })
       .then(({ count, error }) => {
-        // Se anon não conseguir ler (RLS), assumimos que já existe alguém
         if (!error && (count ?? 0) === 0) {
           setNeedsFirstAdmin(true);
           setMode("first");
@@ -39,23 +38,25 @@ function AuthPage() {
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
+    if (!mat.trim()) return toast.error("Informe sua matrícula");
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email: matToEmail(mat), password });
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error("Matrícula ou senha incorreta");
     toast.success("Bem-vindo!");
     navigate({ to: "/equipamentos", replace: true });
   }
 
   async function handleFirstAdmin(e: React.FormEvent) {
     e.preventDefault();
+    if (!mat.trim()) return toast.error("Informe sua matrícula");
     setLoading(true);
+    const email = matToEmail(mat);
     const { error } = await supabase.auth.signUp({
       email, password,
-      options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin },
+      options: { data: { full_name: fullName, matricula: mat.trim().toUpperCase() }, emailRedirectTo: window.location.origin },
     });
     if (error) { setLoading(false); return toast.error(error.message); }
-    // tenta login imediato (auto_confirm ativo)
     const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (signInErr) return toast.error(signInErr.message);
@@ -68,10 +69,10 @@ function AuthPage() {
       <div className="flex-1 flex items-center justify-center p-6">
         <Card className="w-full max-w-sm p-6 bg-card text-card-foreground shadow-2xl">
           <div className="flex flex-col items-center gap-3 mb-6">
-            <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center shadow-lg">
-              <Gauge className="w-9 h-9 text-accent" />
+            <div className="w-28 h-28 rounded-2xl bg-white p-2 shadow-lg flex items-center justify-center overflow-hidden">
+              <img src={logo.url} alt="SPH JHM Mafra" className="w-full h-full object-contain" />
             </div>
-            <h1 className="text-xl font-bold text-center">Controle de Horímetros</h1>
+            <h1 className="text-lg font-bold text-center">Controle de Horímetros</h1>
             <p className="text-xs text-muted-foreground text-center">
               {mode === "first" ? "Crie a conta do primeiro administrador" : "Acesso restrito aos colaboradores"}
             </p>
@@ -80,8 +81,8 @@ function AuthPage() {
           {mode === "login" ? (
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <Label htmlFor="email">E-mail</Label>
-                <Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1" />
+                <Label htmlFor="mat">Matrícula</Label>
+                <Input id="mat" inputMode="text" autoCapitalize="characters" autoComplete="username" required value={mat} onChange={(e) => setMat(e.target.value)} className="mt-1 uppercase" placeholder="Ex: 12345" />
               </div>
               <div>
                 <Label htmlFor="password">Senha</Label>
@@ -103,8 +104,8 @@ function AuthPage() {
                 <Input id="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} className="mt-1" />
               </div>
               <div>
-                <Label htmlFor="email">E-mail</Label>
-                <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1" />
+                <Label htmlFor="mat">Matrícula</Label>
+                <Input id="mat" required value={mat} onChange={(e) => setMat(e.target.value)} className="mt-1 uppercase" placeholder="Ex: 12345" />
               </div>
               <div>
                 <Label htmlFor="password">Senha (mín. 8)</Label>
@@ -119,8 +120,14 @@ function AuthPage() {
             </form>
           )}
           <p className="mt-6 text-[11px] text-muted-foreground text-center">
-            {mode === "login" ? "Não possui acesso? Solicite o cadastro ao administrador." : "Esta opção só está disponível enquanto não houver nenhum usuário cadastrado."}
+            {mode === "login" ? "Sem acesso? Peça sua matrícula ao administrador." : "Esta opção só está disponível enquanto não houver nenhum usuário cadastrado."}
           </p>
+
+          <div className="mt-4 pt-4 border-t border-border text-center">
+            <p className="text-[11px] text-muted-foreground">
+              📱 Para instalar no celular: abra este link no <b>Chrome</b> (Android) ou <b>Safari</b> (iPhone) e use <b>"Adicionar à tela inicial"</b>.
+            </p>
+          </div>
         </Card>
       </div>
     </div>
