@@ -38,8 +38,9 @@ function EquipamentosList() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("equipamentos")
-        .select("id, numero, identificacao, placa, localizacao, operador_contato, horimetro_atual, proxima_revisao_horimetro, data_horimetro_atual, status, cl")
+        .select("id, numero, identificacao, placa, localizacao, operador_contato, horimetro_atual, h_revisao, proxima_revisao_horimetro, data_horimetro_atual, status, cl")
         .order("numero", { ascending: true });
+
       if (error) throw error;
       return (data ?? []) as Equip[];
     },
