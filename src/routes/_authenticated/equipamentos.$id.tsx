@@ -141,13 +141,23 @@ function EquipamentoDetail() {
         <ArrowLeft className="w-4 h-4" /> Voltar
       </Link>
 
-      <Card className="p-4">
-        <div className="flex items-start justify-between gap-2 mb-1">
+      <Card className={`p-4 ${overdue ? "border-destructive ring-1 ring-destructive/40" : ""}`}>
+        <div className="flex items-start justify-between gap-2 mb-1 flex-wrap">
           <h2 className="text-xl font-bold text-primary">{equip.numero}</h2>
-          {equip.cl && <Badge variant="secondary">CL {equip.cl}</Badge>}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {equip.cl && <Badge variant="secondary">CL {equip.cl}</Badge>}
+            {overdue && <Badge variant="destructive" className="blink-overdue">Revisão vencida</Badge>}
+          </div>
         </div>
         {equip.identificacao && <p className="text-xs text-muted-foreground">{equip.identificacao}</p>}
+        {hrRodadoCalc != null && (
+          <p className={`text-xs mt-2 ${overdue ? "text-destructive font-semibold blink-overdue" : "text-muted-foreground"}`}>
+            Hr rodado: <span className="tabular-nums">{hrRodadoCalc}h</span>
+            <span className="opacity-70"> (atual {form.horimetro_atual} − últ. revisão {form.h_revisao})</span>
+          </p>
+        )}
       </Card>
+
 
       {/* Editáveis por TODOS */}
       <Card className="p-4 space-y-3 border-accent/40">
