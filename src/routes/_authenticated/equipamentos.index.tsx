@@ -101,14 +101,14 @@ function EquipamentosList() {
                 params={{ id: e.id }}
                 className="block"
               >
-                <Card className="p-3 hover:bg-accent/5 active:bg-accent/10 transition-colors">
+                <Card className={`p-3 hover:bg-accent/5 active:bg-accent/10 transition-colors ${overdue ? "border-destructive ring-1 ring-destructive/40" : ""}`}>
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-base text-primary">{e.numero}</span>
                         {e.cl && <Badge variant="secondary" className="text-[10px] h-4 px-1.5">CL {e.cl}</Badge>}
                         {e.status && <Badge className="text-[10px] h-4 px-1.5 bg-warning text-warning-foreground">{e.status}</Badge>}
-                        {overdue && <Badge variant="destructive" className="text-[10px] h-4 px-1.5">Revisão vencida</Badge>}
+                        {overdue && <Badge variant="destructive" className="text-[10px] h-4 px-1.5 blink-overdue">Revisão vencida</Badge>}
                       </div>
                       {e.identificacao && (
                         <p className="text-xs text-muted-foreground mt-0.5 truncate">{e.identificacao}</p>
@@ -121,15 +121,22 @@ function EquipamentosList() {
                       <div className="mt-2 flex items-center gap-2">
                         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full ${overdue ? "bg-destructive" : "bg-accent"}`}
+                            className={`h-full rounded-full ${overdue ? "bg-destructive blink-overdue" : "bg-accent"}`}
                             style={{ width: `${horaPct}%` }}
                           />
                         </div>
-                        <span className="text-[11px] font-medium tabular-nums">
+                        <span className={`text-[11px] font-medium tabular-nums ${overdue ? "text-destructive blink-overdue" : ""}`}>
                           {e.horimetro_atual ?? 0}h
                         </span>
                       </div>
+                      {(e.horimetro_atual != null && e.h_revisao != null) && (
+                        <div className="mt-1 text-[11px] text-muted-foreground">
+                          Hr rodado: <span className="font-semibold text-foreground tabular-nums">{Math.max(0, Number(e.horimetro_atual) - Number(e.h_revisao))}h</span>
+                          <span className="opacity-60"> (atual {e.horimetro_atual} − últ. revisão {e.h_revisao})</span>
+                        </div>
+                      )}
                     </div>
+
                     <ChevronRight className="w-4 h-4 text-muted-foreground mt-1" />
                   </div>
                 </Card>
