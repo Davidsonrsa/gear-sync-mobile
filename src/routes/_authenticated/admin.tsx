@@ -15,6 +15,7 @@ import { adminCreateUser, adminListUsers, adminDeleteUser } from "@/lib/admin.fu
 import { toast } from "sonner";
 import { UserPlus, Plus, Trash2, ShieldCheck, User } from "lucide-react";
 import { ImportEquipamentos } from "@/components/ImportEquipamentos";
+import { emailToMat } from "@/lib/mat";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -97,13 +98,13 @@ function Usuarios() {
 
   const { data: users, isLoading } = useQuery({ queryKey: ["admin-users"], queryFn: () => list() });
 
-  const [f, setF] = useState({ email: "", password: "", fullName: "", phone: "", role: "colaborador" as "admin" | "colaborador" });
+  const [f, setF] = useState({ matricula: "", password: "", fullName: "", phone: "", role: "colaborador" as "admin" | "colaborador" });
 
   const m = useMutation({
-    mutationFn: () => create({ data: { email: f.email, password: f.password, fullName: f.fullName, phone: f.phone || null, role: f.role } }),
+    mutationFn: () => create({ data: { matricula: f.matricula, password: f.password, fullName: f.fullName, phone: f.phone || null, role: f.role } }),
     onSuccess: () => {
       toast.success("Usuário criado");
-      setF({ email: "", password: "", fullName: "", phone: "", role: "colaborador" });
+      setF({ matricula: "", password: "", fullName: "", phone: "", role: "colaborador" });
       qc.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -120,11 +121,11 @@ function Usuarios() {
       <Card className="p-4 space-y-3">
         <h3 className="font-semibold text-sm flex items-center gap-2"><UserPlus className="w-4 h-4" /> Cadastrar colaborador</h3>
         <div><Label className="text-xs">Nome completo *</Label><Input value={f.fullName} onChange={(e) => setF({ ...f, fullName: e.target.value })} /></div>
-        <div><Label className="text-xs">E-mail *</Label><Input type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></div>
         <div className="grid grid-cols-2 gap-3">
-          <div><Label className="text-xs">Senha inicial *</Label><Input type="text" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} placeholder="mín. 8 caracteres" /></div>
+          <div><Label className="text-xs">Matrícula *</Label><Input value={f.matricula} onChange={(e) => setF({ ...f, matricula: e.target.value })} placeholder="Ex: 12345" className="uppercase" /></div>
           <div><Label className="text-xs">Telefone</Label><Input value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
         </div>
+        <div><Label className="text-xs">Senha inicial *</Label><Input type="text" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} placeholder="mín. 8 caracteres" /></div>
         <div>
           <Label className="text-xs">Tipo de acesso</Label>
           <Select value={f.role} onValueChange={(v) => setF({ ...f, role: v as "admin" | "colaborador" })}>
@@ -138,6 +139,7 @@ function Usuarios() {
         <Button onClick={() => m.mutate()} disabled={m.isPending} className="w-full">
           {m.isPending ? "Criando..." : "Criar usuário"}
         </Button>
+        <p className="text-[11px] text-muted-foreground">O colaborador fará login com a <b>matrícula</b> e a senha definida aqui.</p>
       </Card>
 
       <Card className="p-4">
@@ -150,8 +152,8 @@ function Usuarios() {
                 {u.isAdmin ? <ShieldCheck className="w-4 h-4 text-accent" /> : <User className="w-4 h-4 text-muted-foreground" />}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{u.full_name || u.email}</p>
-                <p className="text-[11px] text-muted-foreground truncate">{u.email}</p>
+                <p className="text-sm font-medium truncate">{u.full_name || emailToMat(u.email)}</p>
+                <p className="text-[11px] text-muted-foreground truncate">MAT {emailToMat(u.email)}</p>
               </div>
               <Badge variant={u.isAdmin ? "default" : "secondary"} className="text-[10px]">{u.isAdmin ? "Admin" : "Colab"}</Badge>
               <AlertDialog>
@@ -160,7 +162,7 @@ function Usuarios() {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Remover {u.full_name || u.email}?</AlertDialogTitle>
+                    <AlertDialogTitle>Remover {u.full_name || emailToMat(u.email)}?</AlertDialogTitle>
                     <AlertDialogDescription>O usuário perderá acesso ao aplicativo.</AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
