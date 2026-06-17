@@ -21,11 +21,13 @@ type Equip = {
   localizacao: string | null;
   operador_contato: string | null;
   horimetro_atual: number | null;
+  h_revisao: number | null;
   proxima_revisao_horimetro: number | null;
   data_horimetro_atual: string | null;
   status: string | null;
   cl: string | null;
 };
+
 
 function EquipamentosList() {
   const { isAdmin } = useAuth();
