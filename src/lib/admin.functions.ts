@@ -2,8 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
+const DOMAIN = "sphjhm.app";
+function matToEmail(mat: string) {
+  const m = mat.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  return `mat-${m}@${DOMAIN}`;
+}
+
 const createUserSchema = z.object({
-  email: z.string().email(),
+  matricula: z.string().min(1).max(40),
   password: z.string().min(8),
   fullName: z.string().min(1),
   phone: z.string().optional().nullable(),
@@ -22,20 +28,19 @@ export const adminCreateUser = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const email = matToEmail(data.matricula);
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
-      email: data.email,
+      email,
       password: data.password,
       email_confirm: true,
-      user_metadata: { full_name: data.fullName, phone: data.phone ?? "" },
+      user_metadata: { full_name: data.fullName, phone: data.phone ?? "", matricula: data.matricula.trim().toUpperCase() },
     });
     if (error) throw new Error(error.message);
     const newId = created.user!.id;
 
-    // Garante role correto (trigger criou 'colaborador' default)
     if (data.role === "admin") {
       await supabaseAdmin.from("user_roles").insert({ user_id: newId, role: "admin" });
     }
-    // Garante phone no profile
     if (data.phone) {
       await supabaseAdmin.from("profiles").update({ phone: data.phone }).eq("id", newId);
     }
