@@ -30,7 +30,14 @@ type Equip = {
   data_horimetro_atual: string | null; horimetro_atual: number | null;
   proxima_revisao_horimetro: number | null; hr_rodado: number | null;
   observacoes: string | null; status: string | null;
+  modelo: string | null; motor_oleo: string | null; hidraulico_oleo: string | null;
+  transmissao_oleo: string | null; eixo_oleo: string | null; tandem_oleo: string | null;
+  filtro_lub: string | null; filtro_diesel_p: string | null; filtro_diesel_s: string | null;
+  filtro_sep_agua: string | null; filtro_ar_ext: string | null; filtro_ar_int: string | null;
+  filtro_trans: string | null; filtro_hidr: string | null; filtro_respiro: string | null;
+  filtro_ar_cond1: string | null; filtro_ar_cond2: string | null;
 };
+
 
 function EquipamentoDetail() {
   const { id } = Route.useParams();
