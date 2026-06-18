@@ -139,15 +139,20 @@ function EquipamentoDetail() {
   const hrRodadoCalc = (form.horimetro_atual != null && form.h_revisao != null)
     ? Math.max(0, Number(form.horimetro_atual) - Number(form.h_revisao))
     : null;
-  const overdue = form.horimetro_atual != null && form.proxima_revisao_horimetro != null
-    && Number(form.horimetro_atual) >= Number(form.proxima_revisao_horimetro);
+  const overdue = hrRodadoCalc != null && hrRodadoCalc > 500;
 
 
   return (
     <div className="px-3 py-3 max-w-md mx-auto w-full space-y-3">
-      <Link to="/equipamentos" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="w-4 h-4" /> Voltar
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link to="/equipamentos" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="w-4 h-4" /> Voltar
+        </Link>
+        <Link to="/equipamentos/$id/manutencao" params={{ id }} className="inline-flex items-center gap-1 text-xs text-primary font-medium">
+          <Wrench className="w-3.5 h-3.5" /> Manutenção
+        </Link>
+      </div>
+
 
       <Card className={`p-4 ${overdue ? "border-destructive ring-1 ring-destructive/40" : ""}`}>
         <div className="flex items-start justify-between gap-2 mb-1 flex-wrap">
