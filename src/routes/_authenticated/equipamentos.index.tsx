@@ -91,9 +91,10 @@ function EquipamentosList() {
           const horaPct = e.horimetro_atual && e.proxima_revisao_horimetro
             ? Math.min(100, (Number(e.horimetro_atual) / Number(e.proxima_revisao_horimetro)) * 100)
             : 0;
-          const overdue = e.horimetro_atual && e.proxima_revisao_horimetro
-            ? Number(e.horimetro_atual) >= Number(e.proxima_revisao_horimetro)
-            : false;
+          const hrRodado = (e.horimetro_atual != null && e.h_revisao != null)
+            ? Math.max(0, Number(e.horimetro_atual) - Number(e.h_revisao))
+            : null;
+          const overdue = hrRodado != null && hrRodado > 500;
           return (
             <li key={e.id}>
               <Link
@@ -129,10 +130,11 @@ function EquipamentosList() {
                           {e.horimetro_atual ?? 0}h
                         </span>
                       </div>
-                      {(e.horimetro_atual != null && e.h_revisao != null) && (
-                        <div className="mt-1 text-[11px] text-muted-foreground">
-                          Hr rodado: <span className="font-semibold text-foreground tabular-nums">{Math.max(0, Number(e.horimetro_atual) - Number(e.h_revisao))}h</span>
+                      {hrRodado != null && (
+                        <div className={`mt-1 text-[11px] ${overdue ? "text-destructive font-semibold blink-overdue" : "text-muted-foreground"}`}>
+                          Hr rodado: <span className="tabular-nums">{hrRodado}h</span>
                           <span className="opacity-60"> (atual {e.horimetro_atual} − últ. revisão {e.h_revisao})</span>
+                          {overdue && <span className="ml-1">⚠ &gt; 500h</span>}
                         </div>
                       )}
                     </div>
@@ -145,6 +147,7 @@ function EquipamentosList() {
           );
         })}
       </ul>
+
 
       {isAdmin && (
         <Link to="/admin">

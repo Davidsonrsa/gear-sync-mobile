@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { adminCreateUser, adminListUsers, adminDeleteUser } from "@/lib/admin.functions";
 import { toast } from "sonner";
 import { UserPlus, Plus, Trash2, ShieldCheck, User } from "lucide-react";
@@ -98,13 +98,13 @@ function Usuarios() {
 
   const { data: users, isLoading } = useQuery({ queryKey: ["admin-users"], queryFn: () => list() });
 
-  const [f, setF] = useState({ matricula: "", password: "", fullName: "", phone: "", role: "colaborador" as "admin" | "colaborador" });
+  const [f, setF] = useState({ matricula: "", password: "", fullName: "", phone: "" });
 
   const m = useMutation({
-    mutationFn: () => create({ data: { matricula: f.matricula, password: f.password, fullName: f.fullName, phone: f.phone || null, role: f.role } }),
+    mutationFn: () => create({ data: { matricula: f.matricula, password: f.password, fullName: f.fullName, phone: f.phone || null, role: "colaborador" } }),
     onSuccess: () => {
-      toast.success("Usuário criado");
-      setF({ matricula: "", password: "", fullName: "", phone: "", role: "colaborador" });
+      toast.success("Colaborador criado");
+      setF({ matricula: "", password: "", fullName: "", phone: "" });
       qc.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -126,21 +126,12 @@ function Usuarios() {
           <div><Label className="text-xs">Telefone</Label><Input value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
         </div>
         <div><Label className="text-xs">Senha inicial *</Label><Input type="text" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} placeholder="mín. 8 caracteres" /></div>
-        <div>
-          <Label className="text-xs">Tipo de acesso</Label>
-          <Select value={f.role} onValueChange={(v) => setF({ ...f, role: v as "admin" | "colaborador" })}>
-            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="colaborador">Colaborador (só edita horímetro, data e observações)</SelectItem>
-              <SelectItem value="admin">Administrador (edita tudo)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
         <Button onClick={() => m.mutate()} disabled={m.isPending} className="w-full">
-          {m.isPending ? "Criando..." : "Criar usuário"}
+          {m.isPending ? "Criando..." : "Criar colaborador"}
         </Button>
         <p className="text-[11px] text-muted-foreground">O colaborador fará login com a <b>matrícula</b> e a senha definida aqui.</p>
       </Card>
+
 
       <Card className="p-4">
         <h3 className="font-semibold text-sm mb-3">Usuários cadastrados</h3>

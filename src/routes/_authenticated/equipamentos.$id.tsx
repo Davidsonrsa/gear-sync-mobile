@@ -10,11 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
-import { ArrowLeft, Camera, Save, Trash2, ImagePlus } from "lucide-react";
+import { ArrowLeft, Camera, Save, Trash2, ImagePlus, Printer, Wrench } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
 
 export const Route = createFileRoute("/_authenticated/equipamentos/$id")({
   component: EquipamentoDetail,
@@ -29,7 +30,14 @@ type Equip = {
   data_horimetro_atual: string | null; horimetro_atual: number | null;
   proxima_revisao_horimetro: number | null; hr_rodado: number | null;
   observacoes: string | null; status: string | null;
+  modelo: string | null; motor_oleo: string | null; hidraulico_oleo: string | null;
+  transmissao_oleo: string | null; eixo_oleo: string | null; tandem_oleo: string | null;
+  filtro_lub: string | null; filtro_diesel_p: string | null; filtro_diesel_s: string | null;
+  filtro_sep_agua: string | null; filtro_ar_ext: string | null; filtro_ar_int: string | null;
+  filtro_trans: string | null; filtro_hidr: string | null; filtro_respiro: string | null;
+  filtro_ar_cond1: string | null; filtro_ar_cond2: string | null;
 };
+
 
 function EquipamentoDetail() {
   const { id } = Route.useParams();
@@ -131,15 +139,20 @@ function EquipamentoDetail() {
   const hrRodadoCalc = (form.horimetro_atual != null && form.h_revisao != null)
     ? Math.max(0, Number(form.horimetro_atual) - Number(form.h_revisao))
     : null;
-  const overdue = form.horimetro_atual != null && form.proxima_revisao_horimetro != null
-    && Number(form.horimetro_atual) >= Number(form.proxima_revisao_horimetro);
+  const overdue = hrRodadoCalc != null && hrRodadoCalc > 500;
 
 
   return (
     <div className="px-3 py-3 max-w-md mx-auto w-full space-y-3">
-      <Link to="/equipamentos" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="w-4 h-4" /> Voltar
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link to="/equipamentos" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="w-4 h-4" /> Voltar
+        </Link>
+        <Link to="/equipamentos/$id/manutencao" params={{ id }} className="inline-flex items-center gap-1 text-xs text-primary font-medium">
+          <Wrench className="w-3.5 h-3.5" /> Manutenção
+        </Link>
+      </div>
+
 
       <Card className={`p-4 ${overdue ? "border-destructive ring-1 ring-destructive/40" : ""}`}>
         <div className="flex items-start justify-between gap-2 mb-1 flex-wrap">
@@ -326,6 +339,65 @@ function EquipamentoDetail() {
           </div>
         )}
       </Card>
+
+      {/* Filtros e Lubrificantes */}
+      <Card className="p-4 space-y-3">
+        <h3 className="font-semibold text-sm flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-warning" />
+          Filtros e Lubrificantes {ro && <span className="text-[11px] font-normal text-muted-foreground">(somente leitura)</span>}
+        </h3>
+
+        <Field label="Modelo"><Input value={form.modelo ?? ""} readOnly={ro}
+          onChange={(e) => setForm({ ...form, modelo: e.target.value })} /></Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Óleo motor"><Input value={form.motor_oleo ?? ""} readOnly={ro}
+            onChange={(e) => setForm({ ...form, motor_oleo: e.target.value })} /></Field>
+          <Field label="Óleo hidráulico"><Input value={form.hidraulico_oleo ?? ""} readOnly={ro}
+            onChange={(e) => setForm({ ...form, hidraulico_oleo: e.target.value })} /></Field>
+          <Field label="Óleo transmissão"><Input value={form.transmissao_oleo ?? ""} readOnly={ro}
+            onChange={(e) => setForm({ ...form, transmissao_oleo: e.target.value })} /></Field>
+          <Field label="Óleo eixo"><Input value={form.eixo_oleo ?? ""} readOnly={ro}
+            onChange={(e) => setForm({ ...form, eixo_oleo: e.target.value })} /></Field>
+          <Field label="Óleo tandem"><Input value={form.tandem_oleo ?? ""} readOnly={ro}
+            onChange={(e) => setForm({ ...form, tandem_oleo: e.target.value })} /></Field>
+          <Field label="Filtro lubrificante"><Input value={form.filtro_lub ?? ""} readOnly={ro}
+            onChange={(e) => setForm({ ...form, filtro_lub: e.target.value })} /></Field>
+          <Field label="Diesel primário"><Input value={form.filtro_diesel_p ?? ""} readOnly={ro}
+            onChange={(e) => setForm({ ...form, filtro_diesel_p: e.target.value })} /></Field>
+          <Field label="Diesel secundário"><Input value={form.filtro_diesel_s ?? ""} readOnly={ro}
+            onChange={(e) => setForm({ ...form, filtro_diesel_s: e.target.value })} /></Field>
+          <Field label="Sep. água"><Input value={form.filtro_sep_agua ?? ""} readOnly={ro}
+            onChange={(e) => setForm({ ...form, filtro_sep_agua: e.target.value })} /></Field>
+          <Field label="Ar externo"><Input value={form.filtro_ar_ext ?? ""} readOnly={ro}
+            onChange={(e) => setForm({ ...form, filtro_ar_ext: e.target.value })} /></Field>
+          <Field label="Ar interno"><Input value={form.filtro_ar_int ?? ""} readOnly={ro}
+            onChange={(e) => setForm({ ...form, filtro_ar_int: e.target.value })} /></Field>
+          <Field label="Transmissão"><Input value={form.filtro_trans ?? ""} readOnly={ro}
+            onChange={(e) => setForm({ ...form, filtro_trans: e.target.value })} /></Field>
+          <Field label="Hidráulico"><Input value={form.filtro_hidr ?? ""} readOnly={ro}
+            onChange={(e) => setForm({ ...form, filtro_hidr: e.target.value })} /></Field>
+          <Field label="Respiro"><Input value={form.filtro_respiro ?? ""} readOnly={ro}
+            onChange={(e) => setForm({ ...form, filtro_respiro: e.target.value })} /></Field>
+          <Field label="Ar cond. 1"><Input value={form.filtro_ar_cond1 ?? ""} readOnly={ro}
+            onChange={(e) => setForm({ ...form, filtro_ar_cond1: e.target.value })} /></Field>
+          <Field label="Ar cond. 2"><Input value={form.filtro_ar_cond2 ?? ""} readOnly={ro}
+            onChange={(e) => setForm({ ...form, filtro_ar_cond2: e.target.value })} /></Field>
+        </div>
+
+        {isAdmin && (
+          <Button onClick={() => save.mutate(form)} disabled={save.isPending} className="w-full" variant="secondary">
+            <Save className="w-4 h-4 mr-2" /> Salvar filtros
+          </Button>
+        )}
+      </Card>
+
+      <Link to="/equipamentos/$id/manutencao" params={{ id }}>
+        <Button variant="outline" className="w-full h-12">
+          <Printer className="w-4 h-4 mr-2" /> Formulário de manutenção (imprimir)
+        </Button>
+      </Link>
+
     </div>
   );
 }

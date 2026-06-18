@@ -59,20 +59,37 @@ export type Database = {
           created_at: string
           data_horimetro_atual: string | null
           data_ultima_revisao: string | null
+          eixo_oleo: string | null
+          filtro_ar_cond1: string | null
+          filtro_ar_cond2: string | null
+          filtro_ar_ext: string | null
+          filtro_ar_int: string | null
+          filtro_diesel_p: string | null
+          filtro_diesel_s: string | null
+          filtro_hidr: string | null
+          filtro_lub: string | null
+          filtro_respiro: string | null
+          filtro_sep_agua: string | null
+          filtro_trans: string | null
           h_revisao: number | null
+          hidraulico_oleo: string | null
           horimetro_atual: number | null
           hr_rodado: number | null
           id: string
           identificacao: string | null
           item: number | null
           localizacao: string | null
+          modelo: string | null
+          motor_oleo: string | null
           numero: string
           observacoes: string | null
           operador_contato: string | null
           placa: string | null
           proxima_revisao_horimetro: number | null
           status: string | null
+          tandem_oleo: string | null
           telefone: string | null
+          transmissao_oleo: string | null
           u_revisao: number | null
           updated_at: string
           updated_by: string | null
@@ -86,20 +103,37 @@ export type Database = {
           created_at?: string
           data_horimetro_atual?: string | null
           data_ultima_revisao?: string | null
+          eixo_oleo?: string | null
+          filtro_ar_cond1?: string | null
+          filtro_ar_cond2?: string | null
+          filtro_ar_ext?: string | null
+          filtro_ar_int?: string | null
+          filtro_diesel_p?: string | null
+          filtro_diesel_s?: string | null
+          filtro_hidr?: string | null
+          filtro_lub?: string | null
+          filtro_respiro?: string | null
+          filtro_sep_agua?: string | null
+          filtro_trans?: string | null
           h_revisao?: number | null
+          hidraulico_oleo?: string | null
           horimetro_atual?: number | null
           hr_rodado?: number | null
           id?: string
           identificacao?: string | null
           item?: number | null
           localizacao?: string | null
+          modelo?: string | null
+          motor_oleo?: string | null
           numero: string
           observacoes?: string | null
           operador_contato?: string | null
           placa?: string | null
           proxima_revisao_horimetro?: number | null
           status?: string | null
+          tandem_oleo?: string | null
           telefone?: string | null
+          transmissao_oleo?: string | null
           u_revisao?: number | null
           updated_at?: string
           updated_by?: string | null
@@ -113,20 +147,37 @@ export type Database = {
           created_at?: string
           data_horimetro_atual?: string | null
           data_ultima_revisao?: string | null
+          eixo_oleo?: string | null
+          filtro_ar_cond1?: string | null
+          filtro_ar_cond2?: string | null
+          filtro_ar_ext?: string | null
+          filtro_ar_int?: string | null
+          filtro_diesel_p?: string | null
+          filtro_diesel_s?: string | null
+          filtro_hidr?: string | null
+          filtro_lub?: string | null
+          filtro_respiro?: string | null
+          filtro_sep_agua?: string | null
+          filtro_trans?: string | null
           h_revisao?: number | null
+          hidraulico_oleo?: string | null
           horimetro_atual?: number | null
           hr_rodado?: number | null
           id?: string
           identificacao?: string | null
           item?: number | null
           localizacao?: string | null
+          modelo?: string | null
+          motor_oleo?: string | null
           numero?: string
           observacoes?: string | null
           operador_contato?: string | null
           placa?: string | null
           proxima_revisao_horimetro?: number | null
           status?: string | null
+          tandem_oleo?: string | null
           telefone?: string | null
+          transmissao_oleo?: string | null
           u_revisao?: number | null
           updated_at?: string
           updated_by?: string | null
