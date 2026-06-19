@@ -64,7 +64,7 @@ function ManutencaoFormPage() {
         tipo_revisao: tipoRevisao || null,
         executante: executante || null,
         observacoes: observacoes || null,
-        itens: itens as unknown as object,
+        itens: JSON.parse(JSON.stringify(itens)),
       }).eq("id", histId);
       if (error) throw error;
     },
