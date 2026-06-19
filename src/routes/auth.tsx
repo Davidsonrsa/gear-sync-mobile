@@ -54,11 +54,29 @@ function AuthPage() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <Label htmlFor="mat">Matrícula</Label>
-              <Input id="mat" inputMode="text" autoCapitalize="characters" autoComplete="username" required value={mat} onChange={(e) => setMat(e.target.value)} className="mt-1 uppercase" placeholder="Ex: 12345" />
+              <Input
+                id="mat"
+                inputMode="text"
+                autoCapitalize="characters"
+                autoComplete="username"
+                required
+                value={mat}
+                onChange={(e) => setMat(e.target.value)}
+                className="mt-1 uppercase"
+                placeholder="Ex: 12345"
+              />
             </div>
             <div>
               <Label htmlFor="password">Senha</Label>
-              <Input id="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1" />
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-1"
+              />
             </div>
             <Button type="submit" disabled={loading} className="w-full h-11 text-base">
               {loading ? "Entrando..." : "Entrar"}
@@ -70,7 +88,8 @@ function AuthPage() {
 
           <div className="mt-4 pt-4 border-t border-border text-center">
             <p className="text-[11px] text-muted-foreground">
-              📱 Para instalar no celular: abra este link no <b>Chrome</b> (Android) ou <b>Safari</b> (iPhone) e use <b>"Adicionar à tela inicial"</b>.
+              📱 Para instalar no celular: abra este link no <b>Chrome</b> (Android) ou{" "}
+              <b>Safari</b> (iPhone) e use <b>"Adicionar à tela inicial"</b>.
             </p>
           </div>
         </Card>

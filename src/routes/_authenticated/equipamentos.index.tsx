@@ -28,7 +28,6 @@ type Equip = {
   cl: string | null;
 };
 
-
 function EquipamentosList() {
   const { isAdmin } = useAuth();
   const [q, setQ] = useState("");
@@ -38,7 +37,9 @@ function EquipamentosList() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("equipamentos")
-        .select("id, numero, identificacao, placa, localizacao, operador_contato, horimetro_atual, h_revisao, proxima_revisao_horimetro, data_horimetro_atual, status, cl")
+        .select(
+          "id, numero, identificacao, placa, localizacao, operador_contato, horimetro_atual, h_revisao, proxima_revisao_horimetro, data_horimetro_atual, status, cl",
+        )
         .order("numero", { ascending: true });
 
       if (error) throw error;
@@ -70,7 +71,9 @@ function EquipamentosList() {
           />
         </div>
         <p className="text-xs text-muted-foreground mt-1.5 px-1">
-          {isLoading ? "Carregando..." : `${filtered.length} equipamento${filtered.length === 1 ? "" : "s"}`}
+          {isLoading
+            ? "Carregando..."
+            : `${filtered.length} equipamento${filtered.length === 1 ? "" : "s"}`}
         </p>
       </div>
 
@@ -80,7 +83,9 @@ function EquipamentosList() {
           <p className="text-sm text-muted-foreground">Nenhum equipamento cadastrado ainda.</p>
           {isAdmin && (
             <Link to="/admin">
-              <Button className="mt-4" size="sm">Cadastrar primeiro equipamento</Button>
+              <Button className="mt-4" size="sm">
+                Cadastrar primeiro equipamento
+              </Button>
             </Link>
           )}
         </Card>
@@ -88,31 +93,51 @@ function EquipamentosList() {
 
       <ul className="space-y-2 mt-2">
         {filtered.map((e) => {
-          const horaPct = e.horimetro_atual && e.proxima_revisao_horimetro
-            ? Math.min(100, (Number(e.horimetro_atual) / Number(e.proxima_revisao_horimetro)) * 100)
-            : 0;
-          const hrRodado = (e.horimetro_atual != null && e.h_revisao != null)
-            ? Math.max(0, Number(e.horimetro_atual) - Number(e.h_revisao))
-            : null;
+          const horaPct =
+            e.horimetro_atual && e.proxima_revisao_horimetro
+              ? Math.min(
+                  100,
+                  (Number(e.horimetro_atual) / Number(e.proxima_revisao_horimetro)) * 100,
+                )
+              : 0;
+          const hrRodado =
+            e.horimetro_atual != null && e.h_revisao != null
+              ? Math.max(0, Number(e.horimetro_atual) - Number(e.h_revisao))
+              : null;
           const overdue = hrRodado != null && hrRodado > 500;
           return (
             <li key={e.id}>
-              <Link
-                to="/equipamentos/$id"
-                params={{ id: e.id }}
-                className="block"
-              >
-                <Card className={`p-3 hover:bg-accent/5 active:bg-accent/10 transition-colors ${overdue ? "border-destructive ring-1 ring-destructive/40" : ""}`}>
+              <Link to="/equipamentos/$id" params={{ id: e.id }} className="block">
+                <Card
+                  className={`p-3 hover:bg-accent/5 active:bg-accent/10 transition-colors ${overdue ? "border-destructive ring-1 ring-destructive/40" : ""}`}
+                >
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-base text-primary">{e.numero}</span>
-                        {e.cl && <Badge variant="secondary" className="text-[10px] h-4 px-1.5">CL {e.cl}</Badge>}
-                        {e.status && <Badge className="text-[10px] h-4 px-1.5 bg-warning text-warning-foreground">{e.status}</Badge>}
-                        {overdue && <Badge variant="destructive" className="text-[10px] h-4 px-1.5 blink-overdue">Revisão vencida</Badge>}
+                        {e.cl && (
+                          <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
+                            CL {e.cl}
+                          </Badge>
+                        )}
+                        {e.status && (
+                          <Badge className="text-[10px] h-4 px-1.5 bg-warning text-warning-foreground">
+                            {e.status}
+                          </Badge>
+                        )}
+                        {overdue && (
+                          <Badge
+                            variant="destructive"
+                            className="text-[10px] h-4 px-1.5 blink-overdue"
+                          >
+                            Revisão vencida
+                          </Badge>
+                        )}
                       </div>
                       {e.identificacao && (
-                        <p className="text-xs text-muted-foreground mt-0.5 truncate">{e.identificacao}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                          {e.identificacao}
+                        </p>
                       )}
                       <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground flex-wrap">
                         {e.placa && <span className="font-mono">{e.placa}</span>}
@@ -126,14 +151,21 @@ function EquipamentosList() {
                             style={{ width: `${horaPct}%` }}
                           />
                         </div>
-                        <span className={`text-[11px] font-medium tabular-nums ${overdue ? "text-destructive blink-overdue" : ""}`}>
+                        <span
+                          className={`text-[11px] font-medium tabular-nums ${overdue ? "text-destructive blink-overdue" : ""}`}
+                        >
                           {e.horimetro_atual ?? 0}h
                         </span>
                       </div>
                       {hrRodado != null && (
-                        <div className={`mt-1 text-[11px] ${overdue ? "text-destructive font-semibold blink-overdue" : "text-muted-foreground"}`}>
+                        <div
+                          className={`mt-1 text-[11px] ${overdue ? "text-destructive font-semibold blink-overdue" : "text-muted-foreground"}`}
+                        >
                           Hr rodado: <span className="tabular-nums">{hrRodado}h</span>
-                          <span className="opacity-60"> (atual {e.horimetro_atual} − últ. revisão {e.h_revisao})</span>
+                          <span className="opacity-60">
+                            {" "}
+                            (atual {e.horimetro_atual} − últ. revisão {e.h_revisao})
+                          </span>
                           {overdue && <span className="ml-1">⚠ &gt; 500h</span>}
                         </div>
                       )}
@@ -147,7 +179,6 @@ function EquipamentosList() {
           );
         })}
       </ul>
-
 
       {isAdmin && (
         <Link to="/admin">

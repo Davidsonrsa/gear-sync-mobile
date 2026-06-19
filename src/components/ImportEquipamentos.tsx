@@ -9,13 +9,35 @@ import { useQueryClient } from "@tanstack/react-query";
 
 // Mapeamento dos cabeçalhos da planilha → colunas da tabela
 const COLS = [
-  "item", "cl", "numero", "cartao_ticket", "identificacao", "afericao_taco",
-  "placa", "ano", "localizacao", "operador_contato", "telefone", "cnh",
-  "data_ultima_revisao", "u_revisao", "h_revisao", "data_horimetro_atual",
-  "horimetro_atual", "proxima_revisao_horimetro", "hr_rodado", "observacoes",
+  "item",
+  "cl",
+  "numero",
+  "cartao_ticket",
+  "identificacao",
+  "afericao_taco",
+  "placa",
+  "ano",
+  "localizacao",
+  "operador_contato",
+  "telefone",
+  "cnh",
+  "data_ultima_revisao",
+  "u_revisao",
+  "h_revisao",
+  "data_horimetro_atual",
+  "horimetro_atual",
+  "proxima_revisao_horimetro",
+  "hr_rodado",
+  "observacoes",
 ] as const;
 
-const NUM = new Set(["u_revisao", "h_revisao", "horimetro_atual", "proxima_revisao_horimetro", "hr_rodado"]);
+const NUM = new Set([
+  "u_revisao",
+  "h_revisao",
+  "horimetro_atual",
+  "proxima_revisao_horimetro",
+  "hr_rodado",
+]);
 const DATE = new Set(["data_ultima_revisao", "data_horimetro_atual"]);
 
 function toDate(v: unknown): string | null {
@@ -63,7 +85,10 @@ export function ImportEquipamentos() {
       let start = 0;
       for (let i = 0; i < rows.length; i++) {
         const r = rows[i];
-        if (r && r[2] && typeof r[0] === "number") { start = i; break; }
+        if (r && r[2] && typeof r[0] === "number") {
+          start = i;
+          break;
+        }
       }
 
       const records: Record<string, unknown>[] = [];
@@ -112,14 +137,19 @@ export function ImportEquipamentos() {
         <FileSpreadsheet className="w-4 h-4" /> Importar planilha
       </h3>
       <p className="text-[11px] text-muted-foreground">
-        Aceita Excel (.xlsx) ou CSV. Use o mesmo layout da planilha (ITEM, CL, Nº, CARTAO TICKET, IDENTIFICAÇÃO, AFERIÇÃO, PLACA, ANO, LOCALIZAÇÃO, OPERADOR, TELEFONE, CNH, DATA, U.REVISÃO, H.REVISÃO, DATA, H.ATUAL, PROX. REVISÃO, HR RODADO, OBSERVAÇÕES).
+        Aceita Excel (.xlsx) ou CSV. Use o mesmo layout da planilha (ITEM, CL, Nº, CARTAO TICKET,
+        IDENTIFICAÇÃO, AFERIÇÃO, PLACA, ANO, LOCALIZAÇÃO, OPERADOR, TELEFONE, CNH, DATA, U.REVISÃO,
+        H.REVISÃO, DATA, H.ATUAL, PROX. REVISÃO, HR RODADO, OBSERVAÇÕES).
       </p>
       <input
         ref={inputRef}
         type="file"
         accept=".xlsx,.xls,.csv"
         className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handleFile(f);
+        }}
       />
       <Button onClick={() => inputRef.current?.click()} disabled={busy} className="w-full">
         <Upload className="w-4 h-4" /> {busy ? "Importando..." : "Selecionar arquivo"}

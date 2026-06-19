@@ -8,8 +8,15 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { MANUTENCAO_TEMPLATE } from "@/lib/manutencao-template";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/equipamentos/$id/historico")({
@@ -25,7 +32,11 @@ function HistoricoPage() {
   const { data: equip } = useQuery({
     queryKey: ["equipamento", id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("equipamentos").select("numero, identificacao, horimetro_atual").eq("id", id).single();
+      const { data, error } = await supabase
+        .from("equipamentos")
+        .select("numero, identificacao, horimetro_atual")
+        .eq("id", id)
+        .single();
       if (error) throw error;
       return data;
     },
@@ -47,12 +58,16 @@ function HistoricoPage() {
   const createNew = useMutation({
     mutationFn: async () => {
       if (!userId) throw new Error("Não autenticado");
-      const { data, error } = await supabase.from("manutencao_historico").insert({
-        equipamento_id: id,
-        created_by: userId,
-        horimetro: equip?.horimetro_atual ?? null,
-        itens: MANUTENCAO_TEMPLATE.map((i) => ({ ...i, codigo: "", quantidade: "", status: "" })),
-      }).select("id").single();
+      const { data, error } = await supabase
+        .from("manutencao_historico")
+        .insert({
+          equipamento_id: id,
+          created_by: userId,
+          horimetro: equip?.horimetro_atual ?? null,
+          itens: MANUTENCAO_TEMPLATE.map((i) => ({ ...i, codigo: "", quantidade: "", status: "" })),
+        })
+        .select("id")
+        .single();
       if (error) throw error;
       return data.id as string;
     },
@@ -78,7 +93,11 @@ function HistoricoPage() {
   return (
     <div className="px-3 py-3 max-w-md mx-auto w-full space-y-3">
       <div className="flex items-center justify-between">
-        <Link to="/equipamentos/$id" params={{ id }} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          to="/equipamentos/$id"
+          params={{ id }}
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="w-4 h-4" /> Voltar
         </Link>
         <Button size="sm" onClick={() => createNew.mutate()} disabled={createNew.isPending}>
@@ -88,7 +107,11 @@ function HistoricoPage() {
 
       <Card className="p-4">
         <h2 className="text-lg font-bold">Histórico de Manutenção</h2>
-        {equip && <p className="text-xs text-muted-foreground">{equip.numero} — {equip.identificacao ?? ""}</p>}
+        {equip && (
+          <p className="text-xs text-muted-foreground">
+            {equip.numero} — {equip.identificacao ?? ""}
+          </p>
+        )}
       </Card>
 
       {isLoading ? (
@@ -100,13 +123,19 @@ function HistoricoPage() {
       ) : (
         registros.map((r) => (
           <Card key={r.id} className="p-3 flex items-center justify-between gap-2">
-            <Link to="/equipamentos/$id/historico/$histId" params={{ id, histId: r.id }} className="flex-1 min-w-0">
+            <Link
+              to="/equipamentos/$id/historico/$histId"
+              params={{ id, histId: r.id }}
+              className="flex-1 min-w-0"
+            >
               <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4 text-primary shrink-0" />
                 <div className="min-w-0">
                   <p className="font-medium text-sm">
                     {new Date(r.data + "T00:00:00").toLocaleDateString("pt-BR")}
-                    {r.tipo_revisao && <span className="ml-2 text-xs text-muted-foreground">{r.tipo_revisao}</span>}
+                    {r.tipo_revisao && (
+                      <span className="ml-2 text-xs text-muted-foreground">{r.tipo_revisao}</span>
+                    )}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
                     {r.horimetro ? `${r.horimetro}h` : "—"} · {r.executante || "sem executante"}
@@ -124,11 +153,15 @@ function HistoricoPage() {
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Excluir manutenção?</AlertDialogTitle>
-                    <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+                    <AlertDialogDescription>
+                      Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => remove.mutate(r.id)}>Excluir</AlertDialogAction>
+                    <AlertDialogAction onClick={() => remove.mutate(r.id)}>
+                      Excluir
+                    </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>

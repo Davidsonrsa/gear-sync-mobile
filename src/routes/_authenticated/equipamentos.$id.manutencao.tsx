@@ -60,7 +60,9 @@ function ManutencaoPage() {
     <div className="bg-white text-black min-h-screen">
       <div className="no-print sticky top-0 z-30 bg-background border-b px-3 py-2 flex items-center justify-between">
         <Link to="/equipamentos/$id" params={{ id }}>
-          <Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1" /> Voltar</Button>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
+          </Button>
         </Link>
         <Button onClick={() => window.print()} size="sm">
           <Printer className="w-4 h-4 mr-2" /> Imprimir
@@ -75,35 +77,57 @@ function ManutencaoPage() {
             <p className="text-[11px]">SPH JHM Mafra — Relatório de manutenção</p>
           </div>
           <div className="text-right text-[11px]">
-            <p><b>Data:</b> ____/____/______</p>
-            <p><b>Revisão:</b> ______ horas</p>
+            <p>
+              <b>Data:</b> ____/____/______
+            </p>
+            <p>
+              <b>Revisão:</b> ______ horas
+            </p>
           </div>
         </div>
 
         <table className="w-full text-[11px] border border-black mb-3">
           <tbody>
             <tr>
-              <td className="border border-black px-2 py-1 w-1/4 bg-gray-100"><b>Equipamento</b></td>
-              <td className="border border-black px-2 py-1">{e.numero} — {e.identificacao ?? ""}</td>
-              <td className="border border-black px-2 py-1 w-1/4 bg-gray-100"><b>Modelo</b></td>
+              <td className="border border-black px-2 py-1 w-1/4 bg-gray-100">
+                <b>Equipamento</b>
+              </td>
+              <td className="border border-black px-2 py-1">
+                {e.numero} — {e.identificacao ?? ""}
+              </td>
+              <td className="border border-black px-2 py-1 w-1/4 bg-gray-100">
+                <b>Modelo</b>
+              </td>
               <td className="border border-black px-2 py-1">{e.modelo ?? ""}</td>
             </tr>
             <tr>
-              <td className="border border-black px-2 py-1 bg-gray-100"><b>Placa</b></td>
+              <td className="border border-black px-2 py-1 bg-gray-100">
+                <b>Placa</b>
+              </td>
               <td className="border border-black px-2 py-1">{e.placa ?? ""}</td>
-              <td className="border border-black px-2 py-1 bg-gray-100"><b>Ano</b></td>
+              <td className="border border-black px-2 py-1 bg-gray-100">
+                <b>Ano</b>
+              </td>
               <td className="border border-black px-2 py-1">{e.ano ?? ""}</td>
             </tr>
             <tr>
-              <td className="border border-black px-2 py-1 bg-gray-100"><b>Horímetro atual</b></td>
+              <td className="border border-black px-2 py-1 bg-gray-100">
+                <b>Horímetro atual</b>
+              </td>
               <td className="border border-black px-2 py-1">{e.horimetro_atual ?? ""} h</td>
-              <td className="border border-black px-2 py-1 bg-gray-100"><b>Última revisão</b></td>
+              <td className="border border-black px-2 py-1 bg-gray-100">
+                <b>Última revisão</b>
+              </td>
               <td className="border border-black px-2 py-1">{e.h_revisao ?? ""} h</td>
             </tr>
             <tr>
-              <td className="border border-black px-2 py-1 bg-gray-100"><b>Localização</b></td>
+              <td className="border border-black px-2 py-1 bg-gray-100">
+                <b>Localização</b>
+              </td>
               <td className="border border-black px-2 py-1">{e.localizacao ?? ""}</td>
-              <td className="border border-black px-2 py-1 bg-gray-100"><b>Operador</b></td>
+              <td className="border border-black px-2 py-1 bg-gray-100">
+                <b>Operador</b>
+              </td>
               <td className="border border-black px-2 py-1">{e.operador_contato ?? ""}</td>
             </tr>
           </tbody>
@@ -123,9 +147,13 @@ function ManutencaoPage() {
               ["Ar cond. 1", e.filtro_ar_cond1, "Ar cond. 2", e.filtro_ar_cond2],
             ].map((row, i) => (
               <tr key={i}>
-                <td className="border border-black px-2 py-1 bg-gray-100 w-1/4"><b>{row[0]}</b></td>
+                <td className="border border-black px-2 py-1 bg-gray-100 w-1/4">
+                  <b>{row[0]}</b>
+                </td>
                 <td className="border border-black px-2 py-1">{row[1] ?? ""}</td>
-                <td className="border border-black px-2 py-1 bg-gray-100 w-1/4"><b>{row[2]}</b></td>
+                <td className="border border-black px-2 py-1 bg-gray-100 w-1/4">
+                  <b>{row[2]}</b>
+                </td>
                 <td className="border border-black px-2 py-1">{row[3] ?? ""}</td>
               </tr>
             ))}
@@ -166,10 +194,14 @@ function ManutencaoPage() {
 
         <div className="grid grid-cols-2 gap-6 mt-10">
           <div className="text-center">
-            <div className="border-t border-black pt-1"><b>Mecânico responsável</b></div>
+            <div className="border-t border-black pt-1">
+              <b>Mecânico responsável</b>
+            </div>
           </div>
           <div className="text-center">
-            <div className="border-t border-black pt-1"><b>Supervisor</b></div>
+            <div className="border-t border-black pt-1">
+              <b>Supervisor</b>
+            </div>
           </div>
         </div>
       </div>

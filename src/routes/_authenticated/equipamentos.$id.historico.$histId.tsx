@@ -32,7 +32,11 @@ function ManutencaoFormPage() {
   const { data: registro, isLoading } = useQuery({
     queryKey: ["manutencao_historico_item", histId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("manutencao_historico").select("*").eq("id", histId).single();
+      const { data, error } = await supabase
+        .from("manutencao_historico")
+        .select("*")
+        .eq("id", histId)
+        .single();
       if (error) throw error;
       return data;
     },
@@ -52,20 +56,25 @@ function ManutencaoFormPage() {
     setTipoRevisao(registro.tipo_revisao ?? "");
     setExecutante(registro.executante ?? "");
     setObservacoes(registro.observacoes ?? "");
-    const arr = Array.isArray(registro.itens) ? (registro.itens as unknown as ManutencaoItem[]) : [];
+    const arr = Array.isArray(registro.itens)
+      ? (registro.itens as unknown as ManutencaoItem[])
+      : [];
     setItens(arr.length ? arr : MANUTENCAO_TEMPLATE);
   }, [registro]);
 
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("manutencao_historico").update({
-        data: data || new Date().toISOString().slice(0, 10),
-        horimetro: horimetro === "" ? null : Number(horimetro),
-        tipo_revisao: tipoRevisao || null,
-        executante: executante || null,
-        observacoes: observacoes || null,
-        itens: JSON.parse(JSON.stringify(itens)),
-      }).eq("id", histId);
+      const { error } = await supabase
+        .from("manutencao_historico")
+        .update({
+          data: data || new Date().toISOString().slice(0, 10),
+          horimetro: horimetro === "" ? null : Number(horimetro),
+          tipo_revisao: tipoRevisao || null,
+          executante: executante || null,
+          observacoes: observacoes || null,
+          itens: JSON.parse(JSON.stringify(itens)),
+        })
+        .eq("id", histId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -88,7 +97,9 @@ function ManutencaoFormPage() {
     <div className="bg-background min-h-screen">
       <div className="no-print sticky top-0 z-30 bg-background border-b px-3 py-2 flex items-center justify-between">
         <Link to="/equipamentos/$id/historico" params={{ id }}>
-          <Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1" /> Voltar</Button>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
+          </Button>
         </Link>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => window.print()}>
@@ -105,7 +116,9 @@ function ManutencaoFormPage() {
           <img src={logo.url} alt="" className="w-16 h-16 object-contain" />
           <div className="flex-1">
             <h1 className="text-lg font-bold">PLANO DE MANUTENÇÃO PREVENTIVA</h1>
-            <p className="text-[11px] text-muted-foreground print:text-black">SPH JHM Mafra — Registro de manutenção</p>
+            <p className="text-[11px] text-muted-foreground print:text-black">
+              SPH JHM Mafra — Registro de manutenção
+            </p>
           </div>
         </div>
 
@@ -126,7 +139,12 @@ function ManutencaoFormPage() {
             </div>
             <div>
               <Label className="text-[11px]">Horímetro</Label>
-              <Input type="number" inputMode="decimal" value={horimetro} onChange={(e) => setHorimetro(e.target.value)} />
+              <Input
+                type="number"
+                inputMode="decimal"
+                value={horimetro}
+                onChange={(e) => setHorimetro(e.target.value)}
+              />
             </div>
             <div className="col-span-2">
               <Label className="text-[11px]">Executante</Label>
@@ -179,10 +197,14 @@ function ManutencaoFormPage() {
                       <select
                         className="w-full bg-transparent outline-none text-[11px] py-0.5"
                         value={it.status ?? ""}
-                        onChange={(e) => updateItem(i, { status: e.target.value as ManutencaoItem["status"] })}
+                        onChange={(e) =>
+                          updateItem(i, { status: e.target.value as ManutencaoItem["status"] })
+                        }
                       >
                         {Object.entries(STATUS_LABELS).map(([k, v]) => (
-                          <option key={k} value={k}>{v}</option>
+                          <option key={k} value={k}>
+                            {v}
+                          </option>
                         ))}
                       </select>
                     </td>
@@ -200,10 +222,14 @@ function ManutencaoFormPage() {
 
         <div className="grid grid-cols-2 gap-6 mt-10 print:mt-16 text-[11px]">
           <div className="text-center">
-            <div className="border-t border-foreground print:border-black pt-1"><b>Mecânico responsável</b></div>
+            <div className="border-t border-foreground print:border-black pt-1">
+              <b>Mecânico responsável</b>
+            </div>
           </div>
           <div className="text-center">
-            <div className="border-t border-foreground print:border-black pt-1"><b>Supervisor</b></div>
+            <div className="border-t border-foreground print:border-black pt-1">
+              <b>Supervisor</b>
+            </div>
           </div>
         </div>
 

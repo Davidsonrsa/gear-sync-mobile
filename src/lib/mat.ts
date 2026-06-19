@@ -2,7 +2,10 @@
 const DOMAIN = "sphjhm.app";
 
 export function normalizeMat(mat: string): string {
-  return mat.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  return mat
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
 }
 
 export function matToEmail(mat: string): string {
