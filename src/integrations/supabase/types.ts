@@ -184,6 +184,56 @@ export type Database = {
         }
         Relationships: []
       }
+      manutencao_historico: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: string
+          equipamento_id: string
+          executante: string | null
+          horimetro: number | null
+          id: string
+          itens: Json
+          observacoes: string | null
+          tipo_revisao: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          equipamento_id: string
+          executante?: string | null
+          horimetro?: number | null
+          id?: string
+          itens?: Json
+          observacoes?: string | null
+          tipo_revisao?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          equipamento_id?: string
+          executante?: string | null
+          horimetro?: number | null
+          id?: string
+          itens?: Json
+          observacoes?: string | null
+          tipo_revisao?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manutencao_historico_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "equipamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
