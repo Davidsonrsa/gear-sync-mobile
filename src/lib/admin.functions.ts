@@ -21,7 +21,7 @@ const createUserSchema = z.object({
 
 export const adminCreateUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => createUserSchema.parse(d))
+  .validator(createUserSchema)
   .handler(async ({ data, context }) => {
     const { data: isAdmin } = await context.supabase.rpc(
       "has_role" as never,
@@ -83,7 +83,7 @@ export const adminListUsers = createServerFn({ method: "GET" })
 
 export const adminDeleteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ userId: z.string().uuid() }).parse(d))
+  .validator(z.object({ userId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
     const { data: isAdmin } = await context.supabase.rpc(
       "has_role" as never,
