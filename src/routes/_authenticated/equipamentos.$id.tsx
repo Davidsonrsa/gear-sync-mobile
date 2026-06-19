@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
-import { ArrowLeft, Camera, Save, Trash2, ImagePlus, Printer, Wrench } from "lucide-react";
+import { ArrowLeft, Camera, Save, Trash2, ImagePlus, Printer, Wrench, FileText } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -144,13 +144,18 @@ function EquipamentoDetail() {
 
   return (
     <div className="px-3 py-3 max-w-md mx-auto w-full space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <Link to="/equipamentos" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-4 h-4" /> Voltar
         </Link>
-        <Link to="/equipamentos/$id/manutencao" params={{ id }} className="inline-flex items-center gap-1 text-xs text-primary font-medium">
-          <Wrench className="w-3.5 h-3.5" /> Manutenção
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link to="/equipamentos/$id/historico" params={{ id }} className="inline-flex items-center gap-1 text-xs text-primary font-medium">
+            <FileText className="w-3.5 h-3.5" /> Histórico
+          </Link>
+          <Link to="/equipamentos/$id/manutencao" params={{ id }} className="inline-flex items-center gap-1 text-xs text-primary font-medium">
+            <Wrench className="w-3.5 h-3.5" /> Plano
+          </Link>
+        </div>
       </div>
 
 
