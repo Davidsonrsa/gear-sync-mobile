@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedEquipamentosIndexRouteImport } from './routes/_authenticated/equipamentos.index'
+import { Route as AuthenticatedEquipamentosIdRouteImport } from './routes/_authenticated/equipamentos.$id'
 import { Route as AuthenticatedEquipamentosIdIndexRouteImport } from './routes/_authenticated/equipamentos.$id.index'
 import { Route as AuthenticatedEquipamentosIdManutencaoRouteImport } from './routes/_authenticated/equipamentos.$id.manutencao'
 import { Route as AuthenticatedEquipamentosIdHistoricoRouteImport } from './routes/_authenticated/equipamentos.$id.historico'
@@ -44,23 +45,29 @@ const AuthenticatedEquipamentosIndexRoute =
     path: '/equipamentos/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEquipamentosIdRoute =
+  AuthenticatedEquipamentosIdRouteImport.update({
+    id: '/equipamentos/$id',
+    path: '/equipamentos/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEquipamentosIdIndexRoute =
   AuthenticatedEquipamentosIdIndexRouteImport.update({
-    id: '/equipamentos/$id/',
-    path: '/equipamentos/$id/',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedEquipamentosIdRoute,
   } as any)
 const AuthenticatedEquipamentosIdManutencaoRoute =
   AuthenticatedEquipamentosIdManutencaoRouteImport.update({
-    id: '/equipamentos/$id/manutencao',
-    path: '/equipamentos/$id/manutencao',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/manutencao',
+    path: '/manutencao',
+    getParentRoute: () => AuthenticatedEquipamentosIdRoute,
   } as any)
 const AuthenticatedEquipamentosIdHistoricoRoute =
   AuthenticatedEquipamentosIdHistoricoRouteImport.update({
-    id: '/equipamentos/$id/historico',
-    path: '/equipamentos/$id/historico',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/historico',
+    path: '/historico',
+    getParentRoute: () => AuthenticatedEquipamentosIdRoute,
   } as any)
 const AuthenticatedEquipamentosIdHistoricoHistIdRoute =
   AuthenticatedEquipamentosIdHistoricoHistIdRouteImport.update({
@@ -73,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/equipamentos/$id': typeof AuthenticatedEquipamentosIdRouteWithChildren
   '/equipamentos/': typeof AuthenticatedEquipamentosIndexRoute
   '/equipamentos/$id/historico': typeof AuthenticatedEquipamentosIdHistoricoRouteWithChildren
   '/equipamentos/$id/manutencao': typeof AuthenticatedEquipamentosIdManutencaoRoute
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/equipamentos/$id': typeof AuthenticatedEquipamentosIdRouteWithChildren
   '/_authenticated/equipamentos/': typeof AuthenticatedEquipamentosIndexRoute
   '/_authenticated/equipamentos/$id/historico': typeof AuthenticatedEquipamentosIdHistoricoRouteWithChildren
   '/_authenticated/equipamentos/$id/manutencao': typeof AuthenticatedEquipamentosIdManutencaoRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/admin'
+    | '/equipamentos/$id'
     | '/equipamentos/'
     | '/equipamentos/$id/historico'
     | '/equipamentos/$id/manutencao'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/admin'
+    | '/_authenticated/equipamentos/$id'
     | '/_authenticated/equipamentos/'
     | '/_authenticated/equipamentos/$id/historico'
     | '/_authenticated/equipamentos/$id/manutencao'
@@ -178,26 +189,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEquipamentosIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/equipamentos/$id': {
+      id: '/_authenticated/equipamentos/$id'
+      path: '/equipamentos/$id'
+      fullPath: '/equipamentos/$id'
+      preLoaderRoute: typeof AuthenticatedEquipamentosIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/equipamentos/$id/': {
       id: '/_authenticated/equipamentos/$id/'
-      path: '/equipamentos/$id'
+      path: '/'
       fullPath: '/equipamentos/$id/'
       preLoaderRoute: typeof AuthenticatedEquipamentosIdIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedEquipamentosIdRoute
     }
     '/_authenticated/equipamentos/$id/manutencao': {
       id: '/_authenticated/equipamentos/$id/manutencao'
-      path: '/equipamentos/$id/manutencao'
+      path: '/manutencao'
       fullPath: '/equipamentos/$id/manutencao'
       preLoaderRoute: typeof AuthenticatedEquipamentosIdManutencaoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedEquipamentosIdRoute
     }
     '/_authenticated/equipamentos/$id/historico': {
       id: '/_authenticated/equipamentos/$id/historico'
-      path: '/equipamentos/$id/historico'
+      path: '/historico'
       fullPath: '/equipamentos/$id/historico'
       preLoaderRoute: typeof AuthenticatedEquipamentosIdHistoricoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedEquipamentosIdRoute
     }
     '/_authenticated/equipamentos/$id/historico/$histId': {
       id: '/_authenticated/equipamentos/$id/historico/$histId'
@@ -224,22 +242,38 @@ const AuthenticatedEquipamentosIdHistoricoRouteWithChildren =
     AuthenticatedEquipamentosIdHistoricoRouteChildren,
   )
 
-interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
-  AuthenticatedEquipamentosIndexRoute: typeof AuthenticatedEquipamentosIndexRoute
+interface AuthenticatedEquipamentosIdRouteChildren {
   AuthenticatedEquipamentosIdHistoricoRoute: typeof AuthenticatedEquipamentosIdHistoricoRouteWithChildren
   AuthenticatedEquipamentosIdManutencaoRoute: typeof AuthenticatedEquipamentosIdManutencaoRoute
   AuthenticatedEquipamentosIdIndexRoute: typeof AuthenticatedEquipamentosIdIndexRoute
 }
 
+const AuthenticatedEquipamentosIdRouteChildren: AuthenticatedEquipamentosIdRouteChildren =
+  {
+    AuthenticatedEquipamentosIdHistoricoRoute:
+      AuthenticatedEquipamentosIdHistoricoRouteWithChildren,
+    AuthenticatedEquipamentosIdManutencaoRoute:
+      AuthenticatedEquipamentosIdManutencaoRoute,
+    AuthenticatedEquipamentosIdIndexRoute:
+      AuthenticatedEquipamentosIdIndexRoute,
+  }
+
+const AuthenticatedEquipamentosIdRouteWithChildren =
+  AuthenticatedEquipamentosIdRoute._addFileChildren(
+    AuthenticatedEquipamentosIdRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedEquipamentosIdRoute: typeof AuthenticatedEquipamentosIdRouteWithChildren
+  AuthenticatedEquipamentosIndexRoute: typeof AuthenticatedEquipamentosIndexRoute
+}
+
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedEquipamentosIdRoute:
+    AuthenticatedEquipamentosIdRouteWithChildren,
   AuthenticatedEquipamentosIndexRoute: AuthenticatedEquipamentosIndexRoute,
-  AuthenticatedEquipamentosIdHistoricoRoute:
-    AuthenticatedEquipamentosIdHistoricoRouteWithChildren,
-  AuthenticatedEquipamentosIdManutencaoRoute:
-    AuthenticatedEquipamentosIdManutencaoRoute,
-  AuthenticatedEquipamentosIdIndexRoute: AuthenticatedEquipamentosIdIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
