@@ -32,7 +32,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-export const Route = createFileRoute("/_authenticated/equipamentos/$id")({
+export const Route = createFileRoute("/_authenticated/equipamentos/$id/")({
   component: EquipamentoDetail,
 });
 
