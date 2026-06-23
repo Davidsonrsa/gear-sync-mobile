@@ -21,16 +21,15 @@ const createUserSchema = z.object({
 
 export const adminCreateUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator(createUserSchema)
+  .inputValidator((data) => createUserSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc(
-      "has_role" as never,
-      {
-        _user_id: context.userId,
-        _role: "admin",
-      } as never,
-    );
-    if (!isAdmin) throw new Error("Acesso negado: somente admin.");
+    const { data: adminRole, error: roleError } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (roleError || !adminRole) throw new Error("Acesso negado: somente admin.");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -60,14 +59,13 @@ export const adminCreateUser = createServerFn({ method: "POST" })
 export const adminListUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: isAdmin } = await context.supabase.rpc(
-      "has_role" as never,
-      {
-        _user_id: context.userId,
-        _role: "admin",
-      } as never,
-    );
-    if (!isAdmin) throw new Error("Acesso negado.");
+    const { data: adminRole, error: roleError } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (roleError || !adminRole) throw new Error("Acesso negado.");
 
     const { data: profiles } = await context.supabase
       .from("profiles")
@@ -83,16 +81,15 @@ export const adminListUsers = createServerFn({ method: "GET" })
 
 export const adminDeleteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator(z.object({ userId: z.string().uuid() }))
+  .inputValidator((data) => z.object({ userId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc(
-      "has_role" as never,
-      {
-        _user_id: context.userId,
-        _role: "admin",
-      } as never,
-    );
-    if (!isAdmin) throw new Error("Acesso negado.");
+    const { data: adminRole, error: roleError } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (roleError || !adminRole) throw new Error("Acesso negado.");
     if (data.userId === context.userId) throw new Error("Você não pode excluir a si mesmo.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
