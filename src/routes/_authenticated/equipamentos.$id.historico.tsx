@@ -47,7 +47,7 @@ function HistoricoPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("manutencao_historico")
-        .select("id, data, horimetro, tipo_revisao, executante, observacoes")
+        .select("id, data, horimetro, tipo_revisao, executante, observacoes, created_by")
         .eq("equipamento_id", id)
         .order("data", { ascending: false });
       if (error) throw error;
@@ -143,7 +143,7 @@ function HistoricoPage() {
                 </div>
               </div>
             </Link>
-            {isAdmin && (
+            {(isAdmin || r.created_by === userId) && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button size="icon" variant="ghost" className="text-destructive shrink-0">

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, Printer, FileText } from "lucide-react";
 import logo from "@/assets/logo-sph.jpg.asset.json";
 
 export const Route = createFileRoute("/_authenticated/equipamentos/$id/manutencao")({
@@ -58,15 +58,22 @@ function ManutencaoPage() {
 
   return (
     <div className="bg-white text-black min-h-screen">
-      <div className="no-print sticky top-0 z-30 bg-background border-b px-3 py-2 flex items-center justify-between">
+      <div className="no-print sticky top-0 z-30 bg-background border-b px-3 py-2 flex items-center justify-between gap-2">
         <Link to="/equipamentos/$id" params={{ id }}>
           <Button variant="ghost" size="sm">
             <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
           </Button>
         </Link>
-        <Button onClick={() => window.print()} size="sm">
-          <Printer className="w-4 h-4 mr-2" /> Imprimir
-        </Button>
+        <div className="flex gap-2">
+          <Link to="/equipamentos/$id/historico" params={{ id }}>
+            <Button size="sm" variant="outline">
+              <FileText className="w-4 h-4 mr-1" /> Histórico salvo
+            </Button>
+          </Link>
+          <Button onClick={() => window.print()} size="sm">
+            <Printer className="w-4 h-4 mr-2" /> Imprimir
+          </Button>
+        </div>
       </div>
 
       <div className="max-w-[210mm] mx-auto p-6 print:p-4 text-[12px]">

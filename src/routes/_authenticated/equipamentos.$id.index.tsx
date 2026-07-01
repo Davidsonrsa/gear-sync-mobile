@@ -76,6 +76,7 @@ type Equip = {
   filtro_respiro: string | null;
   filtro_ar_cond1: string | null;
   filtro_ar_cond2: string | null;
+  cover_storage_path: string | null;
 };
 
 function EquipamentoDetail() {
@@ -115,6 +116,18 @@ function EquipamentoDetail() {
     },
   });
 
+  const coverInput = useRef<HTMLInputElement>(null);
+  const { data: coverUrl } = useQuery({
+    queryKey: ["cover", id, equip?.cover_storage_path],
+    enabled: !!equip?.cover_storage_path,
+    queryFn: async () => {
+      const { data } = await supabase.storage
+        .from("equipamento-fotos")
+        .createSignedUrl(equip!.cover_storage_path!, 60 * 60);
+      return data?.signedUrl ?? null;
+    },
+  });
+
   const [form, setForm] = useState<Partial<Equip>>({});
   useEffect(() => {
     if (equip) setForm(equip);
@@ -122,13 +135,29 @@ function EquipamentoDetail() {
 
   const save = useMutation({
     mutationFn: async (payload: Partial<Equip>) => {
-      // Para colaborador, enviar apenas campos permitidos
+      // Para colaborador: permitido horímetro, observações, filtros e lubrificantes.
       const allowed = isAdmin
         ? payload
         : {
             horimetro_atual: payload.horimetro_atual,
             data_horimetro_atual: payload.data_horimetro_atual,
             observacoes: payload.observacoes,
+            motor_oleo: payload.motor_oleo,
+            hidraulico_oleo: payload.hidraulico_oleo,
+            transmissao_oleo: payload.transmissao_oleo,
+            eixo_oleo: payload.eixo_oleo,
+            tandem_oleo: payload.tandem_oleo,
+            filtro_lub: payload.filtro_lub,
+            filtro_diesel_p: payload.filtro_diesel_p,
+            filtro_diesel_s: payload.filtro_diesel_s,
+            filtro_sep_agua: payload.filtro_sep_agua,
+            filtro_ar_ext: payload.filtro_ar_ext,
+            filtro_ar_int: payload.filtro_ar_int,
+            filtro_trans: payload.filtro_trans,
+            filtro_hidr: payload.filtro_hidr,
+            filtro_respiro: payload.filtro_respiro,
+            filtro_ar_cond1: payload.filtro_ar_cond1,
+            filtro_ar_cond2: payload.filtro_ar_cond2,
           };
       const { error } = await supabase.from("equipamentos").update(allowed).eq("id", id);
       if (error) throw error;
@@ -175,13 +204,51 @@ function EquipamentoDetail() {
     qc.invalidateQueries({ queryKey: ["fotos", id] });
   }
 
-  async function deletePhoto(photoId: string, path: string) {
-    if (!isAdmin) return toast.error("Somente administrador pode excluir fotos");
+  async function deletePhoto(photoId: string, path: string, uploadedBy: string | null) {
+    if (!isAdmin && uploadedBy !== userId)
+      return toast.error("Você só pode excluir suas próprias fotos");
     await supabase.storage.from("equipamento-fotos").remove([path]);
     const { error } = await supabase.from("equipamento_fotos").delete().eq("id", photoId);
     if (error) return toast.error(error.message);
     toast.success("Foto removida");
     qc.invalidateQueries({ queryKey: ["fotos", id] });
+  }
+
+  async function handleCoverUpload(files: FileList | null) {
+    if (!files?.length || !isAdmin) return;
+    const file = files[0];
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${id}/cover-${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("equipamento-fotos")
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (upErr) return toast.error(upErr.message);
+    // remove previous cover file, if any
+    if (equip?.cover_storage_path) {
+      await supabase.storage.from("equipamento-fotos").remove([equip.cover_storage_path]);
+    }
+    const { error } = await supabase
+      .from("equipamentos")
+      .update({ cover_storage_path: path })
+      .eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Imagem principal atualizada");
+    qc.invalidateQueries({ queryKey: ["equipamento", id] });
+    qc.invalidateQueries({ queryKey: ["equipamentos"] });
+    qc.invalidateQueries({ queryKey: ["cover", id] });
+  }
+
+  async function removeCover() {
+    if (!isAdmin || !equip?.cover_storage_path) return;
+    await supabase.storage.from("equipamento-fotos").remove([equip.cover_storage_path]);
+    const { error } = await supabase
+      .from("equipamentos")
+      .update({ cover_storage_path: null })
+      .eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Imagem principal removida");
+    qc.invalidateQueries({ queryKey: ["equipamento", id] });
+    qc.invalidateQueries({ queryKey: ["equipamentos"] });
   }
 
   if (isLoading || !equip) {
@@ -223,6 +290,43 @@ function EquipamentoDetail() {
       </div>
 
       <Card className={`p-4 ${overdue ? "border-destructive ring-1 ring-destructive/40" : ""}`}>
+        {coverUrl && (
+          <div className="relative mb-3 rounded-md overflow-hidden border border-border bg-muted">
+            <img src={coverUrl} alt="" className="w-full h-40 object-cover" />
+            {isAdmin && (
+              <button
+                onClick={removeCover}
+                className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full p-1.5 shadow"
+                title="Remover imagem"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+        {isAdmin && (
+          <div className="mb-3">
+            <input
+              ref={coverInput}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                handleCoverUpload(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full"
+              onClick={() => coverInput.current?.click()}
+            >
+              <ImagePlus className="w-4 h-4 mr-1.5" />
+              {coverUrl ? "Trocar imagem principal" : "Adicionar imagem principal"}
+            </Button>
+          </div>
+        )}
         <div className="flex items-start justify-between gap-2 mb-1 flex-wrap">
           <h2 className="text-xl font-bold text-primary">{equip.numero}</h2>
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -335,7 +439,7 @@ function EquipamentoDetail() {
                     loading="lazy"
                   />
                 </div>
-                {isAdmin && (
+                {(isAdmin || f.uploaded_by === userId) && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <button className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1.5 shadow">
@@ -351,7 +455,9 @@ function EquipamentoDetail() {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => deletePhoto(f.id, f.storage_path)}>
+                        <AlertDialogAction
+                          onClick={() => deletePhoto(f.id, f.storage_path, f.uploaded_by)}
+                        >
                           Excluir
                         </AlertDialogAction>
                       </AlertDialogFooter>
@@ -567,14 +673,11 @@ function EquipamentoDetail() {
         )}
       </Card>
 
-      {/* Filtros e Lubrificantes */}
+      {/* Filtros e Lubrificantes — todos podem editar */}
       <Card className="p-4 space-y-3">
         <h3 className="font-semibold text-sm flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-warning" />
-          Filtros e Lubrificantes{" "}
-          {ro && (
-            <span className="text-[11px] font-normal text-muted-foreground">(somente leitura)</span>
-          )}
+          Filtros e Lubrificantes
         </h3>
 
         <Field label="Modelo">
@@ -589,128 +692,140 @@ function EquipamentoDetail() {
           <Field label="Óleo motor">
             <Input
               value={form.motor_oleo ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, motor_oleo: e.target.value })}
             />
           </Field>
           <Field label="Óleo hidráulico">
             <Input
               value={form.hidraulico_oleo ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, hidraulico_oleo: e.target.value })}
             />
           </Field>
           <Field label="Óleo transmissão">
             <Input
               value={form.transmissao_oleo ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, transmissao_oleo: e.target.value })}
             />
           </Field>
           <Field label="Óleo eixo">
             <Input
               value={form.eixo_oleo ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, eixo_oleo: e.target.value })}
             />
           </Field>
           <Field label="Óleo tandem">
             <Input
               value={form.tandem_oleo ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, tandem_oleo: e.target.value })}
             />
           </Field>
           <Field label="Filtro lubrificante">
             <Input
               value={form.filtro_lub ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_lub: e.target.value })}
             />
           </Field>
           <Field label="Diesel primário">
             <Input
               value={form.filtro_diesel_p ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_diesel_p: e.target.value })}
             />
           </Field>
           <Field label="Diesel secundário">
             <Input
               value={form.filtro_diesel_s ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_diesel_s: e.target.value })}
             />
           </Field>
           <Field label="Sep. água">
             <Input
               value={form.filtro_sep_agua ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_sep_agua: e.target.value })}
             />
           </Field>
           <Field label="Ar externo">
             <Input
               value={form.filtro_ar_ext ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_ar_ext: e.target.value })}
             />
           </Field>
           <Field label="Ar interno">
             <Input
               value={form.filtro_ar_int ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_ar_int: e.target.value })}
             />
           </Field>
           <Field label="Transmissão">
             <Input
               value={form.filtro_trans ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_trans: e.target.value })}
             />
           </Field>
           <Field label="Hidráulico">
             <Input
               value={form.filtro_hidr ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_hidr: e.target.value })}
             />
           </Field>
           <Field label="Respiro">
             <Input
               value={form.filtro_respiro ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_respiro: e.target.value })}
             />
           </Field>
           <Field label="Ar cond. 1">
             <Input
               value={form.filtro_ar_cond1 ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_ar_cond1: e.target.value })}
             />
           </Field>
           <Field label="Ar cond. 2">
             <Input
               value={form.filtro_ar_cond2 ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_ar_cond2: e.target.value })}
             />
           </Field>
         </div>
 
-        {isAdmin && (
+        <div className="flex gap-2">
           <Button
             onClick={() => save.mutate(form)}
             disabled={save.isPending}
-            className="w-full"
+            className="flex-1"
             variant="secondary"
           >
             <Save className="w-4 h-4 mr-2" /> Salvar filtros
           </Button>
-        )}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>
+              setForm({
+                ...form,
+                motor_oleo: null,
+                hidraulico_oleo: null,
+                transmissao_oleo: null,
+                eixo_oleo: null,
+                tandem_oleo: null,
+                filtro_lub: null,
+                filtro_diesel_p: null,
+                filtro_diesel_s: null,
+                filtro_sep_agua: null,
+                filtro_ar_ext: null,
+                filtro_ar_int: null,
+                filtro_trans: null,
+                filtro_hidr: null,
+                filtro_respiro: null,
+                filtro_ar_cond1: null,
+                filtro_ar_cond2: null,
+              })
+            }
+          >
+            <Trash2 className="w-4 h-4 mr-2" /> Limpar
+          </Button>
+        </div>
       </Card>
+
 
       <Link to="/equipamentos/$id/manutencao" params={{ id }}>
         <Button variant="outline" className="w-full h-12">
