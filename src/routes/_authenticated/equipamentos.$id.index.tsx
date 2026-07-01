@@ -116,6 +116,18 @@ function EquipamentoDetail() {
     },
   });
 
+  const coverInput = useRef<HTMLInputElement>(null);
+  const { data: coverUrl } = useQuery({
+    queryKey: ["cover", id, equip?.cover_storage_path],
+    enabled: !!equip?.cover_storage_path,
+    queryFn: async () => {
+      const { data } = await supabase.storage
+        .from("equipamento-fotos")
+        .createSignedUrl(equip!.cover_storage_path!, 60 * 60);
+      return data?.signedUrl ?? null;
+    },
+  });
+
   const [form, setForm] = useState<Partial<Equip>>({});
   useEffect(() => {
     if (equip) setForm(equip);
