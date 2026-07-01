@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           equipamento_id: string
           id: string
+          manutencao_historico_id: string | null
           storage_path: string
           uploaded_by: string
         }
@@ -28,6 +29,7 @@ export type Database = {
           created_at?: string
           equipamento_id: string
           id?: string
+          manutencao_historico_id?: string | null
           storage_path: string
           uploaded_by: string
         }
@@ -36,6 +38,7 @@ export type Database = {
           created_at?: string
           equipamento_id?: string
           id?: string
+          manutencao_historico_id?: string | null
           storage_path?: string
           uploaded_by?: string
         }
@@ -47,6 +50,13 @@ export type Database = {
             referencedRelation: "equipamentos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "equipamento_fotos_manutencao_historico_id_fkey"
+            columns: ["manutencao_historico_id"]
+            isOneToOne: false
+            referencedRelation: "manutencao_historico"
+            referencedColumns: ["id"]
+          },
         ]
       }
       equipamentos: {
@@ -56,6 +66,7 @@ export type Database = {
           cartao_ticket: string | null
           cl: string | null
           cnh: string | null
+          cover_storage_path: string | null
           created_at: string
           data_horimetro_atual: string | null
           data_ultima_revisao: string | null
@@ -100,6 +111,7 @@ export type Database = {
           cartao_ticket?: string | null
           cl?: string | null
           cnh?: string | null
+          cover_storage_path?: string | null
           created_at?: string
           data_horimetro_atual?: string | null
           data_ultima_revisao?: string | null
@@ -144,6 +156,7 @@ export type Database = {
           cartao_ticket?: string | null
           cl?: string | null
           cnh?: string | null
+          cover_storage_path?: string | null
           created_at?: string
           data_horimetro_atual?: string | null
           data_ultima_revisao?: string | null
