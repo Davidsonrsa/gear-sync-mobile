@@ -673,14 +673,11 @@ function EquipamentoDetail() {
         )}
       </Card>
 
-      {/* Filtros e Lubrificantes */}
+      {/* Filtros e Lubrificantes — todos podem editar */}
       <Card className="p-4 space-y-3">
         <h3 className="font-semibold text-sm flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-warning" />
-          Filtros e Lubrificantes{" "}
-          {ro && (
-            <span className="text-[11px] font-normal text-muted-foreground">(somente leitura)</span>
-          )}
+          Filtros e Lubrificantes
         </h3>
 
         <Field label="Modelo">
@@ -695,128 +692,140 @@ function EquipamentoDetail() {
           <Field label="Óleo motor">
             <Input
               value={form.motor_oleo ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, motor_oleo: e.target.value })}
             />
           </Field>
           <Field label="Óleo hidráulico">
             <Input
               value={form.hidraulico_oleo ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, hidraulico_oleo: e.target.value })}
             />
           </Field>
           <Field label="Óleo transmissão">
             <Input
               value={form.transmissao_oleo ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, transmissao_oleo: e.target.value })}
             />
           </Field>
           <Field label="Óleo eixo">
             <Input
               value={form.eixo_oleo ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, eixo_oleo: e.target.value })}
             />
           </Field>
           <Field label="Óleo tandem">
             <Input
               value={form.tandem_oleo ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, tandem_oleo: e.target.value })}
             />
           </Field>
           <Field label="Filtro lubrificante">
             <Input
               value={form.filtro_lub ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_lub: e.target.value })}
             />
           </Field>
           <Field label="Diesel primário">
             <Input
               value={form.filtro_diesel_p ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_diesel_p: e.target.value })}
             />
           </Field>
           <Field label="Diesel secundário">
             <Input
               value={form.filtro_diesel_s ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_diesel_s: e.target.value })}
             />
           </Field>
           <Field label="Sep. água">
             <Input
               value={form.filtro_sep_agua ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_sep_agua: e.target.value })}
             />
           </Field>
           <Field label="Ar externo">
             <Input
               value={form.filtro_ar_ext ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_ar_ext: e.target.value })}
             />
           </Field>
           <Field label="Ar interno">
             <Input
               value={form.filtro_ar_int ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_ar_int: e.target.value })}
             />
           </Field>
           <Field label="Transmissão">
             <Input
               value={form.filtro_trans ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_trans: e.target.value })}
             />
           </Field>
           <Field label="Hidráulico">
             <Input
               value={form.filtro_hidr ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_hidr: e.target.value })}
             />
           </Field>
           <Field label="Respiro">
             <Input
               value={form.filtro_respiro ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_respiro: e.target.value })}
             />
           </Field>
           <Field label="Ar cond. 1">
             <Input
               value={form.filtro_ar_cond1 ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_ar_cond1: e.target.value })}
             />
           </Field>
           <Field label="Ar cond. 2">
             <Input
               value={form.filtro_ar_cond2 ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, filtro_ar_cond2: e.target.value })}
             />
           </Field>
         </div>
 
-        {isAdmin && (
+        <div className="flex gap-2">
           <Button
             onClick={() => save.mutate(form)}
             disabled={save.isPending}
-            className="w-full"
+            className="flex-1"
             variant="secondary"
           >
             <Save className="w-4 h-4 mr-2" /> Salvar filtros
           </Button>
-        )}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>
+              setForm({
+                ...form,
+                motor_oleo: null,
+                hidraulico_oleo: null,
+                transmissao_oleo: null,
+                eixo_oleo: null,
+                tandem_oleo: null,
+                filtro_lub: null,
+                filtro_diesel_p: null,
+                filtro_diesel_s: null,
+                filtro_sep_agua: null,
+                filtro_ar_ext: null,
+                filtro_ar_int: null,
+                filtro_trans: null,
+                filtro_hidr: null,
+                filtro_respiro: null,
+                filtro_ar_cond1: null,
+                filtro_ar_cond2: null,
+              })
+            }
+          >
+            <Trash2 className="w-4 h-4 mr-2" /> Limpar
+          </Button>
+        </div>
       </Card>
+
 
       <Link to="/equipamentos/$id/manutencao" params={{ id }}>
         <Button variant="outline" className="w-full h-12">
