@@ -276,6 +276,78 @@ function ManutencaoFormPage() {
           <Textarea rows={4} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
         </Card>
 
+        <Card className="p-3 mt-3 print:shadow-none print:border-black no-print">
+          <div className="flex items-center justify-between mb-2">
+            <Label className="text-[11px] font-semibold">
+              Fotos deste registro ({fotos?.length ?? 0})
+            </Label>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => fileInput.current?.click()}
+            >
+              <Camera className="w-4 h-4 mr-1.5" /> Anexar foto
+            </Button>
+            <input
+              ref={fileInput}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => {
+                handleUpload(e.target.files);
+                e.target.value = "";
+              }}
+            />
+          </div>
+          {!fotos || fotos.length === 0 ? (
+            <button
+              type="button"
+              onClick={() => fileInput.current?.click()}
+              className="w-full border-2 border-dashed border-border rounded-lg p-4 flex flex-col items-center gap-1 text-muted-foreground hover:bg-muted/50"
+            >
+              <ImagePlus className="w-6 h-6" />
+              <span className="text-xs">Anexar fotos ao registro</span>
+            </button>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {fotos.map((f) => (
+                <div
+                  key={f.id}
+                  className="relative rounded-md overflow-hidden bg-muted border border-border"
+                >
+                  <div className="aspect-square">
+                    <img
+                      src={f.url}
+                      alt={f.caption ?? ""}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                  {(isAdmin || f.uploaded_by === userId) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm("Excluir foto?"))
+                          deletePhoto(f.id, f.storage_path, f.uploaded_by);
+                      }}
+                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 shadow"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  )}
+                  {f.caption && (
+                    <p className="text-[10px] px-1.5 py-0.5 bg-card border-t border-border line-clamp-2">
+                      {f.caption}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
         <div className="grid grid-cols-2 gap-6 mt-10 print:mt-16 text-[11px]">
           <div className="text-center">
             <div className="border-t border-foreground print:border-black pt-1">
