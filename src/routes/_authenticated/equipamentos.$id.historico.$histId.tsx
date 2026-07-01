@@ -1,14 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save, Printer } from "lucide-react";
+import { ArrowLeft, Save, Printer, Camera, Trash2, ImagePlus } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/use-auth";
 import { MANUTENCAO_TEMPLATE, type ManutencaoItem, STATUS_LABELS } from "@/lib/manutencao-template";
 import logo from "@/assets/logo-sph.jpg.asset.json";
 
@@ -19,6 +20,8 @@ export const Route = createFileRoute("/_authenticated/equipamentos/$id/historico
 function ManutencaoFormPage() {
   const { id, histId } = Route.useParams();
   const qc = useQueryClient();
+  const { userId, isAdmin } = useAuth();
+  const fileInput = useRef<HTMLInputElement>(null);
 
   const { data: equip } = useQuery({
     queryKey: ["equipamento", id],
@@ -41,6 +44,59 @@ function ManutencaoFormPage() {
       return data;
     },
   });
+
+  const { data: fotos } = useQuery({
+    queryKey: ["hist_fotos", histId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("equipamento_fotos")
+        .select("id, storage_path, uploaded_by, caption, created_at")
+        .eq("manutencao_historico_id", histId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      const withUrl = await Promise.all(
+        (data ?? []).map(async (f) => {
+          const { data: signed } = await supabase.storage
+            .from("equipamento-fotos")
+            .createSignedUrl(f.storage_path, 60 * 60);
+          return { ...f, url: signed?.signedUrl ?? "" };
+        }),
+      );
+      return withUrl;
+    },
+  });
+
+  async function handleUpload(files: FileList | null) {
+    if (!files?.length || !userId) return;
+    const file = files[0];
+    const caption = window.prompt("Observação da foto (opcional):", "") ?? "";
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${id}/hist-${histId}/${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("equipamento-fotos")
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (upErr) return toast.error(upErr.message);
+    const { error: insErr } = await supabase.from("equipamento_fotos").insert({
+      equipamento_id: id,
+      manutencao_historico_id: histId,
+      storage_path: path,
+      uploaded_by: userId,
+      caption: caption || null,
+    });
+    if (insErr) return toast.error(insErr.message);
+    toast.success("Foto anexada");
+    qc.invalidateQueries({ queryKey: ["hist_fotos", histId] });
+  }
+
+  async function deletePhoto(photoId: string, path: string, uploadedBy: string | null) {
+    if (!isAdmin && uploadedBy !== userId)
+      return toast.error("Você só pode excluir suas próprias fotos");
+    await supabase.storage.from("equipamento-fotos").remove([path]);
+    const { error } = await supabase.from("equipamento_fotos").delete().eq("id", photoId);
+    if (error) return toast.error(error.message);
+    toast.success("Foto removida");
+    qc.invalidateQueries({ queryKey: ["hist_fotos", histId] });
+  }
 
   const [data, setData] = useState("");
   const [horimetro, setHorimetro] = useState<string>("");
