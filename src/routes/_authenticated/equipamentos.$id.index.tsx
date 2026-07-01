@@ -290,6 +290,43 @@ function EquipamentoDetail() {
       </div>
 
       <Card className={`p-4 ${overdue ? "border-destructive ring-1 ring-destructive/40" : ""}`}>
+        {coverUrl && (
+          <div className="relative mb-3 rounded-md overflow-hidden border border-border bg-muted">
+            <img src={coverUrl} alt="" className="w-full h-40 object-cover" />
+            {isAdmin && (
+              <button
+                onClick={removeCover}
+                className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full p-1.5 shadow"
+                title="Remover imagem"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+        {isAdmin && (
+          <div className="mb-3">
+            <input
+              ref={coverInput}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                handleCoverUpload(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full"
+              onClick={() => coverInput.current?.click()}
+            >
+              <ImagePlus className="w-4 h-4 mr-1.5" />
+              {coverUrl ? "Trocar imagem principal" : "Adicionar imagem principal"}
+            </Button>
+          </div>
+        )}
         <div className="flex items-start justify-between gap-2 mb-1 flex-wrap">
           <h2 className="text-xl font-bold text-primary">{equip.numero}</h2>
           <div className="flex items-center gap-1.5 flex-wrap">
