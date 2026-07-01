@@ -390,7 +390,7 @@ function EquipamentoDetail() {
                     loading="lazy"
                   />
                 </div>
-                {isAdmin && (
+                {(isAdmin || f.uploaded_by === userId) && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <button className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1.5 shadow">
@@ -406,7 +406,9 @@ function EquipamentoDetail() {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => deletePhoto(f.id, f.storage_path)}>
+                        <AlertDialogAction
+                          onClick={() => deletePhoto(f.id, f.storage_path, f.uploaded_by)}
+                        >
                           Excluir
                         </AlertDialogAction>
                       </AlertDialogFooter>
