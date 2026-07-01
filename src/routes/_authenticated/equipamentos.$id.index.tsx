@@ -76,6 +76,7 @@ type Equip = {
   filtro_respiro: string | null;
   filtro_ar_cond1: string | null;
   filtro_ar_cond2: string | null;
+  cover_storage_path: string | null;
 };
 
 function EquipamentoDetail() {
@@ -122,13 +123,29 @@ function EquipamentoDetail() {
 
   const save = useMutation({
     mutationFn: async (payload: Partial<Equip>) => {
-      // Para colaborador, enviar apenas campos permitidos
+      // Para colaborador: permitido horímetro, observações, filtros e lubrificantes.
       const allowed = isAdmin
         ? payload
         : {
             horimetro_atual: payload.horimetro_atual,
             data_horimetro_atual: payload.data_horimetro_atual,
             observacoes: payload.observacoes,
+            motor_oleo: payload.motor_oleo,
+            hidraulico_oleo: payload.hidraulico_oleo,
+            transmissao_oleo: payload.transmissao_oleo,
+            eixo_oleo: payload.eixo_oleo,
+            tandem_oleo: payload.tandem_oleo,
+            filtro_lub: payload.filtro_lub,
+            filtro_diesel_p: payload.filtro_diesel_p,
+            filtro_diesel_s: payload.filtro_diesel_s,
+            filtro_sep_agua: payload.filtro_sep_agua,
+            filtro_ar_ext: payload.filtro_ar_ext,
+            filtro_ar_int: payload.filtro_ar_int,
+            filtro_trans: payload.filtro_trans,
+            filtro_hidr: payload.filtro_hidr,
+            filtro_respiro: payload.filtro_respiro,
+            filtro_ar_cond1: payload.filtro_ar_cond1,
+            filtro_ar_cond2: payload.filtro_ar_cond2,
           };
       const { error } = await supabase.from("equipamentos").update(allowed).eq("id", id);
       if (error) throw error;
@@ -175,13 +192,51 @@ function EquipamentoDetail() {
     qc.invalidateQueries({ queryKey: ["fotos", id] });
   }
 
-  async function deletePhoto(photoId: string, path: string) {
-    if (!isAdmin) return toast.error("Somente administrador pode excluir fotos");
+  async function deletePhoto(photoId: string, path: string, uploadedBy: string | null) {
+    if (!isAdmin && uploadedBy !== userId)
+      return toast.error("Você só pode excluir suas próprias fotos");
     await supabase.storage.from("equipamento-fotos").remove([path]);
     const { error } = await supabase.from("equipamento_fotos").delete().eq("id", photoId);
     if (error) return toast.error(error.message);
     toast.success("Foto removida");
     qc.invalidateQueries({ queryKey: ["fotos", id] });
+  }
+
+  async function handleCoverUpload(files: FileList | null) {
+    if (!files?.length || !isAdmin) return;
+    const file = files[0];
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${id}/cover-${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("equipamento-fotos")
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (upErr) return toast.error(upErr.message);
+    // remove previous cover file, if any
+    if (equip?.cover_storage_path) {
+      await supabase.storage.from("equipamento-fotos").remove([equip.cover_storage_path]);
+    }
+    const { error } = await supabase
+      .from("equipamentos")
+      .update({ cover_storage_path: path })
+      .eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Imagem principal atualizada");
+    qc.invalidateQueries({ queryKey: ["equipamento", id] });
+    qc.invalidateQueries({ queryKey: ["equipamentos"] });
+    qc.invalidateQueries({ queryKey: ["cover", id] });
+  }
+
+  async function removeCover() {
+    if (!isAdmin || !equip?.cover_storage_path) return;
+    await supabase.storage.from("equipamento-fotos").remove([equip.cover_storage_path]);
+    const { error } = await supabase
+      .from("equipamentos")
+      .update({ cover_storage_path: null })
+      .eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Imagem principal removida");
+    qc.invalidateQueries({ queryKey: ["equipamento", id] });
+    qc.invalidateQueries({ queryKey: ["equipamentos"] });
   }
 
   if (isLoading || !equip) {
