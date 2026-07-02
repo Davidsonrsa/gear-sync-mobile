@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save, Printer, Camera, Trash2, ImagePlus } from "lucide-react";
+import { ArrowLeft, Save, Printer, Camera, Trash2, ImagePlus, Paperclip, FileIcon, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { MANUTENCAO_TEMPLATE, type ManutencaoItem, STATUS_LABELS } from "@/lib/manutencao-template";
@@ -22,6 +22,7 @@ function ManutencaoFormPage() {
   const qc = useQueryClient();
   const { userId, isAdmin } = useAuth();
   const fileInput = useRef<HTMLInputElement>(null);
+  const anyFileInput = useRef<HTMLInputElement>(null);
 
   const { data: equip } = useQuery({
     queryKey: ["equipamento", id],
@@ -69,22 +70,25 @@ function ManutencaoFormPage() {
   async function handleUpload(files: FileList | null) {
     if (!files?.length || !userId) return;
     const file = files[0];
-    const caption = window.prompt("Observação da foto (opcional):", "") ?? "";
-    const ext = file.name.split(".").pop() || "jpg";
+    const caption = window.prompt("Observação do anexo (opcional):", "") ?? "";
+    const ext = file.name.split(".").pop() || "bin";
     const path = `${id}/hist-${histId}/${crypto.randomUUID()}.${ext}`;
     const { error: upErr } = await supabase.storage
       .from("equipamento-fotos")
-      .upload(path, file, { contentType: file.type, upsert: false });
+      .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
     if (upErr) return toast.error(upErr.message);
+    const captionWithName = caption
+      ? `${caption} — ${file.name}`
+      : file.name;
     const { error: insErr } = await supabase.from("equipamento_fotos").insert({
       equipamento_id: id,
       manutencao_historico_id: histId,
       storage_path: path,
       uploaded_by: userId,
-      caption: caption || null,
+      caption: captionWithName,
     });
     if (insErr) return toast.error(insErr.message);
-    toast.success("Foto anexada");
+    toast.success("Anexo enviado");
     qc.invalidateQueries({ queryKey: ["hist_fotos", histId] });
   }
 
@@ -277,18 +281,28 @@ function ManutencaoFormPage() {
         </Card>
 
         <Card className="p-3 mt-3 print:shadow-none print:border-black no-print">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
             <Label className="text-[11px] font-semibold">
-              Fotos deste registro ({fotos?.length ?? 0})
+              Anexos deste registro ({fotos?.length ?? 0})
             </Label>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => fileInput.current?.click()}
-            >
-              <Camera className="w-4 h-4 mr-1.5" /> Anexar foto
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => fileInput.current?.click()}
+              >
+                <Camera className="w-4 h-4 mr-1.5" /> Foto
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => anyFileInput.current?.click()}
+              >
+                <Paperclip className="w-4 h-4 mr-1.5" /> Arquivo
+              </Button>
+            </div>
             <input
               ref={fileInput}
               type="file"
@@ -300,50 +314,77 @@ function ManutencaoFormPage() {
                 e.target.value = "";
               }}
             />
+            <input
+              ref={anyFileInput}
+              type="file"
+              className="hidden"
+              onChange={(e) => {
+                handleUpload(e.target.files);
+                e.target.value = "";
+              }}
+            />
           </div>
           {!fotos || fotos.length === 0 ? (
             <button
               type="button"
-              onClick={() => fileInput.current?.click()}
+              onClick={() => anyFileInput.current?.click()}
               className="w-full border-2 border-dashed border-border rounded-lg p-4 flex flex-col items-center gap-1 text-muted-foreground hover:bg-muted/50"
             >
               <ImagePlus className="w-6 h-6" />
-              <span className="text-xs">Anexar fotos ao registro</span>
+              <span className="text-xs">Anexar fotos ou arquivos (PDF, docs…)</span>
             </button>
           ) : (
             <div className="grid grid-cols-3 gap-2">
-              {fotos.map((f) => (
-                <div
-                  key={f.id}
-                  className="relative rounded-md overflow-hidden bg-muted border border-border"
-                >
-                  <div className="aspect-square">
-                    <img
-                      src={f.url}
-                      alt={f.caption ?? ""}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
+              {fotos.map((f) => {
+                const ext = (f.storage_path.split(".").pop() || "").toLowerCase();
+                const isImage = ["jpg", "jpeg", "png", "gif", "webp", "heic", "bmp"].includes(ext);
+                const canDelete = isAdmin || f.uploaded_by === userId;
+                return (
+                  <div
+                    key={f.id}
+                    className="relative rounded-md overflow-hidden bg-muted border border-border"
+                  >
+                    <div className="aspect-square">
+                      {isImage ? (
+                        <img
+                          src={f.url}
+                          alt={f.caption ?? ""}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <a
+                          href={f.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="w-full h-full flex flex-col items-center justify-center gap-1 p-2 text-center hover:bg-muted/70"
+                        >
+                          <FileIcon className="w-8 h-8 text-primary" />
+                          <span className="text-[10px] uppercase font-semibold">{ext || "arquivo"}</span>
+                          <Download className="w-3 h-3 text-muted-foreground" />
+                        </a>
+                      )}
+                    </div>
+                    {canDelete && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm("Excluir anexo?"))
+                            deletePhoto(f.id, f.storage_path, f.uploaded_by);
+                        }}
+                        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 shadow"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
+                    {f.caption && (
+                      <p className="text-[10px] px-1.5 py-0.5 bg-card border-t border-border line-clamp-2">
+                        {f.caption}
+                      </p>
+                    )}
                   </div>
-                  {(isAdmin || f.uploaded_by === userId) && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (confirm("Excluir foto?"))
-                          deletePhoto(f.id, f.storage_path, f.uploaded_by);
-                      }}
-                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 shadow"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  )}
-                  {f.caption && (
-                    <p className="text-[10px] px-1.5 py-0.5 bg-card border-t border-border line-clamp-2">
-                      {f.caption}
-                    </p>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </Card>
