@@ -70,22 +70,25 @@ function ManutencaoFormPage() {
   async function handleUpload(files: FileList | null) {
     if (!files?.length || !userId) return;
     const file = files[0];
-    const caption = window.prompt("Observação da foto (opcional):", "") ?? "";
-    const ext = file.name.split(".").pop() || "jpg";
+    const caption = window.prompt("Observação do anexo (opcional):", "") ?? "";
+    const ext = file.name.split(".").pop() || "bin";
     const path = `${id}/hist-${histId}/${crypto.randomUUID()}.${ext}`;
     const { error: upErr } = await supabase.storage
       .from("equipamento-fotos")
-      .upload(path, file, { contentType: file.type, upsert: false });
+      .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
     if (upErr) return toast.error(upErr.message);
+    const captionWithName = caption
+      ? `${caption} — ${file.name}`
+      : file.name;
     const { error: insErr } = await supabase.from("equipamento_fotos").insert({
       equipamento_id: id,
       manutencao_historico_id: histId,
       storage_path: path,
       uploaded_by: userId,
-      caption: caption || null,
+      caption: captionWithName,
     });
     if (insErr) return toast.error(insErr.message);
-    toast.success("Foto anexada");
+    toast.success("Anexo enviado");
     qc.invalidateQueries({ queryKey: ["hist_fotos", histId] });
   }
 
