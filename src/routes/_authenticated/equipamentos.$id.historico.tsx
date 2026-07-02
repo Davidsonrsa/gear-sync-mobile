@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/equipamentos/$id/historico
 
 function HistoricoPage() {
   const { id } = Route.useParams();
-  const { userId, isAdmin } = useAuth();
+  const { userId } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
 
