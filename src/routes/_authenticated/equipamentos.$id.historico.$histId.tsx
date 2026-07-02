@@ -22,6 +22,7 @@ function ManutencaoFormPage() {
   const qc = useQueryClient();
   const { userId, isAdmin } = useAuth();
   const fileInput = useRef<HTMLInputElement>(null);
+  const anyFileInput = useRef<HTMLInputElement>(null);
 
   const { data: equip } = useQuery({
     queryKey: ["equipamento", id],
