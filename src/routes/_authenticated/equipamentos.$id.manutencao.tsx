@@ -48,6 +48,8 @@ const ATIVIDADES: Atividade[] = [
 
 function ManutencaoPage() {
   const { id } = Route.useParams();
+  const { userId } = useAuth();
+  const navigate = useNavigate();
   const { data: e } = useQuery({
     queryKey: ["equipamento", id],
     queryFn: async () => {
@@ -55,6 +57,28 @@ function ManutencaoPage() {
       if (error) throw error;
       return data;
     },
+  });
+
+  const editSave = useMutation({
+    mutationFn: async () => {
+      if (!userId) throw new Error("Não autenticado");
+      const { data, error } = await supabase
+        .from("manutencao_historico")
+        .insert({
+          equipamento_id: id,
+          created_by: userId,
+          horimetro: e?.horimetro_atual ?? null,
+          itens: MANUTENCAO_TEMPLATE.map((i) => ({ ...i, codigo: "", quantidade: "", status: "" })),
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      return data.id as string;
+    },
+    onSuccess: (histId) => {
+      navigate({ to: "/equipamentos/$id/historico/$histId", params: { id, histId } });
+    },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   if (!e) return <div className="p-6 text-center text-muted-foreground">Carregando...</div>;
@@ -67,12 +91,21 @@ function ManutencaoPage() {
             <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
           </Button>
         </Link>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Link to="/equipamentos/$id/historico" params={{ id }}>
             <Button size="sm" variant="outline">
               <FileText className="w-4 h-4 mr-1" /> Histórico salvo
             </Button>
           </Link>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => editSave.mutate()}
+            disabled={editSave.isPending}
+          >
+            <Save className="w-4 h-4 mr-1" />
+            {editSave.isPending ? "Criando..." : "Editar e salvar"}
+          </Button>
           <Button onClick={() => window.print()} size="sm">
             <Printer className="w-4 h-4 mr-2" /> Imprimir
           </Button>
