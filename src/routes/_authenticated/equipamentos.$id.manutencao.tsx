@@ -99,12 +99,11 @@ function ManutencaoPage() {
           </Link>
           <Button
             size="sm"
-            variant="secondary"
             onClick={() => editSave.mutate()}
             disabled={editSave.isPending}
           >
             <Save className="w-4 h-4 mr-1" />
-            {editSave.isPending ? "Criando..." : "Editar e salvar"}
+            {editSave.isPending ? "Criando..." : "Editar / preencher"}
           </Button>
           <Button onClick={() => window.print()} size="sm">
             <Printer className="w-4 h-4 mr-2" /> Imprimir
