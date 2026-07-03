@@ -1,11 +1,15 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { ArrowLeft, Printer, FileText, Save, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
-import { MANUTENCAO_TEMPLATE } from "@/lib/manutencao-template";
+import { MANUTENCAO_TEMPLATE, STATUS_LABELS, type ManutencaoItem } from "@/lib/manutencao-template";
 import logo from "@/assets/logo-sph.jpg.asset.json";
 import * as XLSX from "xlsx";
 
@@ -13,44 +17,11 @@ export const Route = createFileRoute("/_authenticated/equipamentos/$id/manutenca
   component: ManutencaoPage,
 });
 
-type Atividade = { sistema: string; item: string; acao: string; pm: "P" | "M" };
-const ATIVIDADES: Atividade[] = [
-  { sistema: "Motor", item: "Óleo Motor", acao: "Substituir", pm: "P" },
-  { sistema: "Motor", item: "Filtro Lubrificante", acao: "Substituir", pm: "P" },
-  { sistema: "Motor", item: "Filtro de Ar primário", acao: "Substituir", pm: "P" },
-  { sistema: "Motor", item: "Filtro de Ar secundário", acao: "Substituir", pm: "P" },
-  { sistema: "Motor", item: "Indicador de Restrição", acao: "Inspecionar", pm: "M" },
-  { sistema: "Motor", item: "Radiador", acao: "Limpar", pm: "M" },
-  { sistema: "Motor", item: "Filtro Separador de água", acao: "Substituir", pm: "P" },
-  { sistema: "Motor", item: "Correias", acao: "Inspecionar", pm: "M" },
-  { sistema: "Motor", item: "Vazamentos", acao: "Inspecionar", pm: "M" },
-  { sistema: "Motor", item: "Sistema de Escape", acao: "Inspecionar", pm: "M" },
-  { sistema: "Motor", item: "Fixação e Coxins", acao: "Inspecionar", pm: "M" },
-  { sistema: "Combustível", item: "Filtros primário", acao: "Substituir", pm: "P" },
-  { sistema: "Combustível", item: "Tubulação", acao: "Inspecionar", pm: "M" },
-  { sistema: "Combustível", item: "Aceleração e Parada", acao: "Inspecionar", pm: "M" },
-  { sistema: "Combustível", item: "Rotação", acao: "Inspecionar", pm: "M" },
-  { sistema: "Transmissão", item: "Óleo", acao: "Substituir", pm: "P" },
-  { sistema: "Transmissão", item: "Filtro", acao: "Substituir", pm: "P" },
-  { sistema: "Transmissão", item: "Respiro", acao: "Substituir", pm: "P" },
-  { sistema: "Hidráulico", item: "Óleo", acao: "Substituir", pm: "P" },
-  { sistema: "Hidráulico", item: "Filtro", acao: "Substituir", pm: "P" },
-  { sistema: "Hidráulico", item: "Pressões", acao: "Ajustar", pm: "M" },
-  { sistema: "Vazamentos", item: "Bomba", acao: "Inspecionar", pm: "M" },
-  { sistema: "Vazamentos", item: "Comandos", acao: "Inspecionar", pm: "M" },
-  { sistema: "Vazamentos", item: "Mangueiras", acao: "Inspecionar", pm: "M" },
-  { sistema: "Eletricidade", item: "Faróis", acao: "Inspecionar", pm: "M" },
-  { sistema: "Eletricidade", item: "Bateria", acao: "Inspecionar", pm: "M" },
-  { sistema: "Eletricidade", item: "Painel", acao: "Inspecionar", pm: "M" },
-  { sistema: "Estrutura", item: "Pneus / Rodas", acao: "Inspecionar", pm: "M" },
-  { sistema: "Estrutura", item: "Parafusos / Fixações", acao: "Apertar", pm: "M" },
-  { sistema: "Estrutura", item: "Lubrificação geral (graxa)", acao: "Lubrificar", pm: "P" },
-];
-
 function ManutencaoPage() {
   const { id } = Route.useParams();
   const { userId } = useAuth();
-  const navigate = useNavigate();
+  const qc = useQueryClient();
+
   const { data: e } = useQuery({
     queryKey: ["equipamento", id],
     queryFn: async () => {
@@ -60,64 +31,120 @@ function ManutencaoPage() {
     },
   });
 
-  const editSave = useMutation({
+  // Rascunho: último registro em aberto do usuário para este equipamento
+  const { data: rascunho } = useQuery({
+    queryKey: ["manutencao_rascunho", id, userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("manutencao_historico")
+        .select("*")
+        .eq("equipamento_id", id)
+        .eq("created_by", userId!)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const [histId, setHistId] = useState<string | null>(null);
+  const [data, setData] = useState("");
+  const [horimetro, setHorimetro] = useState("");
+  const [tipoRevisao, setTipoRevisao] = useState("");
+  const [executante, setExecutante] = useState("");
+  const [observacoes, setObservacoes] = useState("");
+  const [itens, setItens] = useState<ManutencaoItem[]>(MANUTENCAO_TEMPLATE);
+
+  useEffect(() => {
+    if (rascunho) {
+      setHistId(rascunho.id);
+      setData(rascunho.data ?? "");
+      setHorimetro(rascunho.horimetro != null ? String(rascunho.horimetro) : "");
+      setTipoRevisao(rascunho.tipo_revisao ?? "");
+      setExecutante(rascunho.executante ?? "");
+      setObservacoes(rascunho.observacoes ?? "");
+      const arr = Array.isArray(rascunho.itens) ? (rascunho.itens as unknown as ManutencaoItem[]) : [];
+      setItens(arr.length ? arr : MANUTENCAO_TEMPLATE);
+    } else if (e) {
+      setHorimetro(e.horimetro_atual != null ? String(e.horimetro_atual) : "");
+    }
+  }, [rascunho, e]);
+
+  const save = useMutation({
     mutationFn: async () => {
       if (!userId) throw new Error("Não autenticado");
-      const { data, error } = await supabase
+      const payload = {
+        equipamento_id: id,
+        created_by: userId,
+        data: data || new Date().toISOString().slice(0, 10),
+        horimetro: horimetro === "" ? null : Number(horimetro),
+        tipo_revisao: tipoRevisao || null,
+        executante: executante || null,
+        observacoes: observacoes || null,
+        itens: JSON.parse(JSON.stringify(itens)),
+      };
+      if (histId) {
+        const { error } = await supabase.from("manutencao_historico").update(payload).eq("id", histId);
+        if (error) throw error;
+        return histId;
+      }
+      const { data: ins, error } = await supabase
         .from("manutencao_historico")
-        .insert({
-          equipamento_id: id,
-          created_by: userId,
-          horimetro: e?.horimetro_atual ?? null,
-          itens: MANUTENCAO_TEMPLATE.map((i) => ({ ...i, codigo: "", quantidade: "", status: "" })),
-        })
+        .insert(payload)
         .select("id")
         .single();
       if (error) throw error;
-      return data.id as string;
+      setHistId(ins.id as string);
+      return ins.id as string;
     },
-    onSuccess: (histId) => {
-      navigate({ to: "/equipamentos/$id/historico/$histId", params: { id, histId } });
+    onSuccess: () => {
+      toast.success("Manutenção salva no histórico");
+      qc.invalidateQueries({ queryKey: ["manutencao_historico", id] });
+      qc.invalidateQueries({ queryKey: ["manutencao_rascunho", id, userId] });
     },
     onError: (err: Error) => toast.error(err.message),
   });
 
-  if (!e) return <div className="p-6 text-center text-muted-foreground">Carregando...</div>;
+  function updateItem(idx: number, patch: Partial<ManutencaoItem>) {
+    setItens((arr) => arr.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+  }
 
   function exportExcel() {
     if (!e) return;
-    const wb = XLSX.utils.book_new();
-    const header: (string | number | null)[][] = [
+    const rows: (string | number | null)[][] = [
       ["PLANO DE MANUTENÇÃO PREVENTIVA — SPH JHM Mafra"],
       [],
       ["Equipamento", `${e.numero} — ${e.identificacao ?? ""}`, "Modelo", e.modelo ?? ""],
       ["Placa", e.placa ?? "", "Ano", e.ano ?? ""],
-      ["Horímetro atual", e.horimetro_atual ?? "", "Última revisão", e.h_revisao ?? ""],
-      ["Localização", e.localizacao ?? "", "Operador", e.operador_contato ?? ""],
+      ["Horímetro", horimetro, "Tipo de revisão", tipoRevisao],
+      ["Data", data, "Executante", executante],
       [],
-      ["Filtros e Lubrificantes"],
-      ["Óleo motor", e.motor_oleo ?? "", "Óleo hidráulico", e.hidraulico_oleo ?? ""],
-      ["Óleo transmissão", e.transmissao_oleo ?? "", "Óleo eixo", e.eixo_oleo ?? ""],
-      ["Óleo tandem", e.tandem_oleo ?? "", "Filtro lubrificante", e.filtro_lub ?? ""],
-      ["Diesel primário", e.filtro_diesel_p ?? "", "Diesel secundário", e.filtro_diesel_s ?? ""],
-      ["Separador água", e.filtro_sep_agua ?? "", "Ar externo", e.filtro_ar_ext ?? ""],
-      ["Ar interno", e.filtro_ar_int ?? "", "Filtro transmissão", e.filtro_trans ?? ""],
-      ["Filtro hidráulico", e.filtro_hidr ?? "", "Respiro", e.filtro_respiro ?? ""],
-      ["Ar cond. 1", e.filtro_ar_cond1 ?? "", "Ar cond. 2", e.filtro_ar_cond2 ?? ""],
+      ["Sistema", "Item", "Ação", "P/M", "Código", "Qtd", "Status"],
+      ...itens.map((it) => [
+        it.sistema,
+        it.item,
+        it.acao,
+        it.pm,
+        it.codigo ?? "",
+        it.quantidade ?? "",
+        STATUS_LABELS[it.status ?? ""] ?? "",
+      ]),
       [],
-      ["Atividades de Manutenção Preventiva (P=Peças · M=Mão de obra)"],
-      ["Sistema", "Item", "Ação", "P/M", "Qtd", "Status"],
-      ...ATIVIDADES.map((a) => [a.sistema, a.item, a.acao, a.pm, "", ""]),
+      ["Observações", observacoes],
     ];
-    const ws = XLSX.utils.aoa_to_sheet(header);
-    ws["!cols"] = [{ wch: 22 }, { wch: 30 }, { wch: 18 }, { wch: 8 }, { wch: 8 }, { wch: 14 }];
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws["!cols"] = [{ wch: 22 }, { wch: 30 }, { wch: 18 }, { wch: 8 }, { wch: 14 }, { wch: 8 }, { wch: 14 }];
+    const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Manutenção");
-    XLSX.writeFile(wb, `manutencao-${e.numero ?? id}.xlsx`);
+    XLSX.writeFile(wb, `manutencao-${e.numero ?? id}-${data || "sem-data"}.xlsx`);
     toast.success("Excel gerado");
   }
 
+  if (!e) return <div className="p-6 text-center text-muted-foreground">Carregando...</div>;
+
   return (
-    <div className="bg-white text-black min-h-screen">
+    <div className="bg-background min-h-screen">
       <div className="no-print sticky top-0 z-30 bg-background border-b px-3 py-2 flex items-center justify-between gap-2">
         <Link to="/equipamentos/$id" params={{ id }}>
           <Button variant="ghost" size="sm">
@@ -127,158 +154,140 @@ function ManutencaoPage() {
         <div className="flex gap-2 flex-wrap">
           <Link to="/equipamentos/$id/historico" params={{ id }}>
             <Button size="sm" variant="outline">
-              <FileText className="w-4 h-4 mr-1" /> Histórico salvo
+              <FileText className="w-4 h-4 mr-1" /> Histórico
             </Button>
           </Link>
           <Button size="sm" variant="outline" onClick={exportExcel}>
             <FileSpreadsheet className="w-4 h-4 mr-1" /> Excel
           </Button>
-          <Button
-            size="sm"
-            onClick={() => editSave.mutate()}
-            disabled={editSave.isPending}
-          >
-            <Save className="w-4 h-4 mr-1" />
-            {editSave.isPending ? "Criando..." : "Preencher e salvar"}
+          <Button size="sm" variant="outline" onClick={() => window.print()}>
+            <Printer className="w-4 h-4 mr-1" /> Imprimir
           </Button>
-          <Button onClick={() => window.print()} size="sm" variant="outline">
-            <Printer className="w-4 h-4 mr-2" /> Imprimir
+          <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
+            <Save className="w-4 h-4 mr-1" /> {save.isPending ? "Salvando..." : "Salvar"}
           </Button>
         </div>
       </div>
 
-
-      <div className="max-w-[210mm] mx-auto p-6 print:p-4 text-[12px]">
-        <div className="flex items-center gap-4 border-b-2 border-black pb-3 mb-4">
+      <div className="max-w-[210mm] mx-auto p-4 print:p-4 print:text-black print:bg-white">
+        <div className="flex items-center gap-4 border-b-2 border-foreground print:border-black pb-3 mb-4">
           <img src={logo.url} alt="" className="w-16 h-16 object-contain" />
           <div className="flex-1">
             <h1 className="text-lg font-bold">PLANO DE MANUTENÇÃO PREVENTIVA</h1>
-            <p className="text-[11px]">SPH JHM Mafra — Relatório de manutenção</p>
-          </div>
-          <div className="text-right text-[11px]">
-            <p>
-              <b>Data:</b> ____/____/______
-            </p>
-            <p>
-              <b>Revisão:</b> ______ horas
+            <p className="text-[11px] text-muted-foreground print:text-black">
+              SPH JHM Mafra — Preencha e clique em Salvar
             </p>
           </div>
         </div>
 
-        <table className="w-full text-[11px] border border-black mb-3">
-          <tbody>
-            <tr>
-              <td className="border border-black px-2 py-1 w-1/4 bg-gray-100">
-                <b>Equipamento</b>
-              </td>
-              <td className="border border-black px-2 py-1">
-                {e.numero} — {e.identificacao ?? ""}
-              </td>
-              <td className="border border-black px-2 py-1 w-1/4 bg-gray-100">
-                <b>Modelo</b>
-              </td>
-              <td className="border border-black px-2 py-1">{e.modelo ?? ""}</td>
-            </tr>
-            <tr>
-              <td className="border border-black px-2 py-1 bg-gray-100">
-                <b>Placa</b>
-              </td>
-              <td className="border border-black px-2 py-1">{e.placa ?? ""}</td>
-              <td className="border border-black px-2 py-1 bg-gray-100">
-                <b>Ano</b>
-              </td>
-              <td className="border border-black px-2 py-1">{e.ano ?? ""}</td>
-            </tr>
-            <tr>
-              <td className="border border-black px-2 py-1 bg-gray-100">
-                <b>Horímetro atual</b>
-              </td>
-              <td className="border border-black px-2 py-1">{e.horimetro_atual ?? ""} h</td>
-              <td className="border border-black px-2 py-1 bg-gray-100">
-                <b>Última revisão</b>
-              </td>
-              <td className="border border-black px-2 py-1">{e.h_revisao ?? ""} h</td>
-            </tr>
-            <tr>
-              <td className="border border-black px-2 py-1 bg-gray-100">
-                <b>Localização</b>
-              </td>
-              <td className="border border-black px-2 py-1">{e.localizacao ?? ""}</td>
-              <td className="border border-black px-2 py-1 bg-gray-100">
-                <b>Operador</b>
-              </td>
-              <td className="border border-black px-2 py-1">{e.operador_contato ?? ""}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <h2 className="font-bold text-sm mb-1">Filtros e Lubrificantes</h2>
-        <table className="w-full text-[11px] border border-black mb-3">
-          <tbody>
-            {[
-              ["Óleo motor", e.motor_oleo, "Óleo hidráulico", e.hidraulico_oleo],
-              ["Óleo transmissão", e.transmissao_oleo, "Óleo eixo", e.eixo_oleo],
-              ["Óleo tandem", e.tandem_oleo, "Filtro lubrificante", e.filtro_lub],
-              ["Diesel primário", e.filtro_diesel_p, "Diesel secundário", e.filtro_diesel_s],
-              ["Separador água", e.filtro_sep_agua, "Ar externo", e.filtro_ar_ext],
-              ["Ar interno", e.filtro_ar_int, "Filtro transmissão", e.filtro_trans],
-              ["Filtro hidráulico", e.filtro_hidr, "Respiro", e.filtro_respiro],
-              ["Ar cond. 1", e.filtro_ar_cond1, "Ar cond. 2", e.filtro_ar_cond2],
-            ].map((row, i) => (
-              <tr key={i}>
-                <td className="border border-black px-2 py-1 bg-gray-100 w-1/4">
-                  <b>{row[0]}</b>
-                </td>
-                <td className="border border-black px-2 py-1">{row[1] ?? ""}</td>
-                <td className="border border-black px-2 py-1 bg-gray-100 w-1/4">
-                  <b>{row[2]}</b>
-                </td>
-                <td className="border border-black px-2 py-1">{row[3] ?? ""}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <h2 className="font-bold text-sm mb-1">Atividades de Manutenção Preventiva</h2>
-        <p className="text-[10px] mb-1">P = Peças · M = Mão de obra</p>
-        <table className="w-full text-[11px] border border-black mb-4">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="border border-black px-2 py-1 text-left">Sistema</th>
-              <th className="border border-black px-2 py-1 text-left">Item</th>
-              <th className="border border-black px-2 py-1 text-left">Ação</th>
-              <th className="border border-black px-2 py-1 w-10">P/M</th>
-              <th className="border border-black px-2 py-1 w-12">Qtd</th>
-              <th className="border border-black px-2 py-1 w-20">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ATIVIDADES.map((a, i) => (
-              <tr key={i}>
-                <td className="border border-black px-2 py-1">{a.sistema}</td>
-                <td className="border border-black px-2 py-1">{a.item}</td>
-                <td className="border border-black px-2 py-1">{a.acao}</td>
-                <td className="border border-black px-2 py-1 text-center">{a.pm}</td>
-                <td className="border border-black px-2 py-1"></td>
-                <td className="border border-black px-2 py-1"></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <div className="mb-4">
-          <p className="font-bold text-sm mb-1">Observações:</p>
-          <div className="border border-black h-20"></div>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <Label className="text-[11px]">Equipamento</Label>
+            <Input value={`${e.numero ?? ""} — ${e.identificacao ?? ""}`} readOnly />
+          </div>
+          <div>
+            <Label className="text-[11px]">Tipo de revisão (250h / 500h / 1000h)</Label>
+            <Input value={tipoRevisao} onChange={(ev) => setTipoRevisao(ev.target.value)} />
+          </div>
+          <div>
+            <Label className="text-[11px]">Data</Label>
+            <Input type="date" value={data} onChange={(ev) => setData(ev.target.value)} />
+          </div>
+          <div>
+            <Label className="text-[11px]">Horímetro</Label>
+            <Input
+              type="number"
+              inputMode="decimal"
+              value={horimetro}
+              onChange={(ev) => setHorimetro(ev.target.value)}
+            />
+          </div>
+          <div className="col-span-2">
+            <Label className="text-[11px]">Executante</Label>
+            <Input value={executante} onChange={(ev) => setExecutante(ev.target.value)} />
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6 mt-10">
+        <div className="border rounded-md overflow-hidden mb-3 print:border-black">
+          <div className="px-3 py-2 bg-muted print:bg-gray-200 text-[11px] font-semibold flex justify-between">
+            <span>Atividades de Manutenção Preventiva</span>
+            <span>P = Peças · M = Mão de obra</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px] border-collapse">
+              <thead>
+                <tr className="bg-muted/50 print:bg-gray-100">
+                  <th className="border px-2 py-1 text-left">Sistema</th>
+                  <th className="border px-2 py-1 text-left">Item</th>
+                  <th className="border px-2 py-1 text-left">Ação</th>
+                  <th className="border px-2 py-1 w-8">P/M</th>
+                  <th className="border px-2 py-1 w-24">Código</th>
+                  <th className="border px-2 py-1 w-14">Qtd</th>
+                  <th className="border px-2 py-1 w-28">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {itens.map((it, i) => (
+                  <tr key={i}>
+                    <td className="border px-2 py-1">{it.sistema}</td>
+                    <td className="border px-2 py-1">{it.item}</td>
+                    <td className="border px-2 py-1">{it.acao}</td>
+                    <td className="border px-2 py-1 text-center">{it.pm}</td>
+                    <td className="border px-1 py-0.5">
+                      <input
+                        className="w-full bg-transparent outline-none px-1 py-0.5 text-[11px]"
+                        value={it.codigo ?? ""}
+                        onChange={(ev) => updateItem(i, { codigo: ev.target.value })}
+                      />
+                    </td>
+                    <td className="border px-1 py-0.5">
+                      <input
+                        className="w-full bg-transparent outline-none px-1 py-0.5 text-[11px]"
+                        value={it.quantidade ?? ""}
+                        onChange={(ev) => updateItem(i, { quantidade: ev.target.value })}
+                      />
+                    </td>
+                    <td className="border px-1 py-0.5">
+                      <select
+                        className="w-full bg-transparent outline-none text-[11px] py-0.5"
+                        value={it.status ?? ""}
+                        onChange={(ev) =>
+                          updateItem(i, { status: ev.target.value as ManutencaoItem["status"] })
+                        }
+                      >
+                        {Object.entries(STATUS_LABELS).map(([k, v]) => (
+                          <option key={k} value={k}>
+                            {v}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="mb-3">
+          <Label className="text-[11px]">Observações</Label>
+          <Textarea rows={4} value={observacoes} onChange={(ev) => setObservacoes(ev.target.value)} />
+        </div>
+
+        <div className="no-print">
+          <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full h-11">
+            <Save className="w-4 h-4 mr-2" /> {save.isPending ? "Salvando..." : "Salvar manutenção"}
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6 mt-10 print:mt-16 text-[11px]">
           <div className="text-center">
-            <div className="border-t border-black pt-1">
+            <div className="border-t border-foreground print:border-black pt-1">
               <b>Mecânico responsável</b>
             </div>
           </div>
           <div className="text-center">
-            <div className="border-t border-black pt-1">
+            <div className="border-t border-foreground print:border-black pt-1">
               <b>Supervisor</b>
             </div>
           </div>
@@ -289,7 +298,8 @@ function ManutencaoPage() {
         @media print {
           .no-print { display: none !important; }
           @page { size: A4; margin: 10mm; }
-          body { background: white !important; }
+          body { background: white !important; color: black !important; }
+          select { -webkit-appearance: none; appearance: none; }
         }
       `}</style>
     </div>
