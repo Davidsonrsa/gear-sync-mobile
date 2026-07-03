@@ -2,11 +2,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Printer, FileText, Save } from "lucide-react";
+import { ArrowLeft, Printer, FileText, Save, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { MANUTENCAO_TEMPLATE } from "@/lib/manutencao-template";
 import logo from "@/assets/logo-sph.jpg.asset.json";
+import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/_authenticated/equipamentos/$id/manutencao")({
   component: ManutencaoPage,
@@ -83,6 +84,38 @@ function ManutencaoPage() {
 
   if (!e) return <div className="p-6 text-center text-muted-foreground">Carregando...</div>;
 
+  function exportExcel() {
+    if (!e) return;
+    const wb = XLSX.utils.book_new();
+    const header: (string | number | null)[][] = [
+      ["PLANO DE MANUTENÇÃO PREVENTIVA — SPH JHM Mafra"],
+      [],
+      ["Equipamento", `${e.numero} — ${e.identificacao ?? ""}`, "Modelo", e.modelo ?? ""],
+      ["Placa", e.placa ?? "", "Ano", e.ano ?? ""],
+      ["Horímetro atual", e.horimetro_atual ?? "", "Última revisão", e.h_revisao ?? ""],
+      ["Localização", e.localizacao ?? "", "Operador", e.operador_contato ?? ""],
+      [],
+      ["Filtros e Lubrificantes"],
+      ["Óleo motor", e.motor_oleo ?? "", "Óleo hidráulico", e.hidraulico_oleo ?? ""],
+      ["Óleo transmissão", e.transmissao_oleo ?? "", "Óleo eixo", e.eixo_oleo ?? ""],
+      ["Óleo tandem", e.tandem_oleo ?? "", "Filtro lubrificante", e.filtro_lub ?? ""],
+      ["Diesel primário", e.filtro_diesel_p ?? "", "Diesel secundário", e.filtro_diesel_s ?? ""],
+      ["Separador água", e.filtro_sep_agua ?? "", "Ar externo", e.filtro_ar_ext ?? ""],
+      ["Ar interno", e.filtro_ar_int ?? "", "Filtro transmissão", e.filtro_trans ?? ""],
+      ["Filtro hidráulico", e.filtro_hidr ?? "", "Respiro", e.filtro_respiro ?? ""],
+      ["Ar cond. 1", e.filtro_ar_cond1 ?? "", "Ar cond. 2", e.filtro_ar_cond2 ?? ""],
+      [],
+      ["Atividades de Manutenção Preventiva (P=Peças · M=Mão de obra)"],
+      ["Sistema", "Item", "Ação", "P/M", "Qtd", "Status"],
+      ...ATIVIDADES.map((a) => [a.sistema, a.item, a.acao, a.pm, "", ""]),
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(header);
+    ws["!cols"] = [{ wch: 22 }, { wch: 30 }, { wch: 18 }, { wch: 8 }, { wch: 8 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, ws, "Manutenção");
+    XLSX.writeFile(wb, `manutencao-${e.numero ?? id}.xlsx`);
+    toast.success("Excel gerado");
+  }
+
   return (
     <div className="bg-white text-black min-h-screen">
       <div className="no-print sticky top-0 z-30 bg-background border-b px-3 py-2 flex items-center justify-between gap-2">
@@ -97,19 +130,23 @@ function ManutencaoPage() {
               <FileText className="w-4 h-4 mr-1" /> Histórico salvo
             </Button>
           </Link>
+          <Button size="sm" variant="outline" onClick={exportExcel}>
+            <FileSpreadsheet className="w-4 h-4 mr-1" /> Excel
+          </Button>
           <Button
             size="sm"
             onClick={() => editSave.mutate()}
             disabled={editSave.isPending}
           >
             <Save className="w-4 h-4 mr-1" />
-            {editSave.isPending ? "Criando..." : "Editar / preencher"}
+            {editSave.isPending ? "Criando..." : "Preencher e salvar"}
           </Button>
-          <Button onClick={() => window.print()} size="sm">
+          <Button onClick={() => window.print()} size="sm" variant="outline">
             <Printer className="w-4 h-4 mr-2" /> Imprimir
           </Button>
         </div>
       </div>
+
 
       <div className="max-w-[210mm] mx-auto p-6 print:p-4 text-[12px]">
         <div className="flex items-center gap-4 border-b-2 border-black pb-3 mb-4">

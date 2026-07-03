@@ -7,11 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save, Printer, Camera, Trash2, ImagePlus, Paperclip, FileIcon, Download } from "lucide-react";
+import { ArrowLeft, Save, Printer, Camera, Trash2, ImagePlus, Paperclip, FileIcon, Download, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { MANUTENCAO_TEMPLATE, type ManutencaoItem, STATUS_LABELS } from "@/lib/manutencao-template";
 import logo from "@/assets/logo-sph.jpg.asset.json";
+import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/_authenticated/equipamentos/$id/historico/$histId")({
   component: ManutencaoFormPage,
@@ -149,6 +150,37 @@ function ManutencaoFormPage() {
     setItens((arr) => arr.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
   }
 
+  function exportExcel() {
+    const rows: (string | number | null)[][] = [
+      ["PLANO DE MANUTENÇÃO PREVENTIVA — SPH JHM Mafra"],
+      [],
+      ["Equipamento", `${equip?.numero ?? ""} — ${equip?.identificacao ?? ""}`],
+      ["Tipo de revisão", tipoRevisao],
+      ["Data", data],
+      ["Horímetro", horimetro],
+      ["Executante", executante],
+      [],
+      ["Sistema", "Item", "Ação", "P/M", "Código", "Qtd", "Status"],
+      ...itens.map((it) => [
+        it.sistema,
+        it.item,
+        it.acao,
+        it.pm,
+        it.codigo ?? "",
+        it.quantidade ?? "",
+        STATUS_LABELS[it.status ?? ""] ?? "",
+      ]),
+      [],
+      ["Observações", observacoes],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws["!cols"] = [{ wch: 22 }, { wch: 30 }, { wch: 18 }, { wch: 8 }, { wch: 14 }, { wch: 8 }, { wch: 14 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Manutenção");
+    XLSX.writeFile(wb, `manutencao-${equip?.numero ?? id}-${data || "sem-data"}.xlsx`);
+    toast.success("Excel gerado");
+  }
+
   if (isLoading || !registro) {
     return <div className="p-6 text-center text-muted-foreground">Carregando...</div>;
   }
@@ -161,9 +193,12 @@ function ManutencaoFormPage() {
             <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
           </Button>
         </Link>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button size="sm" variant="outline" onClick={() => window.print()}>
             <Printer className="w-4 h-4 mr-1" /> Imprimir
+          </Button>
+          <Button size="sm" variant="outline" onClick={exportExcel}>
+            <FileSpreadsheet className="w-4 h-4 mr-1" /> Excel
           </Button>
           <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
             <Save className="w-4 h-4 mr-1" /> {save.isPending ? "Salvando..." : "Salvar"}
