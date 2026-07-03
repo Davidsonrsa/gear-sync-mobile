@@ -150,6 +150,37 @@ function ManutencaoFormPage() {
     setItens((arr) => arr.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
   }
 
+  function exportExcel() {
+    const rows: (string | number | null)[][] = [
+      ["PLANO DE MANUTENÇÃO PREVENTIVA — SPH JHM Mafra"],
+      [],
+      ["Equipamento", `${equip?.numero ?? ""} — ${equip?.identificacao ?? ""}`],
+      ["Tipo de revisão", tipoRevisao],
+      ["Data", data],
+      ["Horímetro", horimetro],
+      ["Executante", executante],
+      [],
+      ["Sistema", "Item", "Ação", "P/M", "Código", "Qtd", "Status"],
+      ...itens.map((it) => [
+        it.sistema,
+        it.item,
+        it.acao,
+        it.pm,
+        it.codigo ?? "",
+        it.quantidade ?? "",
+        STATUS_LABELS[it.status ?? ""] ?? "",
+      ]),
+      [],
+      ["Observações", observacoes],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws["!cols"] = [{ wch: 22 }, { wch: 30 }, { wch: 18 }, { wch: 8 }, { wch: 14 }, { wch: 8 }, { wch: 14 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Manutenção");
+    XLSX.writeFile(wb, `manutencao-${equip?.numero ?? id}-${data || "sem-data"}.xlsx`);
+    toast.success("Excel gerado");
+  }
+
   if (isLoading || !registro) {
     return <div className="p-6 text-center text-muted-foreground">Carregando...</div>;
   }
