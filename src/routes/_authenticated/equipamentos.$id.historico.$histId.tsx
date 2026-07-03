@@ -7,11 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save, Printer, Camera, Trash2, ImagePlus, Paperclip, FileIcon, Download } from "lucide-react";
+import { ArrowLeft, Save, Printer, Camera, Trash2, ImagePlus, Paperclip, FileIcon, Download, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { MANUTENCAO_TEMPLATE, type ManutencaoItem, STATUS_LABELS } from "@/lib/manutencao-template";
 import logo from "@/assets/logo-sph.jpg.asset.json";
+import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/_authenticated/equipamentos/$id/historico/$histId")({
   component: ManutencaoFormPage,
