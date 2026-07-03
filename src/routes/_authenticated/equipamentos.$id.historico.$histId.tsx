@@ -162,9 +162,12 @@ function ManutencaoFormPage() {
             <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
           </Button>
         </Link>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button size="sm" variant="outline" onClick={() => window.print()}>
             <Printer className="w-4 h-4 mr-1" /> Imprimir
+          </Button>
+          <Button size="sm" variant="outline" onClick={exportExcel}>
+            <FileSpreadsheet className="w-4 h-4 mr-1" /> Excel
           </Button>
           <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
             <Save className="w-4 h-4 mr-1" /> {save.isPending ? "Salvando..." : "Salvar"}
