@@ -13,6 +13,7 @@ import {
   Paperclip,
   FileIcon,
   Download,
+  Eye,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
@@ -234,6 +235,19 @@ function HistoricoPage() {
                 </AlertDialog>
               </div>
               <div className="flex gap-2 flex-wrap pt-1 border-t">
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="h-8 text-xs"
+                  onClick={() =>
+                    navigate({
+                      to: "/equipamentos/$id/historico/$histId",
+                      params: { id, histId: r.id },
+                    })
+                  }
+                >
+                  <Eye className="w-3.5 h-3.5 mr-1" /> Visualizar
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"
