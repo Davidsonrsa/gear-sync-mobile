@@ -16,10 +16,14 @@ import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/_authenticated/equipamentos/$id/historico/$histId")({
   component: ManutencaoFormPage,
+  validateSearch: (s: Record<string, unknown>) => ({
+    print: s.print === 1 || s.print === "1" ? 1 : undefined,
+  }),
 });
 
 function ManutencaoFormPage() {
   const { id, histId } = Route.useParams();
+  const { print: printFlag } = Route.useSearch();
   const qc = useQueryClient();
   const { userId, isAdmin } = useAuth();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -122,6 +126,13 @@ function ManutencaoFormPage() {
       : [];
     setItens(arr.length ? arr : MANUTENCAO_TEMPLATE);
   }, [registro]);
+
+  useEffect(() => {
+    if (printFlag && registro) {
+      const t = setTimeout(() => window.print(), 400);
+      return () => clearTimeout(t);
+    }
+  }, [printFlag, registro]);
 
   const save = useMutation({
     mutationFn: async () => {

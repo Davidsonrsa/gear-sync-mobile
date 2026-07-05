@@ -1,9 +1,19 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, FileText, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  FileText,
+  Trash2,
+  Printer,
+  Paperclip,
+  FileIcon,
+  Download,
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { MANUTENCAO_TEMPLATE } from "@/lib/manutencao-template";
@@ -18,16 +28,33 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/equipamentos/$id/historico")({
   component: HistoricoPage,
 });
+
+type Anexo = {
+  id: string;
+  storage_path: string;
+  caption: string | null;
+  url: string;
+};
 
 function HistoricoPage() {
   const { id } = Route.useParams();
   const { userId } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const [anexosDialog, setAnexosDialog] = useState<{
+    histId: string;
+    files: Anexo[];
+  } | null>(null);
 
   const { data: equip } = useQuery({
     queryKey: ["equipamento", id],
@@ -54,6 +81,42 @@ function HistoricoPage() {
       return data;
     },
   });
+
+  const { data: anexosCount } = useQuery({
+    queryKey: ["manutencao_historico_anexos_count", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("equipamento_fotos")
+        .select("manutencao_historico_id")
+        .eq("equipamento_id", id)
+        .not("manutencao_historico_id", "is", null);
+      if (error) throw error;
+      const map: Record<string, number> = {};
+      (data ?? []).forEach((r) => {
+        const k = r.manutencao_historico_id as string;
+        map[k] = (map[k] ?? 0) + 1;
+      });
+      return map;
+    },
+  });
+
+  async function openAnexos(histId: string) {
+    const { data, error } = await supabase
+      .from("equipamento_fotos")
+      .select("id, storage_path, caption")
+      .eq("manutencao_historico_id", histId)
+      .order("created_at", { ascending: false });
+    if (error) return toast.error(error.message);
+    const withUrl = await Promise.all(
+      (data ?? []).map(async (f) => {
+        const { data: signed } = await supabase.storage
+          .from("equipamento-fotos")
+          .createSignedUrl(f.storage_path, 60 * 60);
+        return { ...f, url: signed?.signedUrl ?? "" };
+      }),
+    );
+    setAnexosDialog({ histId, files: withUrl });
+  }
 
   const createNew = useMutation({
     mutationFn: async () => {
@@ -121,52 +184,141 @@ function HistoricoPage() {
           Nenhuma manutenção registrada. Clique em <b>Nova manutenção</b> para começar.
         </Card>
       ) : (
-        registros.map((r) => (
-          <Card key={r.id} className="p-3 flex items-center justify-between gap-2">
-            <Link
-              to="/equipamentos/$id/historico/$histId"
-              params={{ id, histId: r.id }}
-              className="flex-1 min-w-0"
-            >
+        registros.map((r) => {
+          const nAnexos = anexosCount?.[r.id] ?? 0;
+          return (
+            <Card key={r.id} className="p-3 space-y-2">
               <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-primary shrink-0" />
-                <div className="min-w-0">
-                  <p className="font-medium text-sm">
-                    {new Date(r.data + "T00:00:00").toLocaleDateString("pt-BR")}
-                    {r.tipo_revisao && (
-                      <span className="ml-2 text-xs text-muted-foreground">{r.tipo_revisao}</span>
-                    )}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {r.horimetro ? `${r.horimetro}h` : "—"} · {r.executante || "sem executante"}
-                  </p>
-                </div>
+                <Link
+                  to="/equipamentos/$id/historico/$histId"
+                  params={{ id, histId: r.id }}
+                  className="flex-1 min-w-0"
+                >
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-primary shrink-0" />
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm">
+                        {new Date(r.data + "T00:00:00").toLocaleDateString("pt-BR")}
+                        {r.tipo_revisao && (
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            {r.tipo_revisao}
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {r.horimetro ? `${r.horimetro}h` : "—"} · {r.executante || "sem executante"}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="icon" variant="ghost" className="text-destructive shrink-0">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir manutenção?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => remove.mutate(r.id)}>
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
-            </Link>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button size="icon" variant="ghost" className="text-destructive shrink-0">
-                  <Trash2 className="w-4 h-4" />
+              <div className="flex gap-2 flex-wrap pt-1 border-t">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs"
+                  onClick={() => openAnexos(r.id)}
+                >
+                  <Paperclip className="w-3.5 h-3.5 mr-1" />
+                  Anexos {nAnexos > 0 && <span className="ml-1 font-semibold">({nAnexos})</span>}
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir manutenção?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta ação não pode ser desfeita.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => remove.mutate(r.id)}>
-                    Excluir
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </Card>
-        ))
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs"
+                  onClick={() =>
+                    navigate({
+                      to: "/equipamentos/$id/historico/$histId",
+                      params: { id, histId: r.id },
+                      search: { print: 1 },
+                    })
+                  }
+                >
+                  <Printer className="w-3.5 h-3.5 mr-1" /> Imprimir
+                </Button>
+              </div>
+            </Card>
+          );
+        })
       )}
+
+      <Dialog
+        open={!!anexosDialog}
+        onOpenChange={(o) => {
+          if (!o) setAnexosDialog(null);
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Anexos salvos</DialogTitle>
+          </DialogHeader>
+          {!anexosDialog?.files.length ? (
+            <p className="text-sm text-muted-foreground text-center py-6">
+              Nenhum arquivo anexado neste registro.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 max-h-[60vh] overflow-auto">
+              {anexosDialog.files.map((f) => {
+                const ext = (f.storage_path.split(".").pop() || "").toLowerCase();
+                const isImage = ["jpg", "jpeg", "png", "gif", "webp", "heic", "bmp"].includes(ext);
+                return (
+                  <a
+                    key={f.id}
+                    href={f.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="border rounded-md overflow-hidden bg-muted hover:bg-muted/70"
+                  >
+                    <div className="aspect-square flex items-center justify-center">
+                      {isImage ? (
+                        <img
+                          src={f.url}
+                          alt={f.caption ?? ""}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center gap-1 p-2 text-center">
+                          <FileIcon className="w-8 h-8 text-primary" />
+                          <span className="text-[10px] uppercase font-semibold">
+                            {ext || "arquivo"}
+                          </span>
+                          <Download className="w-3 h-3 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    {f.caption && (
+                      <p className="text-[10px] px-1.5 py-0.5 border-t line-clamp-2">
+                        {f.caption}
+                      </p>
+                    )}
+                  </a>
+                );
+              })}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
