@@ -23,6 +23,7 @@ export const Route = createFileRoute("/_authenticated/equipamentos/$id/historico
 
 function ManutencaoFormPage() {
   const { id, histId } = Route.useParams();
+  const { print: printFlag } = Route.useSearch();
   const qc = useQueryClient();
   const { userId, isAdmin } = useAuth();
   const fileInput = useRef<HTMLInputElement>(null);
