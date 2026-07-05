@@ -16,6 +16,9 @@ import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/_authenticated/equipamentos/$id/historico/$histId")({
   component: ManutencaoFormPage,
+  validateSearch: (s: Record<string, unknown>) => ({
+    print: s.print === 1 || s.print === "1" ? 1 : undefined,
+  }),
 });
 
 function ManutencaoFormPage() {
