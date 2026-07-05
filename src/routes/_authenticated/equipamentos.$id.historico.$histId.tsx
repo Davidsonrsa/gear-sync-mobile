@@ -127,6 +127,13 @@ function ManutencaoFormPage() {
     setItens(arr.length ? arr : MANUTENCAO_TEMPLATE);
   }, [registro]);
 
+  useEffect(() => {
+    if (printFlag && registro) {
+      const t = setTimeout(() => window.print(), 400);
+      return () => clearTimeout(t);
+    }
+  }, [printFlag, registro]);
+
   const save = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
