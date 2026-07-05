@@ -282,13 +282,20 @@ function HistoricoPage() {
               {anexosDialog.files.map((f) => {
                 const ext = (f.storage_path.split(".").pop() || "").toLowerCase();
                 const isImage = ["jpg", "jpeg", "png", "gif", "webp", "heic", "bmp"].includes(ext);
+                const openFile = () => {
+                  if (!f.url) {
+                    toast.error("Não foi possível gerar o link do arquivo");
+                    return;
+                  }
+                  const w = window.open(f.url, "_blank", "noopener,noreferrer");
+                  if (!w) window.location.href = f.url;
+                };
                 return (
-                  <a
+                  <button
                     key={f.id}
-                    href={f.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="border rounded-md overflow-hidden bg-muted hover:bg-muted/70"
+                    type="button"
+                    onClick={openFile}
+                    className="border rounded-md overflow-hidden bg-muted hover:bg-muted/70 text-left"
                   >
                     <div className="aspect-square flex items-center justify-center">
                       {isImage ? (
@@ -312,7 +319,7 @@ function HistoricoPage() {
                         {f.caption}
                       </p>
                     )}
-                  </a>
+                  </button>
                 );
               })}
             </div>
