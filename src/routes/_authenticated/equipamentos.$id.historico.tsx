@@ -125,7 +125,7 @@ function HistoricoPage() {
   }
 
   async function openRelatorio(histId: string) {
-    const popup = window.open("", "_blank", "noopener,noreferrer");
+    const popup = window.open("", "_blank");
     popup?.document.write("<p style='font-family:Arial,sans-serif'>Abrindo relatório...</p>");
 
     const openUrl = (url: string) => {
