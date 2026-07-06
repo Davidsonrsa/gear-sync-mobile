@@ -19,6 +19,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { MANUTENCAO_TEMPLATE } from "@/lib/manutencao-template";
 import {
+  getWordViewerUrl,
+  REPORT_TAG,
+  saveMaintenanceReportDocx,
+} from "@/lib/manutencao-report";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -75,7 +80,7 @@ function HistoricoPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("manutencao_historico")
-        .select("id, data, horimetro, tipo_revisao, executante, observacoes, created_by")
+        .select("id, data, horimetro, tipo_revisao, executante, observacoes, itens, created_by")
         .eq("equipamento_id", id)
         .order("data", { ascending: false });
       if (error) throw error;
@@ -120,26 +125,68 @@ function HistoricoPage() {
   }
 
   async function openRelatorio(histId: string) {
+    const popup = window.open("", "_blank", "noopener,noreferrer");
+    popup?.document.write("<p style='font-family:Arial,sans-serif'>Abrindo relatório...</p>");
+
+    const openUrl = (url: string) => {
+      const viewerUrl = getWordViewerUrl(url);
+      if (popup) popup.location.href = viewerUrl;
+      else window.location.href = viewerUrl;
+    };
+
     const { data, error } = await supabase
       .from("equipamento_fotos")
       .select("storage_path")
       .eq("manutencao_historico_id", histId)
-      .like("caption", "[RELATORIO]%")
+      .like("caption", `${REPORT_TAG}%`)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (error) return toast.error(error.message);
-    if (!data) {
-      toast.info("Nenhum relatório salvo. Abra o formulário e clique em Salvar para gerar o Word.");
-      navigate({ to: "/equipamentos/$id/historico/$histId", params: { id, histId } });
-      return;
+    if (error) {
+      popup?.close();
+      return toast.error(error.message);
     }
+
+    let storagePath = data?.storage_path;
+    if (!storagePath) {
+      const registro = registros?.find((r) => r.id === histId);
+      if (!registro) {
+        popup?.close();
+        toast.error("Registro de manutenção não encontrado");
+        return;
+      }
+      try {
+        toast.info("Gerando relatório Word...");
+        storagePath = await saveMaintenanceReportDocx({
+          equipamentoId: id,
+          histId,
+          userId,
+          equipNumero: equip?.numero ?? "",
+          equipIdent: equip?.identificacao ?? "",
+          data: registro.data ?? new Date().toISOString().slice(0, 10),
+          horimetro: registro.horimetro != null ? String(registro.horimetro) : "",
+          tipoRevisao: registro.tipo_revisao ?? "",
+          executante: registro.executante ?? "",
+          observacoes: registro.observacoes ?? "",
+          itens: Array.isArray(registro.itens) ? registro.itens : MANUTENCAO_TEMPLATE,
+        });
+        qc.invalidateQueries({ queryKey: ["manutencao_historico_anexos_count", id] });
+        toast.success("Relatório Word gerado");
+      } catch (e) {
+        popup?.close();
+        toast.error(e instanceof Error ? e.message : "Falha ao gerar relatório");
+        return;
+      }
+    }
+
     const { data: signed, error: sErr } = await supabase.storage
       .from("equipamento-fotos")
-      .createSignedUrl(data.storage_path, 60 * 60);
-    if (sErr || !signed?.signedUrl) return toast.error("Falha ao gerar link do relatório");
-    const w = window.open(signed.signedUrl, "_blank", "noopener,noreferrer");
-    if (!w) window.location.href = signed.signedUrl;
+      .createSignedUrl(storagePath, 60 * 60);
+    if (sErr || !signed?.signedUrl) {
+      popup?.close();
+      return toast.error("Falha ao gerar link do relatório");
+    }
+    openUrl(signed.signedUrl);
   }
 
   const createNew = useMutation({
