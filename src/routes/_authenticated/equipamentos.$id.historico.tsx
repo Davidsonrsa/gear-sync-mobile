@@ -119,6 +119,29 @@ function HistoricoPage() {
     setAnexosDialog({ histId, files: withUrl });
   }
 
+  async function openRelatorio(histId: string) {
+    const { data, error } = await supabase
+      .from("equipamento_fotos")
+      .select("storage_path")
+      .eq("manutencao_historico_id", histId)
+      .like("caption", "[RELATORIO]%")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) return toast.error(error.message);
+    if (!data) {
+      toast.info("Nenhum relatório salvo. Abra o formulário e clique em Salvar para gerar o Word.");
+      navigate({ to: "/equipamentos/$id/historico/$histId", params: { id, histId } });
+      return;
+    }
+    const { data: signed, error: sErr } = await supabase.storage
+      .from("equipamento-fotos")
+      .createSignedUrl(data.storage_path, 60 * 60);
+    if (sErr || !signed?.signedUrl) return toast.error("Falha ao gerar link do relatório");
+    const w = window.open(signed.signedUrl, "_blank", "noopener,noreferrer");
+    if (!w) window.location.href = signed.signedUrl;
+  }
+
   const createNew = useMutation({
     mutationFn: async () => {
       if (!userId) throw new Error("Não autenticado");
