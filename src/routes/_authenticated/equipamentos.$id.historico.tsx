@@ -239,12 +239,7 @@ function HistoricoPage() {
                   size="sm"
                   variant="default"
                   className="h-8 text-xs"
-                  onClick={() =>
-                    navigate({
-                      to: "/equipamentos/$id/historico/$histId",
-                      params: { id, histId: r.id },
-                    })
-                  }
+                  onClick={() => openRelatorio(r.id)}
                 >
                   <Eye className="w-3.5 h-3.5 mr-1" /> Visualizar
                 </Button>
