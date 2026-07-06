@@ -279,10 +279,11 @@ function ManutencaoFormPage() {
 
   const save = useMutation({
     mutationFn: async () => {
+      const finalData = data || new Date().toISOString().slice(0, 10);
       const { error } = await supabase
         .from("manutencao_historico")
         .update({
-          data: data || new Date().toISOString().slice(0, 10),
+          data: finalData,
           horimetro: horimetro === "" ? null : Number(horimetro),
           tipo_revisao: tipoRevisao || null,
           executante: executante || null,
@@ -291,14 +292,65 @@ function ManutencaoFormPage() {
         })
         .eq("id", histId);
       if (error) throw error;
+
+      // Gera relatório Word e salva como anexo (substitui o anterior)
+      if (!userId) return;
+      const blob = await buildReportDocx({
+        equipNumero: equip?.numero ?? "",
+        equipIdent: equip?.identificacao ?? "",
+        data: finalData,
+        horimetro: horimetro,
+        tipoRevisao,
+        executante,
+        observacoes,
+        itens,
+      });
+      // Remove relatórios anteriores deste registro
+      const { data: prev } = await supabase
+        .from("equipamento_fotos")
+        .select("id, storage_path")
+        .eq("manutencao_historico_id", histId)
+        .like("caption", `${REPORT_TAG}%`);
+      if (prev && prev.length) {
+        await supabase.storage
+          .from("equipamento-fotos")
+          .remove(prev.map((p) => p.storage_path));
+        await supabase
+          .from("equipamento_fotos")
+          .delete()
+          .in(
+            "id",
+            prev.map((p) => p.id),
+          );
+      }
+      const path = `${id}/hist-${histId}/relatorio-${Date.now()}.docx`;
+      const { error: upErr } = await supabase.storage
+        .from("equipamento-fotos")
+        .upload(path, blob, {
+          contentType:
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          upsert: true,
+        });
+      if (upErr) throw upErr;
+      const { error: insErr } = await supabase.from("equipamento_fotos").insert({
+        equipamento_id: id,
+        manutencao_historico_id: histId,
+        storage_path: path,
+        uploaded_by: userId,
+        caption: `${REPORT_TAG} Relatório de manutenção ${finalData}.docx`,
+      });
+      if (insErr) throw insErr;
     },
     onSuccess: () => {
-      toast.success("Manutenção salva");
+      toast.success("Manutenção salva — relatório Word gerado");
       qc.invalidateQueries({ queryKey: ["manutencao_historico", id] });
       qc.invalidateQueries({ queryKey: ["manutencao_historico_item", histId] });
+      qc.invalidateQueries({ queryKey: ["hist_fotos", histId] });
+      qc.invalidateQueries({ queryKey: ["manutencao_historico_anexos_count", id] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   function updateItem(idx: number, patch: Partial<ManutencaoItem>) {
     setItens((arr) => arr.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
