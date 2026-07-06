@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
-import { MANUTENCAO_TEMPLATE } from "@/lib/manutencao-template";
+import { MANUTENCAO_TEMPLATE, type ManutencaoItem } from "@/lib/manutencao-template";
 import {
   getWordViewerUrl,
   REPORT_TAG,
@@ -168,7 +168,9 @@ function HistoricoPage() {
           tipoRevisao: registro.tipo_revisao ?? "",
           executante: registro.executante ?? "",
           observacoes: registro.observacoes ?? "",
-          itens: Array.isArray(registro.itens) ? registro.itens : MANUTENCAO_TEMPLATE,
+          itens: Array.isArray(registro.itens)
+            ? (registro.itens as unknown as ManutencaoItem[])
+            : MANUTENCAO_TEMPLATE,
         });
         qc.invalidateQueries({ queryKey: ["manutencao_historico_anexos_count", id] });
         toast.success("Relatório Word gerado");
