@@ -13,7 +13,149 @@ import { useAuth } from "@/hooks/use-auth";
 import { MANUTENCAO_TEMPLATE, type ManutencaoItem, STATUS_LABELS } from "@/lib/manutencao-template";
 import logo from "@/assets/logo-sph.jpg.asset.json";
 import * as XLSX from "xlsx";
-import { saveMaintenanceReportDocx } from "@/lib/manutencao-report";
+import {
+  Document,
+  Packer,
+  Paragraph,
+  TextRun,
+  Table,
+  TableRow,
+  TableCell,
+  HeadingLevel,
+  AlignmentType,
+  WidthType,
+  BorderStyle,
+  ShadingType,
+} from "docx";
+
+const REPORT_TAG = "[RELATORIO]";
+
+async function buildReportDocx(params: {
+  equipNumero: string;
+  equipIdent: string;
+  data: string;
+  horimetro: string;
+  tipoRevisao: string;
+  executante: string;
+  observacoes: string;
+  itens: ManutencaoItem[];
+}) {
+  const border = { style: BorderStyle.SINGLE, size: 4, color: "999999" };
+  const borders = { top: border, bottom: border, left: border, right: border };
+  const cell = (text: string, opts: { bold?: boolean; shade?: string; width?: number } = {}) =>
+    new TableCell({
+      borders,
+      width: opts.width ? { size: opts.width, type: WidthType.DXA } : undefined,
+      shading: opts.shade ? { fill: opts.shade, type: ShadingType.CLEAR, color: "auto" } : undefined,
+      margins: { top: 60, bottom: 60, left: 100, right: 100 },
+      children: [
+        new Paragraph({
+          children: [new TextRun({ text: text || "", bold: opts.bold, size: 18 })],
+        }),
+      ],
+    });
+
+  const cols = [1600, 2200, 1800, 500, 1200, 500, 1560];
+  const headerRow = new TableRow({
+    tableHeader: true,
+    children: ["Sistema", "Item", "Ação", "P/M", "Código", "Qtd", "Status"].map((h, i) =>
+      cell(h, { bold: true, shade: "E5E7EB", width: cols[i] }),
+    ),
+  });
+  const itemRows = params.itens.map(
+    (it) =>
+      new TableRow({
+        children: [
+          cell(it.sistema, { width: cols[0] }),
+          cell(it.item, { width: cols[1] }),
+          cell(it.acao, { width: cols[2] }),
+          cell(it.pm, { width: cols[3] }),
+          cell(it.codigo ?? "", { width: cols[4] }),
+          cell(it.quantidade ?? "", { width: cols[5] }),
+          cell(STATUS_LABELS[it.status ?? ""] ?? "", { width: cols[6] }),
+        ],
+      }),
+  );
+
+  const infoRow = (label: string, value: string) =>
+    new TableRow({
+      children: [
+        cell(label, { bold: true, shade: "F3F4F6", width: 2500 }),
+        cell(value, { width: 6860 }),
+      ],
+    });
+
+  const doc = new Document({
+    styles: { default: { document: { run: { font: "Arial", size: 20 } } } },
+    sections: [
+      {
+        properties: {
+          page: {
+            size: { width: 11906, height: 16838 },
+            margin: { top: 720, right: 720, bottom: 720, left: 720 },
+          },
+        },
+        children: [
+          new Paragraph({
+            heading: HeadingLevel.HEADING_1,
+            alignment: AlignmentType.CENTER,
+            children: [
+              new TextRun({ text: "PLANO DE MANUTENÇÃO PREVENTIVA", bold: true, size: 28 }),
+            ],
+          }),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [
+              new TextRun({ text: "SPH JHM Mafra — Registro de manutenção", size: 20 }),
+            ],
+          }),
+          new Paragraph({ children: [new TextRun("")] }),
+          new Table({
+            width: { size: 9360, type: WidthType.DXA },
+            columnWidths: [2500, 6860],
+            rows: [
+              infoRow("Equipamento", `${params.equipNumero} — ${params.equipIdent}`),
+              infoRow("Tipo de revisão", params.tipoRevisao),
+              infoRow("Data", params.data),
+              infoRow("Horímetro", params.horimetro),
+              infoRow("Executante", params.executante),
+            ],
+          }),
+          new Paragraph({ children: [new TextRun("")] }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: "Atividades de Manutenção Preventiva", bold: true, size: 22 }),
+            ],
+          }),
+          new Table({
+            width: { size: 9360, type: WidthType.DXA },
+            columnWidths: cols,
+            rows: [headerRow, ...itemRows],
+          }),
+          new Paragraph({ children: [new TextRun("")] }),
+          new Paragraph({
+            children: [new TextRun({ text: "Observações", bold: true, size: 22 })],
+          }),
+          new Paragraph({ children: [new TextRun(params.observacoes || "—")] }),
+          new Paragraph({ children: [new TextRun("")] }),
+          new Paragraph({ children: [new TextRun("")] }),
+          new Paragraph({
+            children: [
+              new TextRun("___________________________            ___________________________"),
+            ],
+          }),
+          new Paragraph({
+            children: [
+              new TextRun("     Mecânico responsável                                 Supervisor"),
+            ],
+          }),
+        ],
+      },
+    ],
+  });
+
+  return await Packer.toBlob(doc);
+}
 
 export const Route = createFileRoute("/_authenticated/equipamentos/$id/historico/$histId")({
   component: ManutencaoFormPage,
@@ -152,10 +294,8 @@ function ManutencaoFormPage() {
       if (error) throw error;
 
       // Gera relatório Word e salva como anexo (substitui o anterior)
-      await saveMaintenanceReportDocx({
-        equipamentoId: id,
-        histId,
-        userId,
+      if (!userId) return;
+      const blob = await buildReportDocx({
         equipNumero: equip?.numero ?? "",
         equipIdent: equip?.identificacao ?? "",
         data: finalData,
@@ -165,6 +305,41 @@ function ManutencaoFormPage() {
         observacoes,
         itens,
       });
+      // Remove relatórios anteriores deste registro
+      const { data: prev } = await supabase
+        .from("equipamento_fotos")
+        .select("id, storage_path")
+        .eq("manutencao_historico_id", histId)
+        .like("caption", `${REPORT_TAG}%`);
+      if (prev && prev.length) {
+        await supabase.storage
+          .from("equipamento-fotos")
+          .remove(prev.map((p) => p.storage_path));
+        await supabase
+          .from("equipamento_fotos")
+          .delete()
+          .in(
+            "id",
+            prev.map((p) => p.id),
+          );
+      }
+      const path = `${id}/hist-${histId}/relatorio-${Date.now()}.docx`;
+      const { error: upErr } = await supabase.storage
+        .from("equipamento-fotos")
+        .upload(path, blob, {
+          contentType:
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          upsert: true,
+        });
+      if (upErr) throw upErr;
+      const { error: insErr } = await supabase.from("equipamento_fotos").insert({
+        equipamento_id: id,
+        manutencao_historico_id: histId,
+        storage_path: path,
+        uploaded_by: userId,
+        caption: `${REPORT_TAG} Relatório de manutenção ${finalData}.docx`,
+      });
+      if (insErr) throw insErr;
     },
     onSuccess: () => {
       toast.success("Manutenção salva — relatório Word gerado");
