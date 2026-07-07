@@ -74,30 +74,87 @@ function ManutencaoPage() {
   const save = useMutation({
     mutationFn: async () => {
       if (!userId) throw new Error("Não autenticado");
+      const finalData = data || new Date().toISOString().slice(0, 10);
       const payload = {
         equipamento_id: id,
         created_by: userId,
-        data: data || new Date().toISOString().slice(0, 10),
+        data: finalData,
         horimetro: horimetro === "" ? null : Number(horimetro),
         tipo_revisao: tipoRevisao || null,
         executante: executante || null,
         observacoes: observacoes || null,
         itens: JSON.parse(JSON.stringify(itens)),
       };
-      if (histId) {
-        const { error } = await supabase.from("manutencao_historico").update(payload).eq("id", histId);
+      let currentHistId = histId;
+      if (currentHistId) {
+        const { error } = await supabase
+          .from("manutencao_historico")
+          .update(payload)
+          .eq("id", currentHistId);
         if (error) throw error;
-        return histId;
+      } else {
+        const { data: ins, error } = await supabase
+          .from("manutencao_historico")
+          .insert(payload)
+          .select("id")
+          .single();
+        if (error) throw error;
+        currentHistId = ins.id as string;
+        setHistId(currentHistId);
       }
-      const { data: ins, error } = await supabase
-        .from("manutencao_historico")
-        .insert(payload)
-        .select("id")
-        .single();
-      if (error) throw error;
-      setHistId(ins.id as string);
-      return ins.id as string;
+
+      // Gera relatório Word e salva como anexo (substitui o anterior)
+      const blob = await buildReportDocx({
+        equipNumero: e?.numero ?? "",
+        equipIdent: e?.identificacao ?? "",
+        data: finalData,
+        horimetro,
+        tipoRevisao,
+        executante,
+        observacoes,
+        itens,
+      });
+      const { data: prev } = await supabase
+        .from("equipamento_fotos")
+        .select("id, storage_path")
+        .eq("manutencao_historico_id", currentHistId)
+        .like("caption", `${REPORT_TAG}%`);
+      if (prev && prev.length) {
+        await supabase.storage
+          .from("equipamento-fotos")
+          .remove(prev.map((p) => p.storage_path));
+        await supabase
+          .from("equipamento_fotos")
+          .delete()
+          .in("id", prev.map((p) => p.id));
+      }
+      const path = `${id}/hist-${currentHistId}/relatorio-${Date.now()}.docx`;
+      const { error: upErr } = await supabase.storage
+        .from("equipamento-fotos")
+        .upload(path, blob, {
+          contentType:
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          upsert: true,
+        });
+      if (upErr) throw upErr;
+      const { error: insErr } = await supabase.from("equipamento_fotos").insert({
+        equipamento_id: id,
+        manutencao_historico_id: currentHistId,
+        storage_path: path,
+        uploaded_by: userId,
+        caption: `${REPORT_TAG} Relatório de manutenção ${finalData}.docx`,
+      });
+      if (insErr) throw insErr;
+      return currentHistId;
     },
+    onSuccess: () => {
+      toast.success("Manutenção salva — relatório Word gerado");
+      qc.invalidateQueries({ queryKey: ["manutencao_historico", id] });
+      qc.invalidateQueries({ queryKey: ["manutencao_rascunho", id, userId] });
+      qc.invalidateQueries({ queryKey: ["manutencao_historico_anexos_count", id] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
     onSuccess: () => {
       toast.success("Manutenção salva no histórico");
       qc.invalidateQueries({ queryKey: ["manutencao_historico", id] });
