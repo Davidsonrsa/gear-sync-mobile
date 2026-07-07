@@ -201,19 +201,13 @@ function ManutencaoPage() {
       toast.info("Nenhum relatório salvo ainda. Clique em Salvar.");
       return;
     }
-    const { data: blob, error: dErr } = await supabase.storage
+    const { data: signed, error: sErr } = await supabase.storage
       .from("equipamento-fotos")
-      .download(rel.storage_path);
-    if (dErr || !blob) return toast.error("Falha ao baixar relatório");
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `relatorio-manutencao-${e?.numero ?? id}-${data || "sem-data"}.docx`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
-    toast.success("Relatório aberto");
+      .createSignedUrl(rel.storage_path, 60 * 60);
+    if (sErr || !signed?.signedUrl) return toast.error("Falha ao gerar link do relatório");
+    const viewerUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(signed.signedUrl)}`;
+    const w = window.open(viewerUrl, "_blank", "noopener,noreferrer");
+    if (!w) window.location.href = viewerUrl;
   }
 
 
