@@ -134,18 +134,13 @@ function HistoricoPage() {
       navigate({ to: "/equipamentos/$id/historico/$histId", params: { id, histId } });
       return;
     }
-    const { data: blob, error: dErr } = await supabase.storage
+    const { data: signed, error: sErr } = await supabase.storage
       .from("equipamento-fotos")
-      .download(data.storage_path);
-    if (dErr || !blob) return toast.error("Falha ao baixar relatório");
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `relatorio-manutencao-${histId}.docx`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      .createSignedUrl(data.storage_path, 60 * 60);
+    if (sErr || !signed?.signedUrl) return toast.error("Falha ao gerar link do relatório");
+    const viewerUrl = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(signed.signedUrl)}`;
+    const w = window.open(viewerUrl, "_blank", "noopener,noreferrer");
+    if (!w) window.location.href = viewerUrl;
   }
 
   const createNew = useMutation({
