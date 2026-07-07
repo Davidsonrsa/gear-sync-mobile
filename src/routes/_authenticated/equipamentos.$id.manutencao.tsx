@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Printer, FileText, Save, FileSpreadsheet } from "lucide-react";
+import { ArrowLeft, Printer, FileText, Save, FileType, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { MANUTENCAO_TEMPLATE, STATUS_LABELS, type ManutencaoItem } from "@/lib/manutencao-template";
 import logo from "@/assets/logo-sph.jpg.asset.json";
-import * as XLSX from "xlsx";
+import { buildReportDocx, REPORT_TAG } from "@/lib/manutencao-docx";
 
 export const Route = createFileRoute("/_authenticated/equipamentos/$id/manutencao")({
   component: ManutencaoPage,
@@ -74,34 +74,84 @@ function ManutencaoPage() {
   const save = useMutation({
     mutationFn: async () => {
       if (!userId) throw new Error("Não autenticado");
+      const finalData = data || new Date().toISOString().slice(0, 10);
       const payload = {
         equipamento_id: id,
         created_by: userId,
-        data: data || new Date().toISOString().slice(0, 10),
+        data: finalData,
         horimetro: horimetro === "" ? null : Number(horimetro),
         tipo_revisao: tipoRevisao || null,
         executante: executante || null,
         observacoes: observacoes || null,
         itens: JSON.parse(JSON.stringify(itens)),
       };
-      if (histId) {
-        const { error } = await supabase.from("manutencao_historico").update(payload).eq("id", histId);
+      let currentHistId = histId;
+      if (currentHistId) {
+        const { error } = await supabase
+          .from("manutencao_historico")
+          .update(payload)
+          .eq("id", currentHistId);
         if (error) throw error;
-        return histId;
+      } else {
+        const { data: ins, error } = await supabase
+          .from("manutencao_historico")
+          .insert(payload)
+          .select("id")
+          .single();
+        if (error) throw error;
+        currentHistId = ins.id as string;
+        setHistId(currentHistId);
       }
-      const { data: ins, error } = await supabase
-        .from("manutencao_historico")
-        .insert(payload)
-        .select("id")
-        .single();
-      if (error) throw error;
-      setHistId(ins.id as string);
-      return ins.id as string;
+
+      // Gera relatório Word e salva como anexo (substitui o anterior)
+      const blob = await buildReportDocx({
+        equipNumero: e?.numero ?? "",
+        equipIdent: e?.identificacao ?? "",
+        data: finalData,
+        horimetro,
+        tipoRevisao,
+        executante,
+        observacoes,
+        itens,
+      });
+      const { data: prev } = await supabase
+        .from("equipamento_fotos")
+        .select("id, storage_path")
+        .eq("manutencao_historico_id", currentHistId)
+        .like("caption", `${REPORT_TAG}%`);
+      if (prev && prev.length) {
+        await supabase.storage
+          .from("equipamento-fotos")
+          .remove(prev.map((p) => p.storage_path));
+        await supabase
+          .from("equipamento_fotos")
+          .delete()
+          .in("id", prev.map((p) => p.id));
+      }
+      const path = `${id}/hist-${currentHistId}/relatorio-${Date.now()}.docx`;
+      const { error: upErr } = await supabase.storage
+        .from("equipamento-fotos")
+        .upload(path, blob, {
+          contentType:
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          upsert: true,
+        });
+      if (upErr) throw upErr;
+      const { error: insErr } = await supabase.from("equipamento_fotos").insert({
+        equipamento_id: id,
+        manutencao_historico_id: currentHistId,
+        storage_path: path,
+        uploaded_by: userId,
+        caption: `${REPORT_TAG} Relatório de manutenção ${finalData}.docx`,
+      });
+      if (insErr) throw insErr;
+      return currentHistId;
     },
     onSuccess: () => {
-      toast.success("Manutenção salva no histórico");
+      toast.success("Manutenção salva — relatório Word gerado");
       qc.invalidateQueries({ queryKey: ["manutencao_historico", id] });
       qc.invalidateQueries({ queryKey: ["manutencao_rascunho", id, userId] });
+      qc.invalidateQueries({ queryKey: ["manutencao_historico_anexos_count", id] });
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -110,36 +160,55 @@ function ManutencaoPage() {
     setItens((arr) => arr.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
   }
 
-  function exportExcel() {
+  async function exportWord() {
     if (!e) return;
-    const rows: (string | number | null)[][] = [
-      ["PLANO DE MANUTENÇÃO PREVENTIVA — SPH JHM Mafra"],
-      [],
-      ["Equipamento", `${e.numero} — ${e.identificacao ?? ""}`, "Modelo", e.modelo ?? ""],
-      ["Placa", e.placa ?? "", "Ano", e.ano ?? ""],
-      ["Horímetro", horimetro, "Tipo de revisão", tipoRevisao],
-      ["Data", data, "Executante", executante],
-      [],
-      ["Sistema", "Item", "Ação", "P/M", "Código", "Qtd", "Status"],
-      ...itens.map((it) => [
-        it.sistema,
-        it.item,
-        it.acao,
-        it.pm,
-        it.codigo ?? "",
-        it.quantidade ?? "",
-        STATUS_LABELS[it.status ?? ""] ?? "",
-      ]),
-      [],
-      ["Observações", observacoes],
-    ];
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws["!cols"] = [{ wch: 22 }, { wch: 30 }, { wch: 18 }, { wch: 8 }, { wch: 14 }, { wch: 8 }, { wch: 14 }];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Manutenção");
-    XLSX.writeFile(wb, `manutencao-${e.numero ?? id}-${data || "sem-data"}.xlsx`);
-    toast.success("Excel gerado");
+    const blob = await buildReportDocx({
+      equipNumero: e.numero ?? "",
+      equipIdent: e.identificacao ?? "",
+      data,
+      horimetro,
+      tipoRevisao,
+      executante,
+      observacoes,
+      itens,
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `manutencao-${e.numero ?? id}-${data || "sem-data"}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast.success("Word gerado");
   }
+
+  async function visualizarRelatorio() {
+    if (!histId) {
+      toast.info("Salve o formulário primeiro para gerar o relatório.");
+      return;
+    }
+    const { data: rel, error } = await supabase
+      .from("equipamento_fotos")
+      .select("storage_path")
+      .eq("manutencao_historico_id", histId)
+      .like("caption", `${REPORT_TAG}%`)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) return toast.error(error.message);
+    if (!rel) {
+      toast.info("Nenhum relatório salvo ainda. Clique em Salvar.");
+      return;
+    }
+    const { data: signed, error: sErr } = await supabase.storage
+      .from("equipamento-fotos")
+      .createSignedUrl(rel.storage_path, 60 * 60);
+    if (sErr || !signed?.signedUrl) return toast.error("Falha ao gerar link");
+    const w = window.open(signed.signedUrl, "_blank", "noopener,noreferrer");
+    if (!w) window.location.href = signed.signedUrl;
+  }
+
 
   if (!e) return <div className="p-6 text-center text-muted-foreground">Carregando...</div>;
 
@@ -157,8 +226,11 @@ function ManutencaoPage() {
               <FileText className="w-4 h-4 mr-1" /> Histórico
             </Button>
           </Link>
-          <Button size="sm" variant="outline" onClick={exportExcel}>
-            <FileSpreadsheet className="w-4 h-4 mr-1" /> Excel
+          <Button size="sm" variant="outline" onClick={visualizarRelatorio}>
+            <Eye className="w-4 h-4 mr-1" /> Visualizar
+          </Button>
+          <Button size="sm" variant="outline" onClick={exportWord}>
+            <FileType className="w-4 h-4 mr-1" /> Word
           </Button>
           <Button size="sm" variant="outline" onClick={() => window.print()}>
             <Printer className="w-4 h-4 mr-1" /> Imprimir
