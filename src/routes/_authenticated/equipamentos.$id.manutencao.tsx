@@ -226,8 +226,11 @@ function ManutencaoPage() {
               <FileText className="w-4 h-4 mr-1" /> Histórico
             </Button>
           </Link>
-          <Button size="sm" variant="outline" onClick={exportExcel}>
-            <FileSpreadsheet className="w-4 h-4 mr-1" /> Excel
+          <Button size="sm" variant="outline" onClick={visualizarRelatorio}>
+            <Eye className="w-4 h-4 mr-1" /> Visualizar
+          </Button>
+          <Button size="sm" variant="outline" onClick={exportWord}>
+            <FileType className="w-4 h-4 mr-1" /> Word
           </Button>
           <Button size="sm" variant="outline" onClick={() => window.print()}>
             <Printer className="w-4 h-4 mr-1" /> Imprimir
