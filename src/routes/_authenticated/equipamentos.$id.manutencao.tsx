@@ -201,13 +201,21 @@ function ManutencaoPage() {
       toast.info("Nenhum relatório salvo ainda. Clique em Salvar.");
       return;
     }
-    const { data: signed, error: sErr } = await supabase.storage
+    const { data: blob, error: dErr } = await supabase.storage
       .from("equipamento-fotos")
-      .createSignedUrl(rel.storage_path, 60 * 60);
-    if (sErr || !signed?.signedUrl) return toast.error("Falha ao gerar link");
-    const w = window.open(signed.signedUrl, "_blank", "noopener,noreferrer");
-    if (!w) window.location.href = signed.signedUrl;
+      .download(rel.storage_path);
+    if (dErr || !blob) return toast.error("Falha ao baixar relatório");
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `relatorio-manutencao-${e?.numero ?? id}-${data || "sem-data"}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    toast.success("Relatório aberto");
   }
+
 
 
   if (!e) return <div className="p-6 text-center text-muted-foreground">Carregando...</div>;
