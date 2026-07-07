@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Printer, FileText, Save, FileSpreadsheet } from "lucide-react";
+import { ArrowLeft, Printer, FileText, Save, FileType, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { MANUTENCAO_TEMPLATE, STATUS_LABELS, type ManutencaoItem } from "@/lib/manutencao-template";
 import logo from "@/assets/logo-sph.jpg.asset.json";
-import * as XLSX from "xlsx";
+import { buildReportDocx, REPORT_TAG } from "@/lib/manutencao-docx";
 
 export const Route = createFileRoute("/_authenticated/equipamentos/$id/manutencao")({
   component: ManutencaoPage,
