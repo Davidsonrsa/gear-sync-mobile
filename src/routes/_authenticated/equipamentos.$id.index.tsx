@@ -62,7 +62,7 @@ type Equip = {
   data_ultima_revisao: string | null;
   u_revisao: number | null;
   h_revisao: number | null;
-  limite_revisao: number | null;
+  limite_revisao: number;
   data_horimetro_atual: string | null;
   horimetro_atual: number | null;
   proxima_revisao_horimetro: number | null;
