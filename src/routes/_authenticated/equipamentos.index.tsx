@@ -104,8 +104,9 @@ function EquipamentosList() {
   }, [data, q, cl, onlyOverdue]);
 
   return (
-    <div className="px-3 py-3 max-w-md mx-auto w-full">
-      <div className="sticky top-[60px] z-20 -mx-3 px-3 py-2 bg-background/85 backdrop-blur space-y-2">
+    <div className="px-3 py-3 md:px-6 md:py-6 max-w-md md:max-w-7xl mx-auto w-full">
+      <div className="sticky top-[60px] md:top-[76px] z-20 -mx-3 px-3 md:-mx-6 md:px-6 py-2 bg-background/85 backdrop-blur space-y-2 md:space-y-0 md:flex md:items-center md:gap-3">
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
