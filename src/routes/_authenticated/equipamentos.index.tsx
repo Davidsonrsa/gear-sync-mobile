@@ -29,6 +29,7 @@ type Equip = {
   operador_contato: string | null;
   horimetro_atual: number | null;
   h_revisao: number | null;
+  limite_revisao: number | null;
   proxima_revisao_horimetro: number | null;
   data_horimetro_atual: string | null;
   status: string | null;
@@ -48,7 +49,7 @@ function EquipamentosList() {
       const { data, error } = await supabase
         .from("equipamentos")
         .select(
-          "id, numero, identificacao, placa, localizacao, operador_contato, horimetro_atual, h_revisao, proxima_revisao_horimetro, data_horimetro_atual, status, cl, cover_storage_path",
+          "id, numero, identificacao, placa, localizacao, operador_contato, horimetro_atual, h_revisao, limite_revisao, proxima_revisao_horimetro, data_horimetro_atual, status, cl, cover_storage_path",
         )
         .order("numero", { ascending: true });
 
@@ -89,7 +90,7 @@ function EquipamentosList() {
         e.horimetro_atual != null && e.h_revisao != null
           ? Math.max(0, Number(e.horimetro_atual) - Number(e.h_revisao))
           : null;
-      const overdue = hrRodado != null && hrRodado > 500;
+      const overdue = hrRodado != null && hrRodado > Number(e.limite_revisao ?? 500);
       if (onlyOverdue && !overdue) return false;
       if (
         s &&
@@ -165,7 +166,7 @@ function EquipamentosList() {
             e.horimetro_atual != null && e.h_revisao != null
               ? Math.max(0, Number(e.horimetro_atual) - Number(e.h_revisao))
               : null;
-          const overdue = hrRodado != null && hrRodado > 500;
+          const overdue = hrRodado != null && hrRodado > Number(e.limite_revisao ?? 500);
           const coverUrl = e.cover_storage_path ? covers[e.cover_storage_path] : null;
           return (
             <li key={e.id}>
@@ -235,7 +236,7 @@ function EquipamentosList() {
                           className={`mt-1 text-[11px] ${overdue ? "text-destructive font-semibold blink-overdue" : "text-muted-foreground"}`}
                         >
                           Hr rodado: <span className="tabular-nums">{hrRodado}h</span>
-                          {overdue && <span className="ml-1">⚠ &gt; 500h</span>}
+                          {overdue && <span className="ml-1">⚠ &gt; {Number(e.limite_revisao ?? 500)}h</span>}
                         </div>
                       )}
                     </div>

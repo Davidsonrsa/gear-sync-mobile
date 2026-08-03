@@ -31,6 +31,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+export const LIMITES_REVISAO = [250, 500, 750, 1000, 10000];
 
 export const Route = createFileRoute("/_authenticated/equipamentos/$id/")({
   component: EquipamentoDetail,
@@ -53,6 +62,7 @@ type Equip = {
   data_ultima_revisao: string | null;
   u_revisao: number | null;
   h_revisao: number | null;
+  limite_revisao: number;
   data_horimetro_atual: string | null;
   horimetro_atual: number | null;
   proxima_revisao_horimetro: number | null;
@@ -260,7 +270,8 @@ function EquipamentoDetail() {
     form.horimetro_atual != null && form.h_revisao != null
       ? Math.max(0, Number(form.horimetro_atual) - Number(form.h_revisao))
       : null;
-  const overdue = hrRodadoCalc != null && hrRodadoCalc > 500;
+  const limite = Number(form.limite_revisao ?? 500);
+  const overdue = hrRodadoCalc != null && hrRodadoCalc > limite;
 
   return (
     <div className="px-3 py-3 max-w-md mx-auto w-full space-y-3">
@@ -646,6 +657,34 @@ function EquipamentoDetail() {
             />
           </Field>
         </div>
+
+        <Field label="Limite p/ considerar vencido (Hr rodado)">
+          {isAdmin ? (
+            <Select
+              value={String(limite)}
+              onValueChange={(v) => {
+                const next = { ...form, limite_revisao: Number(v) };
+                setForm(next);
+                save.mutate({ limite_revisao: Number(v) });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LIMITES_REVISAO.map((l) => (
+                  <SelectItem key={l} value={String(l)}>
+                    {l} h
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input value={`${limite} h`} readOnly />
+          )}
+        </Field>
+
+
 
         {isAdmin && (
           <div className="flex gap-2 pt-2">
