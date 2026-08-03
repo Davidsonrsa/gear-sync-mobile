@@ -104,9 +104,9 @@ function EquipamentosList() {
   }, [data, q, cl, onlyOverdue]);
 
   return (
-    <div className="px-3 py-3 max-w-md mx-auto w-full">
-      <div className="sticky top-[60px] z-20 -mx-3 px-3 py-2 bg-background/85 backdrop-blur space-y-2">
-        <div className="relative">
+    <div className="px-3 py-3 md:px-6 md:py-6 max-w-md md:max-w-7xl mx-auto w-full">
+      <div className="sticky top-[60px] md:top-[76px] z-20 -mx-3 px-3 md:-mx-6 md:px-6 py-2 bg-background/85 backdrop-blur space-y-2 md:space-y-0 md:flex md:items-center md:gap-3">
+        <div className="relative md:flex-1 md:max-w-lg">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Buscar nº, placa, local, operador..."
@@ -115,9 +115,9 @@ function EquipamentosList() {
             className="pl-9 h-11"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 md:shrink-0">
           <Select value={cl} onValueChange={setCl}>
-            <SelectTrigger className="h-9 flex-1">
+            <SelectTrigger className="h-9 flex-1 md:w-40">
               <SelectValue placeholder="Classe (CL)" />
             </SelectTrigger>
             <SelectContent>
@@ -139,7 +139,7 @@ function EquipamentosList() {
             {onlyOverdue ? "Só vencidos ✓" : "Vencidos"}
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground px-1">
+        <p className="text-xs text-muted-foreground px-1 md:ml-auto md:whitespace-nowrap">
           {isLoading
             ? "Carregando..."
             : `${filtered.length} equipamento${filtered.length === 1 ? "" : "s"}`}
@@ -153,7 +153,8 @@ function EquipamentosList() {
         </Card>
       )}
 
-      <ul className="space-y-2 mt-2">
+      <ul className="space-y-2 mt-2 md:space-y-0 md:grid md:grid-cols-2 xl:grid-cols-3 md:gap-3 md:mt-4">
+
         {filtered.map((e) => {
           const horaPct =
             e.horimetro_atual && e.proxima_revisao_horimetro

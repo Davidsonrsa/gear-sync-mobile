@@ -179,7 +179,7 @@ function HistoricoPage() {
   });
 
   return (
-    <div className="px-3 py-3 max-w-md mx-auto w-full space-y-3">
+    <div className="px-3 py-3 md:px-6 md:py-6 max-w-md md:max-w-5xl mx-auto w-full space-y-3">
       <div className="flex items-center justify-between">
         <Link
           to="/equipamentos/$id"
