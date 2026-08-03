@@ -31,6 +31,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+export const LIMITES_REVISAO = [250, 500, 750, 1000, 10000];
 
 export const Route = createFileRoute("/_authenticated/equipamentos/$id/")({
   component: EquipamentoDetail,
