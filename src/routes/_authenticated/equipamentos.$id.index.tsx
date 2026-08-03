@@ -270,7 +270,8 @@ function EquipamentoDetail() {
     form.horimetro_atual != null && form.h_revisao != null
       ? Math.max(0, Number(form.horimetro_atual) - Number(form.h_revisao))
       : null;
-  const overdue = hrRodadoCalc != null && hrRodadoCalc > 500;
+  const limite = Number(form.limite_revisao ?? 500);
+  const overdue = hrRodadoCalc != null && hrRodadoCalc > limite;
 
   return (
     <div className="px-3 py-3 max-w-md mx-auto w-full space-y-3">
