@@ -658,6 +658,34 @@ function EquipamentoDetail() {
           </Field>
         </div>
 
+        <Field label="Limite p/ considerar vencido (Hr rodado)">
+          {isAdmin ? (
+            <Select
+              value={String(limite)}
+              onValueChange={(v) => {
+                const next = { ...form, limite_revisao: Number(v) };
+                setForm(next);
+                save.mutate({ limite_revisao: Number(v) });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LIMITES_REVISAO.map((l) => (
+                  <SelectItem key={l} value={String(l)}>
+                    {l} h
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input value={`${limite} h`} readOnly />
+          )}
+        </Field>
+
+
+
         {isAdmin && (
           <div className="flex gap-2 pt-2">
             <Button onClick={() => save.mutate(form)} disabled={save.isPending} className="flex-1">
