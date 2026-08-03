@@ -89,6 +89,7 @@ export type Database = {
           id: string
           identificacao: string | null
           item: number | null
+          limite_revisao: number
           localizacao: string | null
           modelo: string | null
           motor_oleo: string | null
@@ -134,6 +135,7 @@ export type Database = {
           id?: string
           identificacao?: string | null
           item?: number | null
+          limite_revisao?: number
           localizacao?: string | null
           modelo?: string | null
           motor_oleo?: string | null
@@ -179,6 +181,7 @@ export type Database = {
           id?: string
           identificacao?: string | null
           item?: number | null
+          limite_revisao?: number
           localizacao?: string | null
           modelo?: string | null
           motor_oleo?: string | null
