@@ -242,9 +242,19 @@ function ManutencaoFormPage() {
   async function deletePhoto(photoId: string, path: string, uploadedBy: string | null) {
     if (!isAdmin && uploadedBy !== userId)
       return toast.error("Você só pode excluir suas próprias fotos");
-    await supabase.storage.from("equipamento-fotos").remove([path]);
+    
+    // Primeiro deleta o registro do banco de dados
     const { error } = await supabase.from("equipamento_fotos").delete().eq("id", photoId);
     if (error) return toast.error(error.message);
+    
+    // Depois remove o arquivo do storage
+    const { error: storageError } = await supabase.storage.from("equipamento-fotos").remove([path]);
+    if (storageError) {
+      console.warn("Erro ao remover arquivo do storage:", storageError);
+      // Não mostra erro ao usuário pois o registro já foi deletado do banco
+      // Mas avisa no console para debug
+    }
+    
     toast.success("Foto removida");
     qc.invalidateQueries({ queryKey: ["hist_fotos", histId] });
   }
