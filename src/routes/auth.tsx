@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import logo from "@/assets/logo-sph.jpg.asset.json";
 import { matToEmail } from "@/lib/mat";
 
 export const Route = createFileRoute("/auth")({
@@ -43,7 +42,7 @@ function AuthPage() {
         <Card className="w-full max-w-sm p-6 bg-card text-card-foreground shadow-2xl">
           <div className="flex flex-col items-center gap-3 mb-6">
             <div className="w-28 h-28 rounded-2xl bg-white p-2 shadow-lg flex items-center justify-center overflow-hidden">
-              <img src={logo.url} alt="SPH JHM Mafra" className="w-full h-full object-contain" />
+              <img src="/logo SPX MAFRA JHM.png" alt="SPH JHM Mafra" className="w-full h-full object-contain" />
             </div>
             <h1 className="text-lg font-bold text-center">Controle de Horímetros</h1>
             <p className="text-xs text-muted-foreground text-center">

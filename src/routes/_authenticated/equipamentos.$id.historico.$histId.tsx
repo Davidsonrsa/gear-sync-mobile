@@ -11,7 +11,6 @@ import { ArrowLeft, Save, Printer, Camera, Trash2, ImagePlus, Paperclip, FileIco
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { MANUTENCAO_TEMPLATE, type ManutencaoItem, STATUS_LABELS } from "@/lib/manutencao-template";
-import logo from "@/assets/logo-sph.jpg.asset.json";
 import * as XLSX from "xlsx";
 import {
   Document,
@@ -414,7 +413,7 @@ function ManutencaoFormPage() {
 
       <div className="max-w-[210mm] mx-auto p-4 print:p-4 print:text-black print:bg-white">
         <div className="flex items-center gap-4 border-b-2 border-foreground print:border-black pb-3 mb-4">
-          <img src={logo.url} alt="" className="w-16 h-16 object-contain" />
+          <img src="/logo SPX MAFRA JHM.png" alt="" className="w-16 h-16 object-contain" />
           <div className="flex-1">
             <h1 className="text-lg font-bold">PLANO DE MANUTENÇÃO PREVENTIVA</h1>
             <p className="text-[11px] text-muted-foreground print:text-black">

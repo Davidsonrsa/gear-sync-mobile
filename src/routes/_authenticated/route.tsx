@@ -10,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { LogOut, Settings, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/logo-sph.jpg.asset.json";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -42,7 +41,7 @@ function AuthenticatedLayout() {
           style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
         >
           <div className="w-9 h-9 md:w-11 md:h-11 rounded-lg bg-white p-0.5 shrink-0 flex items-center justify-center overflow-hidden">
-            <img src={logo.url} alt="SPH JHM Mafra" className="w-full h-full object-contain" />
+            <img src="/logo SPX MAFRA JHM.png" alt="SPH JHM Mafra" className="w-full h-full object-contain" />
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-sm md:text-lg font-bold leading-tight truncate">
