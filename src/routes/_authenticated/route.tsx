@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { LogOut, Settings, List } from "lucide-react";
+import { LogOut, Settings, List, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -22,9 +22,11 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
-  const { isAdmin, fullName } = useAuth();
+  const { isAdmin, fullName, notasFiscais } = useAuth();
   const navigate = useNavigate();
   const loc = useLocation();
+  
+  const canAccessNotasFiscais = isAdmin || notasFiscais.autorizado;
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -56,15 +58,30 @@ function AuthenticatedLayout() {
           <nav className="hidden md:flex items-center gap-1 shrink-0">
             <Link
               to="/equipamentos"
-              className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${!isAdminRoute ? "bg-primary-foreground/15" : "hover:bg-primary-foreground/10"}`}
+              className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                !isAdminRoute && !loc.pathname.startsWith("/notas-fiscais") ? "bg-primary-foreground/15" : "hover:bg-primary-foreground/10"
+              }`}
             >
               <List className="w-4 h-4" />
               Equipamentos
             </Link>
+            {canAccessNotasFiscais && (
+              <Link
+                to="/notas-fiscais"
+                className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  loc.pathname.startsWith("/notas-fiscais") ? "bg-primary-foreground/15" : "hover:bg-primary-foreground/10"
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                Notas Fiscais
+              </Link>
+            )}
             {isAdmin && (
               <Link
                 to="/admin"
-                className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${isAdminRoute ? "bg-primary-foreground/15" : "hover:bg-primary-foreground/10"}`}
+                className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  isAdminRoute ? "bg-primary-foreground/15" : "hover:bg-primary-foreground/10"
+                }`}
               >
                 <Settings className="w-4 h-4" />
                 Admin
@@ -91,18 +108,35 @@ function AuthenticatedLayout() {
         className="fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.06)] md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className="grid grid-cols-2 max-w-md mx-auto">
+        <div className={`grid max-w-md mx-auto ${
+          canAccessNotasFiscais ? "grid-cols-3" : "grid-cols-2"
+        }`}>
           <Link
             to="/equipamentos"
-            className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${!isAdminRoute ? "text-primary" : "text-muted-foreground"}`}
+            className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+              !isAdminRoute && !loc.pathname.startsWith("/notas-fiscais") ? "text-primary" : "text-muted-foreground"
+            }`}
           >
             <List className="w-5 h-5" />
             Equipamentos
           </Link>
+          {canAccessNotasFiscais && (
+            <Link
+              to="/notas-fiscais"
+              className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+                loc.pathname.startsWith("/notas-fiscais") ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              <FileText className="w-5 h-5" />
+              Notas Fiscais
+            </Link>
+          )}
           {isAdmin && (
             <Link
               to="/admin"
-              className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${isAdminRoute ? "text-primary" : "text-muted-foreground"}`}
+              className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+                isAdminRoute ? "text-primary" : "text-muted-foreground"
+              }`}
             >
               <Settings className="w-5 h-5" />
               Admin

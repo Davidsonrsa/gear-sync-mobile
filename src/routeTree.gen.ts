@@ -13,8 +13,10 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedNotasFiscaisIndexRouteImport } from './routes/_authenticated/notas-fiscais.index'
 import { Route as AuthenticatedEquipamentosIndexRouteImport } from './routes/_authenticated/equipamentos.index'
 import { Route as AuthenticatedEquipamentosIdRouteImport } from './routes/_authenticated/equipamentos.$id'
+import { Route as AuthenticatedNotasFiscaisIdIndexRouteImport } from './routes/_authenticated/notas-fiscais.$id.index'
 import { Route as AuthenticatedEquipamentosIdIndexRouteImport } from './routes/_authenticated/equipamentos.$id.index'
 import { Route as AuthenticatedEquipamentosIdManutencaoRouteImport } from './routes/_authenticated/equipamentos.$id.manutencao'
 import { Route as AuthenticatedEquipamentosIdHistoricoRouteImport } from './routes/_authenticated/equipamentos.$id.historico'
@@ -39,6 +41,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedNotasFiscaisIndexRoute =
+  AuthenticatedNotasFiscaisIndexRouteImport.update({
+    id: '/notas-fiscais/',
+    path: '/notas-fiscais/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEquipamentosIndexRoute =
   AuthenticatedEquipamentosIndexRouteImport.update({
     id: '/equipamentos/',
@@ -49,6 +57,12 @@ const AuthenticatedEquipamentosIdRoute =
   AuthenticatedEquipamentosIdRouteImport.update({
     id: '/equipamentos/$id',
     path: '/equipamentos/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedNotasFiscaisIdIndexRoute =
+  AuthenticatedNotasFiscaisIdIndexRouteImport.update({
+    id: '/notas-fiscais/$id/',
+    path: '/notas-fiscais/$id/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEquipamentosIdIndexRoute =
@@ -82,9 +96,11 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/equipamentos/$id': typeof AuthenticatedEquipamentosIdRouteWithChildren
   '/equipamentos/': typeof AuthenticatedEquipamentosIndexRoute
+  '/notas-fiscais/': typeof AuthenticatedNotasFiscaisIndexRoute
   '/equipamentos/$id/historico': typeof AuthenticatedEquipamentosIdHistoricoRouteWithChildren
   '/equipamentos/$id/manutencao': typeof AuthenticatedEquipamentosIdManutencaoRoute
   '/equipamentos/$id/': typeof AuthenticatedEquipamentosIdIndexRoute
+  '/notas-fiscais/$id/': typeof AuthenticatedNotasFiscaisIdIndexRoute
   '/equipamentos/$id/historico/$histId': typeof AuthenticatedEquipamentosIdHistoricoHistIdRoute
 }
 export interface FileRoutesByTo {
@@ -92,9 +108,11 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/equipamentos': typeof AuthenticatedEquipamentosIndexRoute
+  '/notas-fiscais': typeof AuthenticatedNotasFiscaisIndexRoute
   '/equipamentos/$id/historico': typeof AuthenticatedEquipamentosIdHistoricoRouteWithChildren
   '/equipamentos/$id/manutencao': typeof AuthenticatedEquipamentosIdManutencaoRoute
   '/equipamentos/$id': typeof AuthenticatedEquipamentosIdIndexRoute
+  '/notas-fiscais/$id': typeof AuthenticatedNotasFiscaisIdIndexRoute
   '/equipamentos/$id/historico/$histId': typeof AuthenticatedEquipamentosIdHistoricoHistIdRoute
 }
 export interface FileRoutesById {
@@ -105,9 +123,11 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/equipamentos/$id': typeof AuthenticatedEquipamentosIdRouteWithChildren
   '/_authenticated/equipamentos/': typeof AuthenticatedEquipamentosIndexRoute
+  '/_authenticated/notas-fiscais/': typeof AuthenticatedNotasFiscaisIndexRoute
   '/_authenticated/equipamentos/$id/historico': typeof AuthenticatedEquipamentosIdHistoricoRouteWithChildren
   '/_authenticated/equipamentos/$id/manutencao': typeof AuthenticatedEquipamentosIdManutencaoRoute
   '/_authenticated/equipamentos/$id/': typeof AuthenticatedEquipamentosIdIndexRoute
+  '/_authenticated/notas-fiscais/$id/': typeof AuthenticatedNotasFiscaisIdIndexRoute
   '/_authenticated/equipamentos/$id/historico/$histId': typeof AuthenticatedEquipamentosIdHistoricoHistIdRoute
 }
 export interface FileRouteTypes {
@@ -118,9 +138,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/equipamentos/$id'
     | '/equipamentos/'
+    | '/notas-fiscais/'
     | '/equipamentos/$id/historico'
     | '/equipamentos/$id/manutencao'
     | '/equipamentos/$id/'
+    | '/notas-fiscais/$id/'
     | '/equipamentos/$id/historico/$histId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -128,9 +150,11 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin'
     | '/equipamentos'
+    | '/notas-fiscais'
     | '/equipamentos/$id/historico'
     | '/equipamentos/$id/manutencao'
     | '/equipamentos/$id'
+    | '/notas-fiscais/$id'
     | '/equipamentos/$id/historico/$histId'
   id:
     | '__root__'
@@ -140,9 +164,11 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/equipamentos/$id'
     | '/_authenticated/equipamentos/'
+    | '/_authenticated/notas-fiscais/'
     | '/_authenticated/equipamentos/$id/historico'
     | '/_authenticated/equipamentos/$id/manutencao'
     | '/_authenticated/equipamentos/$id/'
+    | '/_authenticated/notas-fiscais/$id/'
     | '/_authenticated/equipamentos/$id/historico/$histId'
   fileRoutesById: FileRoutesById
 }
@@ -182,6 +208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/notas-fiscais/': {
+      id: '/_authenticated/notas-fiscais/'
+      path: '/notas-fiscais'
+      fullPath: '/notas-fiscais/'
+      preLoaderRoute: typeof AuthenticatedNotasFiscaisIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/equipamentos/': {
       id: '/_authenticated/equipamentos/'
       path: '/equipamentos'
@@ -194,6 +227,13 @@ declare module '@tanstack/react-router' {
       path: '/equipamentos/$id'
       fullPath: '/equipamentos/$id'
       preLoaderRoute: typeof AuthenticatedEquipamentosIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notas-fiscais/$id/': {
+      id: '/_authenticated/notas-fiscais/$id/'
+      path: '/notas-fiscais/$id'
+      fullPath: '/notas-fiscais/$id/'
+      preLoaderRoute: typeof AuthenticatedNotasFiscaisIdIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/equipamentos/$id/': {
@@ -267,6 +307,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedEquipamentosIdRoute: typeof AuthenticatedEquipamentosIdRouteWithChildren
   AuthenticatedEquipamentosIndexRoute: typeof AuthenticatedEquipamentosIndexRoute
+  AuthenticatedNotasFiscaisIndexRoute: typeof AuthenticatedNotasFiscaisIndexRoute
+  AuthenticatedNotasFiscaisIdIndexRoute: typeof AuthenticatedNotasFiscaisIdIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -274,6 +316,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEquipamentosIdRoute:
     AuthenticatedEquipamentosIdRouteWithChildren,
   AuthenticatedEquipamentosIndexRoute: AuthenticatedEquipamentosIndexRoute,
+  AuthenticatedNotasFiscaisIndexRoute: AuthenticatedNotasFiscaisIndexRoute,
+  AuthenticatedNotasFiscaisIdIndexRoute: AuthenticatedNotasFiscaisIdIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -287,3 +331,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
