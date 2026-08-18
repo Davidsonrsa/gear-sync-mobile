@@ -1,14 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { Search, FileText, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ImportExcelDialog } from "@/components/ImportExcelDialog";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/notas-fiscais/")({
   component: NotasFiscaisList,
@@ -48,31 +59,161 @@ function formatCurrency(value: number | null) {
   }).format(Number(value));
 }
 
+type NewNotaFiscal = {
+  nf: string;
+  data: string;
+  fornecedor: string;
+  identificacao: string;
+  valor: string;
+  observacao: string;
+};
+
+const emptyNotaFiscal: NewNotaFiscal = {
+  nf: "",
+  data: "",
+  fornecedor: "",
+  identificacao: "",
+  valor: "",
+  observacao: "",
+};
+
+function NewNotaFiscalDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState<NewNotaFiscal>(emptyNotaFiscal);
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const nf = form.nf.trim();
+      if (!nf) throw new Error("O número da NF é obrigatório.");
+
+      const parsedValue = form.valor.trim() ? Number(form.valor.replace(",", ".")) : null;
+      if (parsedValue !== null && !Number.isFinite(parsedValue)) {
+        throw new Error("Informe um valor válido.");
+      }
+
+      const { error } = await supabase.from("notas_fiscais").insert({
+        nf,
+        data: form.data || null,
+        fornecedor: form.fornecedor.trim() || null,
+        identificacao: form.identificacao.trim() || null,
+        valor: parsedValue,
+        observacao: form.observacao.trim() || null,
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Nota fiscal cadastrada com sucesso!");
+      setForm(emptyNotaFiscal);
+      onOpenChange(false);
+      queryClient.invalidateQueries({ queryKey: ["notas-fiscais"] });
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Erro ao cadastrar nota fiscal.");
+    },
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Nova Nota Fiscal</DialogTitle>
+          <DialogDescription>Preencha os dados principais da nota fiscal.</DialogDescription>
+        </DialogHeader>
+        <form
+          className="grid gap-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            createMutation.mutate();
+          }}
+        >
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="nota-nf">Número da NF *</Label>
+              <Input
+                id="nota-nf"
+                required
+                value={form.nf}
+                onChange={(event) => setForm({ ...form, nf: event.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="nota-data">Data</Label>
+              <Input
+                id="nota-data"
+                type="date"
+                value={form.data}
+                onChange={(event) => setForm({ ...form, data: event.target.value })}
+              />
+            </div>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="nota-fornecedor">Fornecedor</Label>
+              <Input
+                id="nota-fornecedor"
+                value={form.fornecedor}
+                onChange={(event) => setForm({ ...form, fornecedor: event.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="nota-identificacao">Identificação</Label>
+              <Input
+                id="nota-identificacao"
+                value={form.identificacao}
+                onChange={(event) => setForm({ ...form, identificacao: event.target.value })}
+              />
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="nota-valor">Valor</Label>
+            <Input
+              id="nota-valor"
+              inputMode="decimal"
+              placeholder="0,00"
+              value={form.valor}
+              onChange={(event) => setForm({ ...form, valor: event.target.value })}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="nota-observacao">Observação</Label>
+            <Textarea
+              id="nota-observacao"
+              value={form.observacao}
+              onChange={(event) => setForm({ ...form, observacao: event.target.value })}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={createMutation.isPending}>
+              {createMutation.isPending ? "Salvando..." : "Cadastrar nota"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function NotasFiscaisList() {
   const { isAdmin, notasFiscais } = useAuth();
   const [q, setQ] = useState("");
   const [importOpen, setImportOpen] = useState(false);
-
-  // Verificar autorização
+  const [createOpen, setCreateOpen] = useState(false);
   const canAccess = isAdmin || notasFiscais.autorizado;
   const canManage = isAdmin || notasFiscais.gerenciar;
 
-  if (!canAccess) {
-    return (
-      <div className="px-3 py-6 md:px-6 max-w-md md:max-w-7xl mx-auto w-full">
-        <Card className="p-8 text-center">
-          <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
-          <p className="font-medium">Acesso Negado</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Você não possui permissão para acessar o módulo de Notas Fiscais.
-          </p>
-        </Card>
-      </div>
-    );
-  }
-
   const { data, isLoading, error } = useQuery({
     queryKey: ["notas-fiscais"],
+    enabled: canAccess,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("notas_fiscais")
@@ -106,6 +247,20 @@ function NotasFiscaisList() {
     );
   }, [data, q]);
 
+  if (!canAccess) {
+    return (
+      <div className="px-3 py-6 md:px-6 max-w-md md:max-w-7xl mx-auto w-full">
+        <Card className="p-8 text-center">
+          <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+          <p className="font-medium">Acesso Negado</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Você não possui permissão para acessar o módulo de Notas Fiscais.
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="px-3 py-3 md:px-6 md:py-6 max-w-md md:max-w-7xl mx-auto w-full">
       <div className="sticky top-[60px] md:top-[76px] z-20 -mx-3 px-3 md:-mx-6 md:px-6 py-2 bg-background/85 backdrop-blur space-y-2 md:space-y-0 md:flex md:items-center md:gap-3">
@@ -121,10 +276,16 @@ function NotasFiscaisList() {
 
         <div className="flex gap-2 flex-wrap md:flex-nowrap">
           <ImportExcelDialog open={importOpen} onOpenChange={setImportOpen} />
-          <Button type="button" className="h-9 md:shrink-0" disabled={!canManage}>
+          <Button
+            type="button"
+            className="h-9 md:shrink-0"
+            disabled={!canManage}
+            onClick={() => setCreateOpen(true)}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Nova Nota Fiscal
           </Button>
+          <NewNotaFiscalDialog open={createOpen} onOpenChange={setCreateOpen} />
         </div>
       </div>
 
@@ -231,7 +392,11 @@ function NotasFiscaisList() {
                   </div>
                 </div>
 
-                <Link to={`/notas-fiscais/${nota.id}`} className="shrink-0">
+                <Link
+                  to="/notas-fiscais/$id"
+                  params={{ id: nota.id }}
+                  className="shrink-0"
+                >
                   <Button variant="outline" size="sm">
                     Visualizar
                   </Button>

@@ -250,6 +250,101 @@ export type Database = {
           },
         ]
       }
+      notas_fiscais: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: string | null
+          equipamento_id: string | null
+          fornecedor: string | null
+          id: string
+          identificacao: string | null
+          nf: string
+          observacao: string | null
+          updated_at: string
+          valor: number | null
+          venc01: string | null
+          venc02: string | null
+          venc03: string | null
+          venc04: string | null
+          venc05: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data?: string | null
+          equipamento_id?: string | null
+          fornecedor?: string | null
+          id?: string
+          identificacao?: string | null
+          nf: string
+          observacao?: string | null
+          updated_at?: string
+          valor?: number | null
+          venc01?: string | null
+          venc02?: string | null
+          venc03?: string | null
+          venc04?: string | null
+          venc05?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: string | null
+          equipamento_id?: string | null
+          fornecedor?: string | null
+          id?: string
+          identificacao?: string | null
+          nf?: string
+          observacao?: string | null
+          updated_at?: string
+          valor?: number | null
+          venc01?: string | null
+          venc02?: string | null
+          venc03?: string | null
+          venc04?: string | null
+          venc05?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_fiscais_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "equipamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notas_fiscais_permissoes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          gerenciar: boolean
+          id: string
+          updated_at: string
+          user_id: string
+          visualizar: boolean
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          gerenciar?: boolean
+          id?: string
+          updated_at?: string
+          user_id: string
+          visualizar?: boolean
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          gerenciar?: boolean
+          id?: string
+          updated_at?: string
+          user_id?: string
+          visualizar?: boolean
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

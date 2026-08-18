@@ -131,7 +131,11 @@ function HistoricoPage() {
     if (error) return toast.error(error.message);
     if (!data) {
       toast.info("Nenhum relatório salvo. Abra o formulário e clique em Salvar para gerar o Word.");
-      navigate({ to: "/equipamentos/$id/historico/$histId", params: { id, histId } });
+      navigate({
+        to: "/equipamentos/$id/historico/$histId",
+        params: { id, histId },
+        search: { print: undefined },
+      });
       return;
     }
     const { data: signed, error: sErr } = await supabase.storage
@@ -161,7 +165,11 @@ function HistoricoPage() {
     },
     onSuccess: (histId) => {
       qc.invalidateQueries({ queryKey: ["manutencao_historico", id] });
-      navigate({ to: "/equipamentos/$id/historico/$histId", params: { id, histId } });
+      navigate({
+        to: "/equipamentos/$id/historico/$histId",
+        params: { id, histId },
+        search: { print: undefined },
+      });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -217,6 +225,7 @@ function HistoricoPage() {
                 <Link
                   to="/equipamentos/$id/historico/$histId"
                   params={{ id, histId: r.id }}
+                  search={{ print: undefined }}
                   className="flex-1 min-w-0"
                 >
                   <div className="flex items-center gap-2">
