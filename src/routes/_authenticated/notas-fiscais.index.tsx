@@ -125,7 +125,7 @@ function NewNotaFiscalDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="z-[60] max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] overflow-y-auto sm:max-h-[90vh] sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Nova Nota Fiscal</DialogTitle>
           <DialogDescription>Preencha os dados principais da nota fiscal.</DialogDescription>
