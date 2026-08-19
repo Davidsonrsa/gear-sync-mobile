@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, FileText, Plus } from "lucide-react";
+import { Search, FileText, Plus, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ImportExcelDialog } from "@/components/ImportExcelDialog";
 import { Label } from "@/components/ui/label";
@@ -31,6 +31,7 @@ type NotaFiscal = {
   data: string | null;
   nf: string;
   fornecedor: string | null;
+  descricao_produto: string | null;
   observacao: string | null;
   equipamento_id: string | null;
   valor: number | null;
@@ -64,6 +65,7 @@ type NewNotaFiscal = {
   data: string;
   fornecedor: string;
   identificacao: string;
+  descricao_produto: string;
   valor: string;
   observacao: string;
 };
@@ -73,6 +75,7 @@ const emptyNotaFiscal: NewNotaFiscal = {
   data: "",
   fornecedor: "",
   identificacao: "",
+  descricao_produto: "",
   valor: "",
   observacao: "",
 };
@@ -102,6 +105,7 @@ function NewNotaFiscalDialog({
         data: form.data || null,
         fornecedor: form.fornecedor.trim() || null,
         identificacao: form.identificacao.trim() || null,
+        descricao_produto: form.descricao_produto.trim() || null,
         valor: parsedValue,
         observacao: form.observacao.trim() || null,
       });
@@ -144,7 +148,7 @@ function NewNotaFiscalDialog({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="nota-data">Data</Label>
+              <Label htmlFor="nota-data">Data de Emissão</Label>
               <Input
                 id="nota-data"
                 type="date"
@@ -170,6 +174,14 @@ function NewNotaFiscalDialog({
                 onChange={(event) => setForm({ ...form, identificacao: event.target.value })}
               />
             </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="nota-descricao-produto">Descrição dos Produtos</Label>
+            <Textarea
+              id="nota-descricao-produto"
+              value={form.descricao_produto}
+              onChange={(event) => setForm({ ...form, descricao_produto: event.target.value })}
+            />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="nota-valor">Valor</Label>
@@ -206,6 +218,9 @@ function NewNotaFiscalDialog({
 function NotasFiscaisList() {
   const { isAdmin, notasFiscais } = useAuth();
   const [q, setQ] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [appliedDateRange, setAppliedDateRange] = useState({ from: "", to: "" });
   const [importOpen, setImportOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const canAccess = isAdmin || notasFiscais.autorizado;
@@ -218,7 +233,7 @@ function NotasFiscaisList() {
       const { data, error } = await supabase
         .from("notas_fiscais")
         .select(
-          "id, identificacao, data, nf, fornecedor, observacao, equipamento_id, valor, venc01, venc02, venc03, venc04, venc05",
+          "id, identificacao, data, nf, fornecedor, descricao_produto, observacao, equipamento_id, valor, venc01, venc02, venc03, venc04, venc05",
         )
         .order("data", { ascending: false });
 
@@ -233,19 +248,32 @@ function NotasFiscaisList() {
 
     if (!data) return [];
 
-    if (!search) return data;
-
-    return data.filter((nota) =>
-      [
-        nota.nf,
-        nota.identificacao,
-        nota.fornecedor,
-        nota.observacao,
-      ]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(search)),
+    return data.filter(
+      (nota) =>
+        (!search ||
+          [nota.nf, nota.identificacao, nota.fornecedor, nota.descricao_produto, nota.observacao]
+            .filter(Boolean)
+            .some((value) => String(value).toLowerCase().includes(search))) &&
+        (!appliedDateRange.from || (nota.data && nota.data >= appliedDateRange.from)) &&
+        (!appliedDateRange.to || (nota.data && nota.data <= appliedDateRange.to)),
     );
-  }, [data, q]);
+  }, [data, q, appliedDateRange]);
+
+  const totalValue = useMemo(
+    () => filtered.reduce((total, nota) => total + (Number(nota.valor) || 0), 0),
+    [filtered],
+  );
+
+  function applyDateFilter() {
+    setAppliedDateRange({ from: dateFrom, to: dateTo });
+  }
+
+  function clearFilters() {
+    setQ("");
+    setDateFrom("");
+    setDateTo("");
+    setAppliedDateRange({ from: "", to: "" });
+  }
 
   if (!canAccess) {
     return (
@@ -267,11 +295,45 @@ function NotasFiscaisList() {
         <div className="relative md:flex-1 md:max-w-lg">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar NF, fornecedor, identificação..."
+            placeholder="Buscar NF, fornecedor, identificação ou descrição..."
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="pl-9 h-11"
           />
+        </div>
+
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="grid gap-1">
+            <Label htmlFor="notas-data-de" className="text-xs">
+              Data de Emissão: De
+            </Label>
+            <Input
+              id="notas-data-de"
+              type="date"
+              value={dateFrom}
+              onChange={(event) => setDateFrom(event.target.value)}
+              className="h-9 w-full md:w-36"
+            />
+          </div>
+          <div className="grid gap-1">
+            <Label htmlFor="notas-data-ate" className="text-xs">
+              Até
+            </Label>
+            <Input
+              id="notas-data-ate"
+              type="date"
+              value={dateTo}
+              onChange={(event) => setDateTo(event.target.value)}
+              className="h-9 w-full md:w-36"
+            />
+          </div>
+          <Button type="button" className="h-9" onClick={applyDateFilter}>
+            <SlidersHorizontal className="mr-2 h-4 w-4" />
+            Filtrar
+          </Button>
+          <Button type="button" variant="outline" className="h-9" onClick={clearFilters}>
+            Limpar filtros
+          </Button>
         </div>
 
         <div className="flex gap-2 flex-wrap md:flex-nowrap">
@@ -299,24 +361,21 @@ function NotasFiscaisList() {
 
         {!isLoading && (
           <Badge variant="secondary">
-            {filtered.length} {filtered.length === 1 ? "nota" : "notas"}
+            {filtered.length} {filtered.length === 1 ? "nota" : "notas"} | Total:{" "}
+            {formatCurrency(totalValue)}
           </Badge>
         )}
       </div>
 
       {isLoading && (
         <Card className="p-8 text-center mt-4">
-          <p className="text-sm text-muted-foreground">
-            Carregando notas fiscais...
-          </p>
+          <p className="text-sm text-muted-foreground">Carregando notas fiscais...</p>
         </Card>
       )}
 
       {error && (
         <Card className="p-8 text-center mt-4 border-destructive">
-          <p className="text-sm text-destructive">
-            Não foi possível carregar as notas fiscais.
-          </p>
+          <p className="text-sm text-destructive">Não foi possível carregar as notas fiscais.</p>
           <p className="text-xs text-muted-foreground mt-2">
             {error instanceof Error ? error.message : "Erro desconhecido"}
           </p>
@@ -344,59 +403,43 @@ function NotasFiscaisList() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-primary">
-                      NF {nota.nf}
-                    </span>
+                    <span className="font-bold text-primary">NF {nota.nf}</span>
 
-                    {nota.fornecedor && (
-                      <Badge variant="secondary">
-                        {nota.fornecedor}
-                      </Badge>
-                    )}
+                    {nota.fornecedor && <Badge variant="secondary">{nota.fornecedor}</Badge>}
                   </div>
 
                   {nota.identificacao && (
-                    <p className="text-sm mt-1 truncate">
-                      {nota.identificacao}
-                    </p>
+                    <p className="text-sm mt-1 truncate">Equipamento: {nota.identificacao}</p>
+                  )}
+
+                  {nota.descricao_produto && (
+                    <p className="text-sm mt-1 truncate">Descrição: {nota.descricao_produto}</p>
                   )}
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-xs text-muted-foreground">
                     <div>
-                      <span className="block">Data</span>
-                      <strong className="text-foreground">
-                        {formatDate(nota.data)}
-                      </strong>
+                      <span className="block">Data de Emissão</span>
+                      <strong className="text-foreground">{formatDate(nota.data)}</strong>
                     </div>
 
                     <div>
                       <span className="block">Valor</span>
-                      <strong className="text-foreground">
-                        {formatCurrency(nota.valor)}
-                      </strong>
+                      <strong className="text-foreground">{formatCurrency(nota.valor)}</strong>
                     </div>
 
                     <div>
                       <span className="block">Venc. 01</span>
-                      <strong className="text-foreground">
-                        {formatDate(nota.venc01)}
-                      </strong>
+                      <strong className="text-foreground">{formatDate(nota.venc01)}</strong>
                     </div>
 
                     <div>
                       <span className="block">Venc. 02</span>
-                      <strong className="text-foreground">
-                        {formatDate(nota.venc02)}
-                      </strong>
+                      <strong className="text-foreground">{formatDate(nota.venc02)}</strong>
                     </div>
                   </div>
                 </div>
 
-                <Link
-                  to="/notas-fiscais/$id"
-                  params={{ id: nota.id }}
-                  className="shrink-0"
-                >
+                <Link to="/notas-fiscais/$id" params={{ id: nota.id }} className="shrink-0">
                   <Button variant="outline" size="sm">
                     Visualizar
                   </Button>
