@@ -11,14 +11,6 @@ import { Search, FileText, Plus, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ImportExcelDialog } from "@/components/ImportExcelDialog";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/notas-fiscais/")({
@@ -123,95 +115,97 @@ function NewNotaFiscalDialog({
     },
   });
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="z-[60] max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] overflow-y-auto sm:max-h-[90vh] sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Nova Nota Fiscal</DialogTitle>
-          <DialogDescription>Preencha os dados principais da nota fiscal.</DialogDescription>
-        </DialogHeader>
-        <form
-          className="grid gap-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            createMutation.mutate();
-          }}
-        >
-          <div className="grid gap-2 sm:grid-cols-2">
-            <div className="grid gap-2">
-              <Label htmlFor="nota-nf">Número da NF *</Label>
-              <Input
-                id="nota-nf"
-                required
-                value={form.nf}
-                onChange={(event) => setForm({ ...form, nf: event.target.value })}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="nota-data">Data de Emissão</Label>
-              <Input
-                id="nota-data"
-                type="date"
-                value={form.data}
-                onChange={(event) => setForm({ ...form, data: event.target.value })}
-              />
-            </div>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <div className="grid gap-2">
-              <Label htmlFor="nota-fornecedor">Fornecedor</Label>
-              <Input
-                id="nota-fornecedor"
-                value={form.fornecedor}
-                onChange={(event) => setForm({ ...form, fornecedor: event.target.value })}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="nota-identificacao">Identificação</Label>
-              <Input
-                id="nota-identificacao"
-                value={form.identificacao}
-                onChange={(event) => setForm({ ...form, identificacao: event.target.value })}
-              />
-            </div>
-          </div>
+    <Card className="mt-4 border-primary/20 p-4 shadow-sm sm:p-6">
+      <div className="mb-4">
+        <h2 className="text-lg font-semibold">Nova Nota Fiscal</h2>
+        <p className="text-sm text-muted-foreground">
+          Preencha os dados principais da nota fiscal.
+        </p>
+      </div>
+      <form
+        className="grid gap-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          createMutation.mutate();
+        }}
+      >
+        <div className="grid gap-2 sm:grid-cols-2">
           <div className="grid gap-2">
-            <Label htmlFor="nota-descricao-produto">Descrição dos Produtos</Label>
-            <Textarea
-              id="nota-descricao-produto"
-              value={form.descricao_produto}
-              onChange={(event) => setForm({ ...form, descricao_produto: event.target.value })}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="nota-valor">Valor</Label>
+            <Label htmlFor="nota-nf">Número da NF *</Label>
             <Input
-              id="nota-valor"
-              inputMode="decimal"
-              placeholder="0,00"
-              value={form.valor}
-              onChange={(event) => setForm({ ...form, valor: event.target.value })}
+              id="nota-nf"
+              required
+              value={form.nf}
+              onChange={(event) => setForm({ ...form, nf: event.target.value })}
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="nota-observacao">Observação</Label>
-            <Textarea
-              id="nota-observacao"
-              value={form.observacao}
-              onChange={(event) => setForm({ ...form, observacao: event.target.value })}
+            <Label htmlFor="nota-data">Data de Emissão</Label>
+            <Input
+              id="nota-data"
+              type="date"
+              value={form.data}
+              onChange={(event) => setForm({ ...form, data: event.target.value })}
             />
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={createMutation.isPending}>
-              {createMutation.isPending ? "Salvando..." : "Cadastrar nota"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-2">
+            <Label htmlFor="nota-fornecedor">Fornecedor</Label>
+            <Input
+              id="nota-fornecedor"
+              value={form.fornecedor}
+              onChange={(event) => setForm({ ...form, fornecedor: event.target.value })}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="nota-identificacao">Identificação</Label>
+            <Input
+              id="nota-identificacao"
+              value={form.identificacao}
+              onChange={(event) => setForm({ ...form, identificacao: event.target.value })}
+            />
+          </div>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="nota-descricao-produto">Descrição dos Produtos</Label>
+          <Textarea
+            id="nota-descricao-produto"
+            value={form.descricao_produto}
+            onChange={(event) => setForm({ ...form, descricao_produto: event.target.value })}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="nota-valor">Valor</Label>
+          <Input
+            id="nota-valor"
+            inputMode="decimal"
+            placeholder="0,00"
+            value={form.valor}
+            onChange={(event) => setForm({ ...form, valor: event.target.value })}
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="nota-observacao">Observação</Label>
+          <Textarea
+            id="nota-observacao"
+            value={form.observacao}
+            onChange={(event) => setForm({ ...form, observacao: event.target.value })}
+          />
+        </div>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={createMutation.isPending}>
+            {createMutation.isPending ? "Salvando..." : "Cadastrar nota"}
+          </Button>
+        </div>
+      </form>
+    </Card>
   );
 }
 
