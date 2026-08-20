@@ -45,64 +45,83 @@ interface ImportData {
 }
 
 /**
- * Normaliza nomes de colunas:
+ * Normaliza o nome da coluna:
  * - remove acentos
+ * - transforma em minúsculas
  * - remove espaços
- * - remove pontuação
- * - converte para minúsculas
+ * - remove caracteres especiais
  */
 function normalizeColumnName(value: string): string {
-  return value
+  return String(value ?? "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
+    .trim()
     .replace(/[^a-z0-9]/g, "");
 }
 
 /**
  * Converte datas do Excel para YYYY-MM-DD.
  */
-function parseExcelDate(value: any): string | null {
+function parseExcelDate(value: unknown): string | null {
   if (value === null || value === undefined || value === "") {
     return null;
   }
 
-  // Data JavaScript
+  // Data já reconhecida pelo XLSX como objeto Date
   if (value instanceof Date && !isNaN(value.getTime())) {
-    return value.toISOString().split("T")[0];
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, "0");
+    const day = String(value.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
   }
 
-  // Número serial do Excel
+  // Número serial de data do Excel
   if (typeof value === "number") {
-    const date = XLSX.SSF.parse_date_code(value);
+    try {
+      const date = XLSX.SSF.parse_date_code(value);
 
-    if (date) {
-      return `${date.y}-${String(date.m).padStart(2, "0")}-${String(
-        date.d
-      ).padStart(2, "0")}`;
+      if (date) {
+        return `${date.y}-${String(date.m).padStart(2, "0")}-${String(
+          date.d
+        ).padStart(2, "0")}`;
+      }
+    } catch {
+      return null;
     }
+  }
 
+  if (typeof value !== "string") {
     return null;
   }
 
-  const text = String(value).trim();
+  let text = value.trim();
 
-  if (!text) return null;
-
-  // YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
-    return text;
+  if (!text) {
+    return null;
   }
 
-  // DD/MM/YYYY ou DD/MM/YY
-  let match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  // Formato YYYY-MM-DD
+  let match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+
+  if (match) {
+    const [, year, month, day] = match;
+
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(
+      2,
+      "0"
+    )}`;
+  }
+
+  // Formato DD/MM/YYYY ou DD/MM/YY
+  match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
 
   if (match) {
     let [, day, month, year] = match;
 
     if (year.length === 2) {
-      const yearNumber = Number(year);
-      year = yearNumber >= 50 ? `19${year}` : `20${year}`;
+      year = Number(year) >= 50 ? `19${year}` : `20${year}`;
     }
 
     return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(
@@ -111,16 +130,11 @@ function parseExcelDate(value: any): string | null {
     )}`;
   }
 
-  // DD-MM-YYYY ou DD-MM-YY
-  match = text.match(/^(\d{1,2})-(\d{1,2})-(\d{2,4})$/);
+  // Formato DD-MM-YYYY
+  match = text.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
 
   if (match) {
-    let [, day, month, year] = match;
-
-    if (year.length === 2) {
-      const yearNumber = Number(year);
-      year = yearNumber >= 50 ? `19${year}` : `20${year}`;
-    }
+    const [, day, month, year] = match;
 
     return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(
       2,
@@ -128,53 +142,70 @@ function parseExcelDate(value: any): string | null {
     )}`;
   }
 
-  // Datas como 25-ago-20
+  // Meses abreviados em português:
+  // 25-ago-20
+  // 25-ago-2020
   const months: Record<string, string> = {
     jan: "01",
+    janeiro: "01",
     fev: "02",
+    fevereiro: "02",
     mar: "03",
+    marco: "03",
+    abril: "04",
     abr: "04",
     mai: "05",
+    maio: "05",
     jun: "06",
+    junho: "06",
     jul: "07",
+    julho: "07",
     ago: "08",
+    agosto: "08",
     set: "09",
+    setembro: "09",
     out: "10",
+    outubro: "10",
     nov: "11",
+    novembro: "11",
     dez: "12",
+    dezembro: "12",
   };
 
-  match = text
-    .toLowerCase()
+  const normalizedText = text
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .match(/^(\d{1,2})-([a-z]{3})-(\d{2,4})$/);
+    .toLowerCase();
+
+  match = normalizedText.match(/^(\d{1,2})[-\/\s]([a-z]+)[-\/\s](\d{2}|\d{4})$/);
 
   if (match) {
-    let [, day, monthText, year] = match;
+    const [, day, monthText, yearText] = match;
     const month = months[monthText];
 
-    if (!month) return null;
+    if (month) {
+      const year =
+        yearText.length === 2
+          ? Number(yearText) >= 50
+            ? `19${yearText}`
+            : `20${yearText}`
+          : yearText;
 
-    if (year.length === 2) {
-      const yearNumber = Number(year);
-      year = yearNumber >= 50 ? `19${year}` : `20${year}`;
+      return `${year}-${month}-${String(day).padStart(2, "0")}`;
     }
-
-    return `${year}-${month}-${String(day).padStart(2, "0")}`;
   }
 
   return null;
 }
 
 /**
- * Converte valores brasileiros:
- * R$ 1.011,00
+ * Converte valores monetários brasileiros:
+ * R$ 608,00
  * 1.011,00
  * 608,00
  * 608.00
  */
-function parseExcelValue(value: any): number | null {
+function parseExcelValue(value: unknown): number | null {
   if (value === null || value === undefined || value === "") {
     return null;
   }
@@ -183,17 +214,20 @@ function parseExcelValue(value: any): number | null {
     return Number.isFinite(value) ? value : null;
   }
 
-  let text = String(value)
-    .trim()
+  let text = String(value).trim();
+
+  if (!text) {
+    return null;
+  }
+
+  text = text
+    .replace(/R\$/gi, "")
     .replace(/\s/g, "")
-    .replace(/R\$/gi, "");
+    .trim();
 
-  if (!text) return null;
-
-  // Formato brasileiro: 1.011,00
+  // Número brasileiro: 1.011,00
   if (text.includes(",")) {
-    text = text.replace(/\./g, "").replace(",", ",");
-    text = text.replace(",", ".");
+    text = text.replace(/\./g, "").replace(",", ".");
   }
 
   const number = Number(text);
@@ -201,36 +235,48 @@ function parseExcelValue(value: any): number | null {
   return Number.isFinite(number) ? number : null;
 }
 
-function normalizeData(data: any[]): ImportData[] {
+/**
+ * Normaliza os dados da planilha.
+ */
+function normalizeData(data: Record<string, unknown>[]): ImportData[] {
   return data
-    .map((row) => ({
-      nf: String(row.nf ?? "").trim(),
+    .map((row) => {
+      const normalizedRow: Record<string, unknown> = {};
 
-      data: parseExcelDate(row.data),
+      Object.entries(row).forEach(([key, value]) => {
+        normalizedRow[normalizeColumnName(key)] = value;
+      });
 
-      fornecedor: row.fornecedor
-        ? String(row.fornecedor).trim()
-        : null,
+      return {
+        nf: String(normalizedRow.nf ?? "").trim(),
 
-      identificacao:
-        row.identificacao !== null &&
-        row.identificacao !== undefined &&
-        row.identificacao !== ""
-          ? String(row.identificacao).trim()
+        data: parseExcelDate(normalizedRow.data),
+
+        fornecedor: normalizedRow.fornecedor
+          ? String(normalizedRow.fornecedor).trim()
           : null,
 
-      valor: parseExcelValue(row.valor),
+        identificacao: normalizedRow.identificacao
+          ? String(normalizedRow.identificacao).trim()
+          : null,
 
-      observacao: row.observacao
-        ? String(row.observacao).trim()
-        : null,
+        valor: parseExcelValue(normalizedRow.valor),
 
-      venc01: parseExcelDate(row.venc01),
-      venc02: parseExcelDate(row.venc02),
-      venc03: parseExcelDate(row.venc03),
-      venc04: parseExcelDate(row.venc04),
-      venc05: parseExcelDate(row.venc05),
-    }))
+        observacao: normalizedRow.observacao
+          ? String(normalizedRow.observacao).trim()
+          : null,
+
+        venc01: parseExcelDate(normalizedRow.venc01),
+
+        venc02: parseExcelDate(normalizedRow.venc02),
+
+        venc03: parseExcelDate(normalizedRow.venc03),
+
+        venc04: parseExcelDate(normalizedRow.venc04),
+
+        venc05: parseExcelDate(normalizedRow.venc05),
+      };
+    })
     .filter((row) => row.nf);
 }
 
@@ -242,7 +288,9 @@ export function ImportExcelDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const fileInput = useRef<HTMLInputElement>(null);
+
   const qc = useQueryClient();
+
   const [previewData, setPreviewData] = useState<ImportData[]>([]);
 
   const importMutation = useMutation({
@@ -255,7 +303,9 @@ export function ImportExcelDialog({
         .from("notas_fiscais")
         .insert(data);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
     },
 
     onSuccess: (_, data) => {
@@ -268,10 +318,13 @@ export function ImportExcelDialog({
       });
 
       setPreviewData([]);
+
       onOpenChange(false);
     },
 
     onError: (error) => {
+      console.error("Erro ao importar notas fiscais:", error);
+
       toast.error(
         error instanceof Error
           ? error.message
@@ -285,147 +338,112 @@ export function ImportExcelDialog({
   ) {
     const file = event.target.files?.[0];
 
-    if (!file) return;
-
-    try {
-      const reader = new FileReader();
-
-      reader.onload = (e) => {
-        try {
-          const data = e.target?.result;
-
-          const workbook = XLSX.read(data, {
-            type: "binary",
-            cellDates: true,
-          });
-
-          const worksheet =
-            workbook.Sheets[workbook.SheetNames[0]];
-
-          if (!worksheet) {
-            toast.error("Planilha vazia");
-            return;
-          }
-
-          /*
-           * raw: false faz o XLSX respeitar a forma como
-           * os valores aparecem no Excel.
-           */
-          const json = XLSX.utils.sheet_to_json(worksheet, {
-            defval: "",
-            raw: false,
-          });
-
-          if (json.length === 0) {
-            toast.error("Planilha vazia");
-            return;
-          }
-
-          /*
-           * Cria um mapa de colunas:
-           *
-           * Identificação -> identificacao
-           * OBSERVAÇÃO   -> observacao
-           * VALOR        -> valor
-           * VENC01       -> venc01
-           */
-          const firstRow = json[0] as Record<string, unknown>;
-
-          const columnMap: Record<string, string> = {};
-
-          Object.keys(firstRow).forEach((originalColumn) => {
-            const normalized = normalizeColumnName(originalColumn);
-
-            if (normalized === "nf") {
-              columnMap[originalColumn] = "nf";
-            } else if (normalized === "data") {
-              columnMap[originalColumn] = "data";
-            } else if (normalized === "fornecedor") {
-              columnMap[originalColumn] = "fornecedor";
-            } else if (normalized === "identificacao") {
-              columnMap[originalColumn] = "identificacao";
-            } else if (normalized === "valor") {
-              columnMap[originalColumn] = "valor";
-            } else if (
-              normalized === "observacao" &&
-              !Object.values(columnMap).includes("observacao")
-            ) {
-              /*
-               * Sua planilha possui duas colunas OBSERVAÇÃO.
-               * Usamos somente a primeira.
-               */
-              columnMap[originalColumn] = "observacao";
-            } else if (normalized === "venc01") {
-              columnMap[originalColumn] = "venc01";
-            } else if (normalized === "venc02") {
-              columnMap[originalColumn] = "venc02";
-            } else if (normalized === "venc03") {
-              columnMap[originalColumn] = "venc03";
-            } else if (normalized === "venc04") {
-              columnMap[originalColumn] = "venc04";
-            } else if (normalized === "venc05") {
-              columnMap[originalColumn] = "venc05";
-            }
-          });
-
-          const foundColumns = Object.values(columnMap);
-
-          const missingColumns = EXPECTED_COLUMNS.filter(
-            (column) => !foundColumns.includes(column)
-          );
-
-          if (missingColumns.length > 0) {
-            toast.error(
-              `Colunas faltando: ${missingColumns.join(", ")}`
-            );
-            return;
-          }
-
-          /*
-           * Converte todas as linhas para os nomes esperados
-           * pelo banco de dados.
-           */
-          const normalizedRows = json.map((row: any) => {
-            const normalizedRow: Record<string, any> = {};
-
-            Object.keys(row).forEach((originalColumn) => {
-              const targetColumn = columnMap[originalColumn];
-
-              if (targetColumn) {
-                normalizedRow[targetColumn] = row[originalColumn];
-              }
-            });
-
-            return normalizedRow;
-          });
-
-          const normalized = normalizeData(normalizedRows);
-
-          if (normalized.length === 0) {
-            toast.error(
-              "Nenhuma linha com NF válida encontrada"
-            );
-            return;
-          }
-
-          setPreviewData(normalized);
-        } catch (error) {
-          toast.error(
-            error instanceof Error
-              ? error.message
-              : "Erro ao processar a planilha"
-          );
-        }
-      };
-
-      reader.readAsBinaryString(file);
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Erro ao ler arquivo"
-      );
+    if (!file) {
+      return;
     }
+
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      try {
+        const data = e.target?.result;
+
+        if (!data) {
+          toast.error("Não foi possível ler o arquivo");
+          return;
+        }
+
+        const workbook = XLSX.read(data, {
+          type: "binary",
+          cellDates: true,
+        });
+
+        if (!workbook.SheetNames.length) {
+          toast.error("Planilha vazia");
+          return;
+        }
+
+        const worksheet =
+          workbook.Sheets[workbook.SheetNames[0]];
+
+        if (!worksheet) {
+          toast.error("Planilha vazia");
+          return;
+        }
+
+        const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(
+          worksheet,
+          {
+            defval: null,
+          }
+        );
+
+        if (json.length === 0) {
+          toast.error("Planilha vazia");
+          return;
+        }
+
+        /**
+         * Normaliza os nomes das colunas antes da validação.
+         *
+         * Exemplo:
+         * "Identificação" -> "identificacao"
+         * "OBSERVAÇÃO"   -> "observacao"
+         * "VENC01"       -> "venc01"
+         * " VALOR "      -> "valor"
+         */
+        const firstRow = json[0];
+
+        const columns = Object.keys(firstRow).map(
+          normalizeColumnName
+        );
+
+        const missingColumns = EXPECTED_COLUMNS.filter(
+          (column) => !columns.includes(column)
+        );
+
+        if (missingColumns.length > 0) {
+          toast.error(
+            `Colunas faltando: ${missingColumns.join(", ")}`
+          );
+
+          console.error("Colunas encontradas:", columns);
+          console.error("Colunas faltando:", missingColumns);
+
+          return;
+        }
+
+        const normalized = normalizeData(json);
+
+        if (normalized.length === 0) {
+          toast.error(
+            "Nenhuma linha com NF válida encontrada"
+          );
+
+          return;
+        }
+
+        setPreviewData(normalized);
+
+        toast.success(
+          `${normalized.length} linha(s) encontrada(s) na planilha`
+        );
+      } catch (error) {
+        console.error("Erro ao processar Excel:", error);
+
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Erro ao ler arquivo Excel"
+        );
+      }
+    };
+
+    reader.onerror = () => {
+      toast.error("Erro ao ler o arquivo");
+    };
+
+    reader.readAsBinaryString(file);
 
     if (fileInput.current) {
       fileInput.current.value = "";
@@ -444,17 +462,23 @@ export function ImportExcelDialog({
 
       <AlertDialog
         open={open && previewData.length > 0}
-        onOpenChange={onOpenChange}
+        onOpenChange={(value) => {
+          if (!value) {
+            setPreviewData([]);
+          }
+
+          onOpenChange(value);
+        }}
       >
-        <AlertDialogContent className="max-w-lg">
+        <AlertDialogContent className="max-w-3xl">
           <AlertDialogHeader>
             <AlertDialogTitle>
               Confirmar Importação
             </AlertDialogTitle>
 
             <AlertDialogDescription>
-              {previewData.length} nota(s) fiscal(is) será(ão)
-              importada(s).
+              {previewData.length} nota(s) fiscal(is)
+              será(ão) importada(s).
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -462,33 +486,73 @@ export function ImportExcelDialog({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left p-2">NF</th>
+                  <th className="text-left p-2">
+                    Identificação
+                  </th>
+
+                  <th className="text-left p-2">
+                    Data
+                  </th>
+
+                  <th className="text-left p-2">
+                    NF
+                  </th>
+
                   <th className="text-left p-2">
                     Fornecedor
                   </th>
-                  <th className="text-left p-2">Valor</th>
+
+                  <th className="text-left p-2">
+                    Valor
+                  </th>
+
+                  <th className="text-left p-2">
+                    Venc. 01
+                  </th>
                 </tr>
               </thead>
 
               <tbody>
-                {previewData.slice(0, 10).map((row, idx) => (
-                  <tr key={idx} className="border-b">
-                    <td className="p-2">{row.nf}</td>
+                {previewData
+                  .slice(0, 10)
+                  .map((row, idx) => (
+                    <tr
+                      key={idx}
+                      className="border-b"
+                    >
+                      <td className="p-2">
+                        {row.identificacao ?? "—"}
+                      </td>
 
-                    <td className="p-2 text-muted-foreground">
-                      {row.fornecedor ?? "—"}
-                    </td>
+                      <td className="p-2">
+                        {row.data ?? "—"}
+                      </td>
 
-                    <td className="p-2 text-muted-foreground">
-                      {row.valor !== null
-                        ? new Intl.NumberFormat("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          }).format(row.valor)
-                        : "—"}
-                    </td>
-                  </tr>
-                ))}
+                      <td className="p-2">
+                        {row.nf}
+                      </td>
+
+                      <td className="p-2 text-muted-foreground">
+                        {row.fornecedor ?? "—"}
+                      </td>
+
+                      <td className="p-2 text-muted-foreground">
+                        {row.valor !== null
+                          ? new Intl.NumberFormat(
+                              "pt-BR",
+                              {
+                                style: "currency",
+                                currency: "BRL",
+                              }
+                            ).format(row.valor)
+                          : "—"}
+                      </td>
+
+                      <td className="p-2">
+                        {row.venc01 ?? "—"}
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
 
@@ -514,7 +578,9 @@ export function ImportExcelDialog({
               }}
               disabled={importMutation.isPending}
             >
-              Importar
+              {importMutation.isPending
+                ? "Importando..."
+                : "Importar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
