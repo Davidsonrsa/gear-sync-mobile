@@ -1404,7 +1404,7 @@ export function ImportExcelDialog({
                   Cancelar
                 </button>
 
-                {/* BOTÃO IMPORTAR */}
+                           {/* BOTÃO IMPORTAR */}
                 <button
                   type="button"
                   disabled={
@@ -1416,31 +1416,29 @@ export function ImportExcelDialog({
                       importMutation.mutate(previewData);
                     }
                   }}
-                  style={{
-                    position: "relative",
-                    zIndex: 99999999,
-                    display: "inline-flex",
-                    height: "44px",
-                    minWidth: "190px",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: importMutation.isPending
-                      ? "not-allowed"
-                      : "pointer",
-                    border: "1px solid #1d4ed8",
-                    borderRadius: "6px",
-                    backgroundColor: "#2563eb",
-                    color: "#ffffff",
-                    paddingLeft: "24px",
-                    paddingRight: "24px",
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    opacity: importMutation.isPending ? 0.5 : 1,
-                    boxShadow: "0 4px 6px -1px rgba(0,0,0,0.15)",
-                    pointerEvents: importMutation.isPending
-                      ? "none"
-                      : "auto",
-                  }}
+                  className="
+                    relative
+                    z-[101]
+                    inline-flex
+                    h-11
+                    min-w-[190px]
+                    items-center
+                    justify-center
+                    rounded-md
+                    border
+                    !border-blue-700
+                    !bg-blue-600
+                    px-6
+                    text-sm
+                    font-bold
+                    !text-white
+                    shadow-sm
+                    transition-colors
+                    hover:!bg-blue-700
+                    disabled:pointer-events-none
+                    disabled:!opacity-50
+                    cursor-pointer
+                  "
                 >
                   {importMutation.isPending
                     ? `Importando ${importProgress.toLocaleString("pt-BR")} / ${previewData.length.toLocaleString("pt-BR")}...`
