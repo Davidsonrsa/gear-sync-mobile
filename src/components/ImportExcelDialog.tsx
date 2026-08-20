@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as XLSX from "xlsx";
@@ -282,11 +282,67 @@ export function ImportExcelDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const fileInput = useRef<HTMLInputElement>(null);
+  // Ã‚ncora "invisÃ­vel" sÃ³ para descobrir a raiz real do DOM
+  // (document normal OU um ShadowRoot, caso o app rode isolado
+  // em Shadow DOM, comum em ambientes de preview tipo Lovable).
+  const anchorRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
 
   const [previewData, setPreviewData] = useState<ImportData[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+
+  /*
+   * ==========================================================
+   * DESCOBRE O CONTAINER CORRETO PARA O PORTAL
+   *
+   * Se apenas usarmos document.body, e o app estiver isolado
+   * dentro de um Shadow DOM (ou de um container com estilos
+   * escopados), o modal perde todo o CSS do app ao ser
+   * portado â€” Ã© isso que causava o efeito "sem estilo /
+   * transparente" na tela anterior.
+   *
+   * Aqui subimos a Ã¡rvore a partir do prÃ³prio componente
+   * (getRootNode) para achar a raiz real: se for um
+   * ShadowRoot, criamos/reaproveitamos um <div> dentro dele;
+   * caso contrÃ¡rio, usamos document.body normalmente.
+   * ==========================================================
+   */
+
+  useEffect(() => {
+    const node = anchorRef.current;
+    if (!node) return;
+
+    const root = node.getRootNode();
+    const PORTAL_ID = "import-excel-portal-root";
+
+    let hostParent: Document | ShadowRoot | HTMLElement;
+
+    if (root instanceof ShadowRoot) {
+      hostParent = root;
+    } else {
+      hostParent = document.body;
+    }
+
+    let container = (hostParent as Document | ShadowRoot).querySelector?.(
+      `#${PORTAL_ID}`
+    ) as HTMLElement | null;
+
+    if (!container) {
+      container = document.createElement("div");
+      container.id = PORTAL_ID;
+      hostParent.appendChild(container);
+    }
+
+    setPortalContainer(container);
+
+    return () => {
+      // NÃ£o remove o container entre re-renders â€” apenas
+      // quando o app inteiro desmonta seria necessÃ¡rio limpar,
+      // e isso nÃ£o costuma acontecer em SPA.
+    };
+  }, []);
 
   /*
    * ==========================================================
@@ -642,6 +698,10 @@ export function ImportExcelDialog({
 
   return (
     <>
+      {/* Elemento Ã¢ncora, invisÃ­vel, sÃ³ para localizar a raiz
+          real do DOM (document ou ShadowRoot) via getRootNode(). */}
+      <span ref={anchorRef} style={{ display: "none" }} aria-hidden="true" />
+
       <input
         ref={fileInput}
         type="file"
@@ -650,11 +710,12 @@ export function ImportExcelDialog({
         className="hidden"
       />
 
-      {/* Renderizado via portal direto no <body>, fora de qualquer
-          Dialog/Sheet/AlertDialog ancestral que possa aplicar
-          transform, opacity de transiÃ§Ã£o ou backdrop-filter. */}
-      {typeof document !== "undefined" && modalContent
-        ? createPortal(modalContent, document.body)
+      {/* Renderizado via portal dentro da raiz correta de estilos
+          (document.body ou o ShadowRoot do app), escapando apenas
+          de ancestrais problemÃ¡ticos (Dialog/Sheet abertos, transform,
+          opacity em transiÃ§Ã£o), sem perder o CSS do app. */}
+      {portalContainer && modalContent
+        ? createPortal(modalContent, portalContainer)
         : null}
 
       <Button
