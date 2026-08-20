@@ -1355,107 +1355,107 @@ export function ImportExcelDialog({
                   importados.
                 </div>
               )}
-{/* RODAPÉ */}
+              {/* RODAPÉ */}
 
-<div
-  style={{
-    position: "relative",
-    zIndex: 9999999,
-    display: "flex",
-    minHeight: "72px",
-    flexShrink: 0,
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "16px",
-    borderTop: "1px solid #d1d5db",
-    backgroundColor: "#ffffff",
-    padding: "16px 20px",
-  }}
->
-  {/* BOTÃO CANCELAR */}
+              <div
+                style={{
+                  position: "relative",
+                  zIndex: 9999999,
+                  display: "flex",
+                  minHeight: "72px",
+                  flexShrink: 0,
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "16px",
+                  borderTop: "1px solid #d1d5db",
+                  backgroundColor: "#ffffff",
+                  padding: "16px 20px",
+                }}
+              >
+                {/* BOTÃO CANCELAR */}
+                <button
+                  type="button"
+                  disabled={importMutation.isPending}
+                  onClick={closePreview}
+                  className="
+                    relative
+                    z-[101]
+                    inline-flex
+                    h-11
+                    min-w-[110px]
+                    cursor-pointer
+                    items-center
+                    justify-center
+                    rounded-md
+                    border
+                    border-gray-300
+                    bg-white
+                    px-5
+                    text-sm
+                    font-medium
+                    text-gray-700
+                    shadow-sm
+                    transition-colors
+                    hover:bg-gray-100
+                    disabled:pointer-events-none
+                    disabled:opacity-50
+                  "
+                >
+                  Cancelar
+                </button>
 
-  <button
-    type="button"
-    disabled={importMutation.isPending}
-    onClick={closePreview}
-    className="
-      relative
-      z-[101]
-      inline-flex
-      h-11
-      min-w-[110px]
-      cursor-pointer
-      items-center
-      justify-center
-      rounded-md
-      border
-      border-gray-300
-      bg-white
-      px-5
-      text-sm
-      font-medium
-      text-gray-700
-      shadow-sm
-      transition-colors
-      hover:bg-gray-100
-      disabled:pointer-events-none
-      disabled:opacity-50
-    "
-  >
-    Cancelar
-  </button>
+                {/* BOTÃO IMPORTAR */}
+                <button
+                  type="button"
+                  disabled={
+                    importMutation.isPending ||
+                    previewData.length === 0
+                  }
+                  onClick={() => {
+                    if (!importMutation.isPending) {
+                      importMutation.mutate(previewData);
+                    }
+                  }}
+                  style={{
+                    position: "relative",
+                    zIndex: 99999999,
+                    display: "inline-flex",
+                    height: "44px",
+                    minWidth: "190px",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: importMutation.isPending
+                      ? "not-allowed"
+                      : "pointer",
+                    border: "1px solid #1d4ed8",
+                    borderRadius: "6px",
+                    backgroundColor: "#2563eb",
+                    color: "#ffffff",
+                    paddingLeft: "24px",
+                    paddingRight: "24px",
+                    fontSize: "14px",
+                    fontWeight: 700,
+                    opacity: importMutation.isPending ? 0.5 : 1,
+                    boxShadow: "0 4px 6px -1px rgba(0,0,0,0.15)",
+                    pointerEvents: importMutation.isPending
+                      ? "none"
+                      : "auto",
+                  }}
+                >
+                  {importMutation.isPending
+                    ? `Importando ${importProgress.toLocaleString("pt-BR")} / ${previewData.length.toLocaleString("pt-BR")}...`
+                    : `Importar ${previewData.length.toLocaleString("pt-BR")} notas`}
+                </button>
+              </div>
+              {/* fecha PAINEL */}
+            </div>
+            {/* fecha ÁREA CENTRAL */}
+          </div>
+          {/* fecha wrapper externo fixed inset-0 z-[999999] */}
+        </div>
+      )
+      : null;
 
-{/* BOTÃO IMPORTAR */}
-
-<button
-  type="button"
-  disabled={
-    importMutation.isPending ||
-    previewData.length === 0
-  }
-  onClick={() => {
-    if (!importMutation.isPending) {
-      importMutation.mutate(previewData);
-    }
-  }}
-  style={{
-    position: "relative",
-    zIndex: 99999999,
-    display: "inline-flex",
-    height: "44px",
-    minWidth: "190px",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: importMutation.isPending
-      ? "not-allowed"
-      : "pointer",
-    border: "1px solid #1d4ed8",
-    borderRadius: "6px",
-    backgroundColor: "#2563eb",
-    color: "#ffffff",
-    paddingLeft: "24px",
-    paddingRight: "24px",
-    fontSize: "14px",
-    fontWeight: 700,
-    opacity: importMutation.isPending ? 0.5 : 1,
-    boxShadow:
-      "0 4px 6px -1px rgba(0,0,0,0.15)",
-    pointerEvents: importMutation.isPending
-      ? "none"
-      : "auto",
-  }}
->
-  {importMutation.isPending
-    ? `Importando ${importProgress.toLocaleString(
-        "pt-BR"
-      )} / ${previewData.length.toLocaleString(
-        "pt-BR"
-      )}...`
-    : `Importar ${previewData.length.toLocaleString(
-        "pt-BR"
-      )} notas`}
-</button>
-</>
   /*
    * ==========================================================
    * INTERFACE
