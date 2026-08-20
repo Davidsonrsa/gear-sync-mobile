@@ -16,6 +16,22 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+/**
+ * Colunas obrigatórias da planilha.
+ *
+ * A planilha pode ter:
+ * DATA
+ * NF
+ * FORNECEDOR
+ * OBSERVAÇÃO
+ * IDENTIFICAÇÃO
+ * VALOR
+ * VENC01
+ * VENC02
+ * VENC03
+ * VENC04
+ * VENC05
+ */
 const EXPECTED_COLUMNS = [
   "nf",
   "data",
@@ -45,11 +61,15 @@ interface ImportData {
 }
 
 /**
- * Normaliza o nome da coluna:
- * - remove acentos
- * - transforma em minúsculas
- * - remove espaços
- * - remove caracteres especiais
+ * Normaliza o nome das colunas.
+ *
+ * Exemplos:
+ *
+ * "Identificação" -> "identificacao"
+ * "IDENTIFICAÇÃO" -> "identificacao"
+ * "OBSERVAÇÃO"    -> "observacao"
+ * " VALOR "       -> "valor"
+ * "VENC01"        -> "venc01"
  */
 function normalizeColumnName(value: string): string {
   return String(value ?? "")
@@ -62,13 +82,28 @@ function normalizeColumnName(value: string): string {
 
 /**
  * Converte datas do Excel para YYYY-MM-DD.
+ *
+ * Aceita:
+ *
+ * 10/08/20
+ * 10/08/2020
+ * 25-ago-20
+ * 25-ago-2020
+ * 03-set-20
+ * 02/10/2020
+ * YYYY-MM-DD
+ *
+ * Também aceita datas que o XLSX já tenha convertido
+ * para Date ou número serial do Excel.
  */
 function parseExcelDate(value: unknown): string | null {
   if (value === null || value === undefined || value === "") {
     return null;
   }
 
-  // Data já reconhecida pelo XLSX como objeto Date
+  /**
+   * Data como objeto Date
+   */
   if (value instanceof Date && !isNaN(value.getTime())) {
     const year = value.getFullYear();
     const month = String(value.getMonth() + 1).padStart(2, "0");
@@ -77,7 +112,9 @@ function parseExcelDate(value: unknown): string | null {
     return `${year}-${month}-${day}`;
   }
 
-  // Número serial de data do Excel
+  /**
+   * Número serial do Excel
+   */
   if (typeof value === "number") {
     try {
       const date = XLSX.SSF.parse_date_code(value);
@@ -96,13 +133,15 @@ function parseExcelDate(value: unknown): string | null {
     return null;
   }
 
-  let text = value.trim();
+  const text = value.trim();
 
   if (!text) {
     return null;
   }
 
-  // Formato YYYY-MM-DD
+  /**
+   * YYYY-MM-DD
+   */
   let match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
 
   if (match) {
@@ -114,7 +153,9 @@ function parseExcelDate(value: unknown): string | null {
     )}`;
   }
 
-  // Formato DD/MM/YYYY ou DD/MM/YY
+  /**
+   * DD/MM/YYYY ou DD/MM/YY
+   */
   match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
 
   if (match) {
@@ -130,7 +171,9 @@ function parseExcelDate(value: unknown): string | null {
     )}`;
   }
 
-  // Formato DD-MM-YYYY
+  /**
+   * DD-MM-YYYY
+   */
   match = text.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
 
   if (match) {
@@ -142,32 +185,48 @@ function parseExcelDate(value: unknown): string | null {
     )}`;
   }
 
-  // Meses abreviados em português:
-  // 25-ago-20
-  // 25-ago-2020
+  /**
+   * Meses em português.
+   *
+   * Exemplos:
+   * 25-ago-20
+   * 03-set-20
+   */
   const months: Record<string, string> = {
     jan: "01",
     janeiro: "01",
+
     fev: "02",
     fevereiro: "02",
+
     mar: "03",
     marco: "03",
-    abril: "04",
+    março: "03",
+
     abr: "04",
+    abril: "04",
+
     mai: "05",
     maio: "05",
+
     jun: "06",
     junho: "06",
+
     jul: "07",
     julho: "07",
+
     ago: "08",
     agosto: "08",
+
     set: "09",
     setembro: "09",
+
     out: "10",
     outubro: "10",
+
     nov: "11",
     novembro: "11",
+
     dez: "12",
     dezembro: "12",
   };
@@ -177,10 +236,13 @@ function parseExcelDate(value: unknown): string | null {
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
-  match = normalizedText.match(/^(\d{1,2})[-\/\s]([a-z]+)[-\/\s](\d{2}|\d{4})$/);
+  match = normalizedText.match(
+    /^(\d{1,2})[-\/\s]([a-z]+)[-\/\s](\d{2}|\d{4})$/
+  );
 
   if (match) {
     const [, day, monthText, yearText] = match;
+
     const month = months[monthText];
 
     if (month) {
@@ -199,17 +261,25 @@ function parseExcelDate(value: unknown): string | null {
 }
 
 /**
- * Converte valores monetários brasileiros:
+ * Converte valores monetários brasileiros.
+ *
+ * Aceita:
+ *
  * R$ 608,00
+ * R$ 417,51
  * 1.011,00
  * 608,00
  * 608.00
+ * 608
  */
 function parseExcelValue(value: unknown): number | null {
   if (value === null || value === undefined || value === "") {
     return null;
   }
 
+  /**
+   * Se o Excel já entregou como número.
+   */
   if (typeof value === "number") {
     return Number.isFinite(value) ? value : null;
   }
@@ -220,12 +290,24 @@ function parseExcelValue(value: unknown): number | null {
     return null;
   }
 
+  /**
+   * Remove R$, espaços e caracteres invisíveis.
+   */
   text = text
     .replace(/R\$/gi, "")
     .replace(/\s/g, "")
+    .replace(/\u00A0/g, "")
     .trim();
 
-  // Número brasileiro: 1.011,00
+  /**
+   * Número brasileiro:
+   *
+   * 1.011,00
+   *
+   * vira:
+   *
+   * 1011.00
+   */
   if (text.includes(",")) {
     text = text.replace(/\./g, "").replace(",", ".");
   }
@@ -236,13 +318,19 @@ function parseExcelValue(value: unknown): number | null {
 }
 
 /**
- * Normaliza os dados da planilha.
+ * Converte cada linha da planilha para o formato
+ * utilizado pela tabela notas_fiscais.
  */
-function normalizeData(data: Record<string, unknown>[]): ImportData[] {
+function normalizeData(
+  data: Record<string, unknown>[]
+): ImportData[] {
   return data
     .map((row) => {
       const normalizedRow: Record<string, unknown> = {};
 
+      /**
+       * Normaliza todos os nomes das colunas.
+       */
       Object.entries(row).forEach(([key, value]) => {
         normalizedRow[normalizeColumnName(key)] = value;
       });
@@ -277,6 +365,10 @@ function normalizeData(data: Record<string, unknown>[]): ImportData[] {
         venc05: parseExcelDate(normalizedRow.venc05),
       };
     })
+
+    /**
+     * Só importa linhas que possuem NF.
+     */
     .filter((row) => row.nf);
 }
 
@@ -293,6 +385,9 @@ export function ImportExcelDialog({
 
   const [previewData, setPreviewData] = useState<ImportData[]>([]);
 
+  /**
+   * Importação para o Supabase.
+   */
   const importMutation = useMutation({
     mutationFn: async (data: ImportData[]) => {
       if (data.length === 0) {
@@ -304,7 +399,11 @@ export function ImportExcelDialog({
         .insert(data);
 
       if (error) {
-        throw error;
+        console.error("Erro Supabase:", error);
+
+        throw new Error(
+          error.message || "Erro ao gravar as notas fiscais."
+        );
       }
     },
 
@@ -313,6 +412,9 @@ export function ImportExcelDialog({
         `${data.length} nota(s) fiscal(is) importada(s) com sucesso!`
       );
 
+      /**
+       * Atualiza a lista de notas fiscais.
+       */
       qc.invalidateQueries({
         queryKey: ["notas-fiscais"],
       });
@@ -323,7 +425,10 @@ export function ImportExcelDialog({
     },
 
     onError: (error) => {
-      console.error("Erro ao importar notas fiscais:", error);
+      console.error(
+        "Erro ao importar notas fiscais:",
+        error
+      );
 
       toast.error(
         error instanceof Error
@@ -333,6 +438,9 @@ export function ImportExcelDialog({
     },
   });
 
+  /**
+   * Processa o arquivo selecionado.
+   */
   function handleFileSelect(
     event: React.ChangeEvent<HTMLInputElement>
   ) {
@@ -349,48 +457,69 @@ export function ImportExcelDialog({
         const data = e.target?.result;
 
         if (!data) {
-          toast.error("Não foi possível ler o arquivo");
+          toast.error(
+            "Não foi possível ler o arquivo."
+          );
           return;
         }
 
+        /**
+         * Lê XLSX, XLS ou CSV.
+         */
         const workbook = XLSX.read(data, {
           type: "binary",
           cellDates: true,
         });
 
         if (!workbook.SheetNames.length) {
-          toast.error("Planilha vazia");
-          return;
-        }
-
-        const worksheet =
-          workbook.Sheets[workbook.SheetNames[0]];
-
-        if (!worksheet) {
-          toast.error("Planilha vazia");
-          return;
-        }
-
-        const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(
-          worksheet,
-          {
-            defval: null,
-          }
-        );
-
-        if (json.length === 0) {
-          toast.error("Planilha vazia");
+          toast.error("Planilha vazia.");
           return;
         }
 
         /**
-         * Normaliza os nomes das colunas antes da validação.
+         * Usa a primeira aba.
+         */
+        const worksheet =
+          workbook.Sheets[workbook.SheetNames[0]];
+
+        if (!worksheet) {
+          toast.error("Planilha vazia.");
+          return;
+        }
+
+        /**
+         * Transforma a planilha em objetos.
          *
-         * Exemplo:
-         * "Identificação" -> "identificacao"
-         * "OBSERVAÇÃO"   -> "observacao"
-         * "VENC01"       -> "venc01"
-         * " VALOR "      -> "valor"
+         * defval: null
+         * mantém as células vazias.
+         */
+        const json =
+          XLSX.utils.sheet_to_json<
+            Record<string, unknown>
+          >(worksheet, {
+            defval: null,
+          });
+
+        if (json.length === 0) {
+          toast.error(
+            "Nenhum registro encontrado na planilha."
+          );
+          return;
+        }
+
+        /**
+         * Verifica as colunas.
+         *
+         * IMPORTANTE:
+         * a comparação é feita depois da normalização.
+         *
+         * Assim:
+         *
+         * "Identificação"
+         * "IDENTIFICAÇÃO"
+         * " identificação "
+         *
+         * são tratados da mesma forma.
          */
         const firstRow = json[0];
 
@@ -398,53 +527,84 @@ export function ImportExcelDialog({
           normalizeColumnName
         );
 
-        const missingColumns = EXPECTED_COLUMNS.filter(
-          (column) => !columns.includes(column)
+        console.log(
+          "Colunas encontradas na planilha:",
+          columns
         );
 
-        if (missingColumns.length > 0) {
-          toast.error(
-            `Colunas faltando: ${missingColumns.join(", ")}`
+        const missingColumns =
+          EXPECTED_COLUMNS.filter(
+            (column) =>
+              !columns.includes(column)
           );
 
-          console.error("Colunas encontradas:", columns);
-          console.error("Colunas faltando:", missingColumns);
+        if (missingColumns.length > 0) {
+          console.error(
+            "Colunas encontradas:",
+            columns
+          );
+
+          console.error(
+            "Colunas faltando:",
+            missingColumns
+          );
+
+          toast.error(
+            `Colunas faltando: ${missingColumns.join(
+              ", "
+            )}`
+          );
 
           return;
         }
 
+        /**
+         * Normaliza os registros.
+         */
         const normalized = normalizeData(json);
 
         if (normalized.length === 0) {
           toast.error(
-            "Nenhuma linha com NF válida encontrada"
+            "Nenhuma linha com NF válida encontrada."
           );
 
           return;
         }
 
+        /**
+         * Mostra os dados antes da gravação.
+         */
         setPreviewData(normalized);
 
         toast.success(
-          `${normalized.length} linha(s) encontrada(s) na planilha`
+          `${normalized.length} linha(s) encontrada(s) na planilha.`
         );
       } catch (error) {
-        console.error("Erro ao processar Excel:", error);
+        console.error(
+          "Erro ao processar Excel:",
+          error
+        );
 
         toast.error(
           error instanceof Error
             ? error.message
-            : "Erro ao ler arquivo Excel"
+            : "Erro ao ler arquivo Excel."
         );
       }
     };
 
     reader.onerror = () => {
-      toast.error("Erro ao ler o arquivo");
+      toast.error(
+        "Erro ao ler o arquivo."
+      );
     };
 
     reader.readAsBinaryString(file);
 
+    /**
+     * Permite selecionar novamente
+     * o mesmo arquivo.
+     */
     if (fileInput.current) {
       fileInput.current.value = "";
     }
@@ -452,6 +612,7 @@ export function ImportExcelDialog({
 
   return (
     <>
+      {/* Campo oculto para seleção do Excel */}
       <input
         ref={fileInput}
         type="file"
@@ -460,8 +621,12 @@ export function ImportExcelDialog({
         className="hidden"
       />
 
+      {/* Janela de confirmação */}
       <AlertDialog
-        open={open && previewData.length > 0}
+        open={
+          open &&
+          previewData.length > 0
+        }
         onOpenChange={(value) => {
           if (!value) {
             setPreviewData([]);
@@ -470,26 +635,23 @@ export function ImportExcelDialog({
           onOpenChange(value);
         }}
       >
-        <AlertDialogContent className="max-w-3xl">
+        <AlertDialogContent className="max-w-5xl">
           <AlertDialogHeader>
             <AlertDialogTitle>
               Confirmar Importação
             </AlertDialogTitle>
 
             <AlertDialogDescription>
-              {previewData.length} nota(s) fiscal(is)
-              será(ão) importada(s).
+              {previewData.length} nota(s)
+              fiscal(is) encontrada(s).
+              Confira os dados antes de importar.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-96 overflow-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left p-2">
-                    Identificação
-                  </th>
-
                   <th className="text-left p-2">
                     Data
                   </th>
@@ -503,62 +665,80 @@ export function ImportExcelDialog({
                   </th>
 
                   <th className="text-left p-2">
+                    Identificação
+                  </th>
+
+                  <th className="text-left p-2">
                     Valor
                   </th>
 
                   <th className="text-left p-2">
                     Venc. 01
                   </th>
+
+                  <th className="text-left p-2">
+                    Venc. 02
+                  </th>
                 </tr>
               </thead>
 
               <tbody>
                 {previewData
-                  .slice(0, 10)
+                  .slice(0, 20)
                   .map((row, idx) => (
                     <tr
                       key={idx}
                       className="border-b"
                     >
                       <td className="p-2">
+                        {row.data ?? "—"}
+                      </td>
+
+                      <td className="p-2 font-medium">
+                        {row.nf}
+                      </td>
+
+                      <td className="p-2">
+                        {row.fornecedor ?? "—"}
+                      </td>
+
+                      <td className="p-2">
                         {row.identificacao ?? "—"}
                       </td>
 
                       <td className="p-2">
-                        {row.data ?? "—"}
-                      </td>
-
-                      <td className="p-2">
-                        {row.nf}
-                      </td>
-
-                      <td className="p-2 text-muted-foreground">
-                        {row.fornecedor ?? "—"}
-                      </td>
-
-                      <td className="p-2 text-muted-foreground">
                         {row.valor !== null
                           ? new Intl.NumberFormat(
                               "pt-BR",
                               {
-                                style: "currency",
-                                currency: "BRL",
+                                style:
+                                  "currency",
+                                currency:
+                                  "BRL",
                               }
-                            ).format(row.valor)
+                            ).format(
+                              row.valor
+                            )
                           : "—"}
                       </td>
 
                       <td className="p-2">
                         {row.venc01 ?? "—"}
                       </td>
+
+                      <td className="p-2">
+                        {row.venc02 ?? "—"}
+                      </td>
                     </tr>
                   ))}
               </tbody>
             </table>
 
-            {previewData.length > 10 && (
+            {previewData.length > 20 && (
               <p className="text-xs text-muted-foreground p-2">
-                ... e mais {previewData.length - 10} linhas
+                ... e mais{" "}
+                {previewData.length - 20}{" "}
+                linhas.
               </p>
             )}
           </div>
@@ -574,9 +754,13 @@ export function ImportExcelDialog({
 
             <AlertDialogAction
               onClick={() => {
-                importMutation.mutate(previewData);
+                importMutation.mutate(
+                  previewData
+                );
               }}
-              disabled={importMutation.isPending}
+              disabled={
+                importMutation.isPending
+              }
             >
               {importMutation.isPending
                 ? "Importando..."
@@ -586,10 +770,13 @@ export function ImportExcelDialog({
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Botão Importar Excel */}
       <Button
         variant="outline"
         size="sm"
-        onClick={() => fileInput.current?.click()}
+        onClick={() =>
+          fileInput.current?.click()
+        }
         className="gap-2"
       >
         <Upload className="w-4 h-4" />
