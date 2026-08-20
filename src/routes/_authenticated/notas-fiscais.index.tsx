@@ -471,19 +471,58 @@ function NotasFiscaisList() {
                       <strong className="text-foreground">{formatCurrency(nota.valor)}</strong>
                     </div>
 
-                    <div>
-                      <span className="block">Venc. 01</span>
-                      <strong className="text-foreground">{formatDate(nota.venc01)}</strong>
-                    </div>
+                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2 mt-3 text-xs text-muted-foreground">
+  <div>
+    <span className="block">Data de Emissão</span>
+    <strong className="text-foreground">
+      {formatDate(nota.data)}
+    </strong>
+  </div>
 
-                    <div>
-                      <span className="block">Venc. 02</span>
-                      <strong className="text-foreground">{formatDate(nota.venc02)}</strong>
-                    </div>
-                  </div>
-                </div>
+  <div>
+    <span className="block">Valor</span>
+    <strong className="text-foreground">
+      {formatCurrency(nota.valor)}
+    </strong>
+  </div>
 
-                <Link to="/notas-fiscais/$id" params={{ id: nota.id }} className="shrink-0">
+  <div>
+    <span className="block">Venc. 01</span>
+    <strong className="text-foreground">
+      {formatDate(nota.venc01)}
+    </strong>
+  </div>
+
+  <div>
+    <span className="block">Venc. 02</span>
+    <strong className="text-foreground">
+      {formatDate(nota.venc02)}
+    </strong>
+  </div>
+
+  <div>
+    <span className="block">Venc. 03</span>
+    <strong className="text-foreground">
+      {formatDate(nota.venc03)}
+    </strong>
+  </div>
+
+  <div>
+    <span className="block">Venc. 04</span>
+    <strong className="text-foreground">
+      {formatDate(nota.venc04)}
+    </strong>
+  </div>
+
+  <div>
+    <span className="block">Venc. 05</span>
+    <strong className="text-foreground">
+      {formatDate(nota.venc05)}
+    </strong>
+  </div>
+</div>
+                
+                  <Link to="/notas-fiscais/$id" params={{ id: nota.id }} className="shrink-0">
                   <Button variant="outline" size="sm">
                     Visualizar
                   </Button>
