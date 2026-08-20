@@ -1,10 +1,16 @@
-import { useState, useRef } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  type ChangeEvent,
+} from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Upload, X, FileSpreadsheet } from "lucide-react";
+import { Upload, X } from "lucide-react";
 
 /*
  * ============================================================
@@ -59,46 +65,6 @@ function normalizeColumnName(value: unknown): string {
 
 /*
  * ============================================================
- * VALIDAÇÃO REAL DA DATA
- * ============================================================
- */
-
-function isValidDate(
-  year: number,
-  month: number,
-  day: number
-): boolean {
-  if (
-    !Number.isInteger(year) ||
-    !Number.isInteger(month) ||
-    !Number.isInteger(day)
-  ) {
-    return false;
-  }
-
-  if (year < 1900 || year > 2200) {
-    return false;
-  }
-
-  if (month < 1 || month > 12) {
-    return false;
-  }
-
-  if (day < 1 || day > 31) {
-    return false;
-  }
-
-  const date = new Date(year, month - 1, day);
-
-  return (
-    date.getFullYear() === year &&
-    date.getMonth() === month - 1 &&
-    date.getDate() === day
-  );
-}
-
-/*
- * ============================================================
  * DATAS
  * ============================================================
  */
@@ -112,19 +78,17 @@ function parseExcelDate(value: unknown): string | null {
     return null;
   }
 
-  /*
-   * Date
-   */
-  if (value instanceof Date) {
-    if (isNaN(value.getTime())) {
-      return null;
-    }
-
+  if (value instanceof Date && !isNaN(value.getTime())) {
     const year = value.getFullYear();
     const month = value.getMonth() + 1;
     const day = value.getDate();
 
-    if (!isValidDate(year, month, day)) {
+    if (
+      month < 1 ||
+      month > 12 ||
+      day < 1 ||
+      day > 31
+    ) {
       return null;
     }
 
@@ -133,31 +97,28 @@ function parseExcelDate(value: unknown): string | null {
     ).padStart(2, "0")}`;
   }
 
-  /*
-   * Número serial do Excel
-   */
   if (typeof value === "number") {
     try {
       const date = XLSX.SSF.parse_date_code(value);
 
-      if (!date) {
-        return null;
+      if (
+        date &&
+        date.y &&
+        date.m >= 1 &&
+        date.m <= 12 &&
+        date.d >= 1 &&
+        date.d <= 31
+      ) {
+        return `${date.y}-${String(date.m).padStart(
+          2,
+          "0"
+        )}-${String(date.d).padStart(2, "0")}`;
       }
-
-      const year = Number(date.y);
-      const month = Number(date.m);
-      const day = Number(date.d);
-
-      if (!isValidDate(year, month, day)) {
-        return null;
-      }
-
-      return `${year}-${String(month).padStart(2, "0")}-${String(
-        day
-      ).padStart(2, "0")}`;
     } catch {
       return null;
     }
+
+    return null;
   }
 
   if (typeof value !== "string") {
@@ -170,39 +131,49 @@ function parseExcelDate(value: unknown): string | null {
     return null;
   }
 
-  /*
-   * YYYY-MM-DD
-   */
   let match = text.match(
     /^(\d{4})-(\d{1,2})-(\d{1,2})$/
   );
 
   if (match) {
-    const year = Number(match[1]);
-    const month = Number(match[2]);
-    const day = Number(match[3]);
+    const [, year, month, day] = match;
 
-    if (!isValidDate(year, month, day)) {
+    const monthNumber = Number(month);
+    const dayNumber = Number(day);
+
+    if (
+      monthNumber < 1 ||
+      monthNumber > 12 ||
+      dayNumber < 1 ||
+      dayNumber > 31
+    ) {
       return null;
     }
 
-    return `${year}-${String(month).padStart(2, "0")}-${String(
-      day
-    ).padStart(2, "0")}`;
+    return `${year}-${String(monthNumber).padStart(
+      2,
+      "0"
+    )}-${String(dayNumber).padStart(2, "0")}`;
   }
 
-  /*
-   * DD/MM/YYYY
-   * DD/MM/YY
-   */
   match = text.match(
     /^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/
   );
 
   if (match) {
-    const day = Number(match[1]);
-    const month = Number(match[2]);
-    let year = match[3];
+    let [, day, month, year] = match;
+
+    const dayNumber = Number(day);
+    const monthNumber = Number(month);
+
+    if (
+      monthNumber < 1 ||
+      monthNumber > 12 ||
+      dayNumber < 1 ||
+      dayNumber > 31
+    ) {
+      return null;
+    }
 
     if (year.length === 2) {
       year =
@@ -211,90 +182,62 @@ function parseExcelDate(value: unknown): string | null {
           : `20${year}`;
     }
 
-    const yearNumber = Number(year);
-
-    if (
-      !isValidDate(
-        yearNumber,
-        month,
-        day
-      )
-    ) {
-      return null;
-    }
-
-    return `${year}-${String(month).padStart(2, "0")}-${String(
-      day
-    ).padStart(2, "0")}`;
+    return `${year}-${String(monthNumber).padStart(
+      2,
+      "0"
+    )}-${String(dayNumber).padStart(2, "0")}`;
   }
 
-  /*
-   * DD-MM-YYYY
-   */
   match = text.match(
     /^(\d{1,2})-(\d{1,2})-(\d{4})$/
   );
 
   if (match) {
-    const day = Number(match[1]);
-    const month = Number(match[2]);
-    const year = Number(match[3]);
+    const [, day, month, year] = match;
+
+    const dayNumber = Number(day);
+    const monthNumber = Number(month);
 
     if (
-      !isValidDate(
-        year,
-        month,
-        day
-      )
+      monthNumber < 1 ||
+      monthNumber > 12 ||
+      dayNumber < 1 ||
+      dayNumber > 31
     ) {
       return null;
     }
 
-    return `${year}-${String(month).padStart(2, "0")}-${String(
-      day
-    ).padStart(2, "0")}`;
+    return `${year}-${String(monthNumber).padStart(
+      2,
+      "0"
+    )}-${String(dayNumber).padStart(2, "0")}`;
   }
 
-  /*
-   * Meses em português
-   */
-  const months: Record<string, number> = {
-    jan: 1,
-    janeiro: 1,
-
-    fev: 2,
-    fevereiro: 2,
-
-    mar: 3,
-    marco: 3,
-    março: 3,
-
-    abr: 4,
-    abril: 4,
-
-    mai: 5,
-    maio: 5,
-
-    jun: 6,
-    junho: 6,
-
-    jul: 7,
-    julho: 7,
-
-    ago: 8,
-    agosto: 8,
-
-    set: 9,
-    setembro: 9,
-
-    out: 10,
-    outubro: 10,
-
-    nov: 11,
-    novembro: 11,
-
-    dez: 12,
-    dezembro: 12,
+  const months: Record<string, string> = {
+    jan: "01",
+    janeiro: "01",
+    fev: "02",
+    fevereiro: "02",
+    mar: "03",
+    marco: "03",
+    abr: "04",
+    abril: "04",
+    mai: "05",
+    maio: "05",
+    jun: "06",
+    junho: "06",
+    jul: "07",
+    julho: "07",
+    ago: "08",
+    agosto: "08",
+    set: "09",
+    setembro: "09",
+    out: "10",
+    outubro: "10",
+    nov: "11",
+    novembro: "11",
+    dez: "12",
+    dezembro: "12",
   };
 
   const normalizedText = text
@@ -307,37 +250,34 @@ function parseExcelDate(value: unknown): string | null {
   );
 
   if (match) {
-    const day = Number(match[1]);
-    const month = months[match[2]];
+    const [, day, monthText, yearText] = match;
+
+    const month = months[monthText];
 
     if (!month) {
       return null;
     }
 
-    let year = match[3];
-
-    if (year.length === 2) {
-      year =
-        Number(year) >= 50
-          ? `19${year}`
-          : `20${year}`;
-    }
-
-    const yearNumber = Number(year);
+    const dayNumber = Number(day);
 
     if (
-      !isValidDate(
-        yearNumber,
-        month,
-        day
-      )
+      dayNumber < 1 ||
+      dayNumber > 31
     ) {
       return null;
     }
 
-    return `${year}-${String(month).padStart(2, "0")}-${String(
-      day
-    ).padStart(2, "0")}`;
+    const year =
+      yearText.length === 2
+        ? Number(yearText) >= 50
+          ? `19${yearText}`
+          : `20${yearText}`
+        : yearText;
+
+    return `${year}-${month}-${String(dayNumber).padStart(
+      2,
+      "0"
+    )}`;
   }
 
   return null;
@@ -375,9 +315,6 @@ function parseExcelValue(value: unknown): number | null {
     .replace(/\s/g, "")
     .replace(/\u00A0/g, "");
 
-  /*
-   * 1.011,00 -> 1011.00
-   */
   if (text.includes(",")) {
     text = text
       .replace(/\./g, "")
@@ -425,26 +362,14 @@ function normalizeData(
         ),
 
         fornecedor:
-          normalizedRow.fornecedor !==
-            null &&
-          normalizedRow.fornecedor !==
-            undefined &&
-          String(
-            normalizedRow.fornecedor
-          ).trim() !== ""
+          normalizedRow.fornecedor
             ? String(
                 normalizedRow.fornecedor
               ).trim()
             : null,
 
         identificacao:
-          normalizedRow.identificacao !==
-            null &&
-          normalizedRow.identificacao !==
-            undefined &&
-          String(
-            normalizedRow.identificacao
-          ).trim() !== ""
+          normalizedRow.identificacao
             ? String(
                 normalizedRow.identificacao
               ).trim()
@@ -455,13 +380,7 @@ function normalizeData(
         ),
 
         observacao:
-          normalizedRow.observacao !==
-            null &&
-          normalizedRow.observacao !==
-            undefined &&
-          String(
-            normalizedRow.observacao
-          ).trim() !== ""
+          normalizedRow.observacao
             ? String(
                 normalizedRow.observacao
               ).trim()
@@ -488,32 +407,7 @@ function normalizeData(
         ),
       };
     })
-    .filter(
-      (row) =>
-        row.nf.length > 0
-    );
-}
-
-/*
- * ============================================================
- * FORMATAÇÃO DE VALOR
- * ============================================================
- */
-
-function formatCurrency(
-  value: number | null
-): string {
-  if (value === null) {
-    return "—";
-  }
-
-  return new Intl.NumberFormat(
-    "pt-BR",
-    {
-      style: "currency",
-      currency: "BRL",
-    }
-  ).format(value);
+    .filter((row) => row.nf);
 }
 
 /*
@@ -545,6 +439,69 @@ export function ImportExcelDialog({
 
   /*
    * ==========================================================
+   * BLOQUEIA SCROLL DA PÁGINA ENQUANTO O MODAL ESTÁ ABERTO
+   * ==========================================================
+   */
+
+  useEffect(() => {
+    if (!open || !showPreview) {
+      return;
+    }
+
+    const originalOverflow =
+      document.body.style.overflow;
+
+    document.body.style.overflow =
+      "hidden";
+
+    return () => {
+      document.body.style.overflow =
+        originalOverflow;
+    };
+  }, [open, showPreview]);
+
+  /*
+   * ==========================================================
+   * ESC FECHA O MODAL
+   * ==========================================================
+   */
+
+  useEffect(() => {
+    if (!open || !showPreview) {
+      return;
+    }
+
+    const handleEscape = (
+      event: KeyboardEvent
+    ) => {
+      if (
+        event.key === "Escape" &&
+        !importMutation.isPending
+      ) {
+        handleCancel();
+        onOpenChange(false);
+      }
+    };
+
+    window.addEventListener(
+      "keydown",
+      handleEscape
+    );
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleEscape
+      );
+    };
+  }, [
+    open,
+    showPreview,
+    importMutation.isPending,
+  ]);
+
+  /*
+   * ==========================================================
    * IMPORTAÇÃO
    * ==========================================================
    */
@@ -571,45 +528,10 @@ export function ImportExcelDialog({
           i + BATCH_SIZE
         );
 
-        /*
-         * Segurança adicional:
-         *
-         * nunca envia uma data inválida
-         * para o PostgreSQL.
-         */
-        const safeBatch =
-          batch.map((row) => ({
-            ...row,
-
-            data: parseExcelDate(
-              row.data
-            ),
-
-            venc01: parseExcelDate(
-              row.venc01
-            ),
-
-            venc02: parseExcelDate(
-              row.venc02
-            ),
-
-            venc03: parseExcelDate(
-              row.venc03
-            ),
-
-            venc04: parseExcelDate(
-              row.venc04
-            ),
-
-            venc05: parseExcelDate(
-              row.venc05
-            ),
-          }));
-
         const { error } =
           await supabase
             .from("notas_fiscais")
-            .insert(safeBatch);
+            .insert(batch);
 
         if (error) {
           console.error(
@@ -624,12 +546,9 @@ export function ImportExcelDialog({
           );
         }
 
-        imported +=
-          batch.length;
+        imported += batch.length;
 
-        setImportProgress(
-          imported
-        );
+        setImportProgress(imported);
       }
 
       return imported;
@@ -643,9 +562,7 @@ export function ImportExcelDialog({
       );
 
       qc.invalidateQueries({
-        queryKey: [
-          "notas-fiscais",
-        ],
+        queryKey: ["notas-fiscais"],
       });
 
       setPreviewData([]);
@@ -678,7 +595,7 @@ export function ImportExcelDialog({
    */
 
   function handleFileSelect(
-    event: React.ChangeEvent<HTMLInputElement>
+    event: ChangeEvent<HTMLInputElement>
   ) {
     const file =
       event.target.files?.[0];
@@ -691,8 +608,7 @@ export function ImportExcelDialog({
       "Lendo a planilha..."
     );
 
-    const reader =
-      new FileReader();
+    const reader = new FileReader();
 
     reader.onload = (e) => {
       try {
@@ -713,8 +629,7 @@ export function ImportExcelDialog({
           });
 
         if (
-          workbook.SheetNames
-            .length === 0
+          !workbook.SheetNames.length
         ) {
           toast.error(
             "Planilha vazia."
@@ -736,28 +651,17 @@ export function ImportExcelDialog({
 
         const json =
           XLSX.utils.sheet_to_json<
-            Record<
-              string,
-              unknown
-            >
+            Record<string, unknown>
           >(worksheet, {
             defval: null,
           });
 
-        if (
-          json.length === 0
-        ) {
+        if (json.length === 0) {
           toast.error(
             "Nenhum registro encontrado na planilha."
           );
           return;
         }
-
-        /*
-         * ======================================================
-         * VERIFICA COLUNAS
-         * ======================================================
-         */
 
         const columns =
           Object.keys(
@@ -791,12 +695,6 @@ export function ImportExcelDialog({
           return;
         }
 
-        /*
-         * ======================================================
-         * NORMALIZA DADOS
-         * ======================================================
-         */
-
         const normalized =
           normalizeData(json);
 
@@ -810,19 +708,11 @@ export function ImportExcelDialog({
           return;
         }
 
-        /*
-         * ======================================================
-         * ABRE PREVISUALIZAÇÃO
-         * ======================================================
-         */
-
         setPreviewData(
           normalized
         );
 
-        setShowPreview(
-          true
-        );
+        setShowPreview(true);
 
         toast.success(
           `${normalized.length.toLocaleString(
@@ -853,10 +743,6 @@ export function ImportExcelDialog({
       file
     );
 
-    /*
-     * Permite escolher novamente
-     * o mesmo arquivo.
-     */
     if (fileInput.current) {
       fileInput.current.value =
         "";
@@ -865,134 +751,72 @@ export function ImportExcelDialog({
 
   /*
    * ==========================================================
-   * FECHAR PREVISUALIZAÇÃO
+   * CANCELAR
    * ==========================================================
    */
 
-  function closePreview() {
+  function handleCancel() {
     if (
       importMutation.isPending
     ) {
       return;
     }
 
-    setShowPreview(false);
     setPreviewData([]);
+    setShowPreview(false);
     setImportProgress(0);
-
-    onOpenChange(false);
   }
 
   /*
    * ==========================================================
-   * ABRIR ARQUIVO
+   * MODAL
+   *
+   * IMPORTANTE:
+   * O modal é criado diretamente no BODY usando PORTAL.
+   * Isso elimina problemas de:
+   *
+   * - opacity herdada
+   * - transform
+   * - z-index
+   * - overflow
+   * - elementos da página aparecendo por cima
+   * - tela duplicada/transparente
    * ==========================================================
    */
 
-  function openFileSelector() {
-    if (
-      importMutation.isPending
-    ) {
-      return;
-    }
-
-    setPreviewData([]);
-    setShowPreview(false);
-
-    onOpenChange(true);
-
-    /*
-     * Pequeno atraso para garantir
-     * que o navegador processe o clique
-     * corretamente.
-     */
-    setTimeout(() => {
-      fileInput.current?.click();
-    }, 100);
-  }
-
-  /*
-   * ==========================================================
-   * BLOQUEAR ESC DURANTE IMPORTAÇÃO
-   * ==========================================================
-   */
-
-  function handleKeyDown(
-    event: React.KeyboardEvent<HTMLDivElement>
-  ) {
-    if (
-      event.key === "Escape"
-    ) {
-      event.preventDefault();
-
-      if (
-        !importMutation.isPending
-      ) {
-        closePreview();
-      }
-    }
-  }
-
-  /*
-   * ==========================================================
-   * INTERFACE
-   * ==========================================================
-   */
-
-  return (
-    <>
-      {/* ====================================================
-          INPUT DO EXCEL
-          ==================================================== */}
-
-      <input
-        ref={fileInput}
-        type="file"
-        accept=".xlsx,.xls,.csv"
-        onChange={
-          handleFileSelect
-        }
-        className="hidden"
-      />
-
-      {/* ====================================================
-          MODAL DE PREVISUALIZAÇÃO
-          
-          IMPORTANTE:
-          Esta estrutura usa UMA única camada fixa.
-          Não utiliza AlertDialog dentro de outro Dialog.
-          Isso evita o efeito de transparência/sobreposição.
-          ==================================================== */}
-
-      {open &&
-        showPreview &&
-        previewData.length > 0 && (
+  const previewModal =
+    open &&
+    showPreview &&
+    previewData.length > 0
+      ? createPortal(
           <div
-            className="fixed inset-0 z-[99999]"
+            className="fixed inset-0"
+            style={{
+              zIndex: 2147483647,
+              isolation: "isolate",
+            }}
             role="dialog"
             aria-modal="true"
-            aria-labelledby="import-excel-title"
-            onKeyDown={
-              handleKeyDown
-            }
-            tabIndex={-1}
+            aria-label="Confirmar importação de notas fiscais"
           >
-            {/* =================================================
-                FUNDO DO MODAL
-                ================================================= */}
+            {/* FUNDO TOTALMENTE OPACO */}
 
             <div
-              className="
-                absolute
-                inset-0
-                bg-black/80
-              "
-              aria-hidden="true"
+              className="absolute inset-0 bg-black"
+              style={{
+                opacity: 0.75,
+              }}
+              onClick={() => {
+                if (
+                  !importMutation.isPending
+                ) {
+                  handleCancel();
+                  onOpenChange(false);
+                }
+              }}
             />
 
-            {/* =================================================
-                CONTAINER CENTRAL
-                ================================================= */}
+            {/* JANELA */}
 
             <div
               className="
@@ -1011,7 +835,7 @@ export function ImportExcelDialog({
                   flex
                   h-[92vh]
                   w-full
-                  max-w-[1400px]
+                  max-w-7xl
                   flex-col
                   overflow-hidden
                   rounded-xl
@@ -1021,80 +845,62 @@ export function ImportExcelDialog({
                   text-foreground
                   shadow-2xl
                 "
+                style={{
+                  opacity: 1,
+                  isolation: "isolate",
+                }}
                 onClick={(event) =>
                   event.stopPropagation()
                 }
               >
-                {/* =================================================
-                    CABEÇALHO
-                    ================================================= */}
+                {/* CABEÇALHO */}
 
                 <div
                   className="
                     flex
                     shrink-0
-                    items-center
+                    items-start
                     justify-between
                     gap-4
                     border-b
                     bg-background
                     px-5
                     py-4
+                    sm:px-6
+                    sm:py-5
                   "
                 >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="
-                        flex
-                        h-10
-                        w-10
-                        shrink-0
-                        items-center
-                        justify-center
-                        rounded-lg
-                        bg-primary/10
-                        text-primary
-                      "
-                    >
-                      <FileSpreadsheet className="h-5 w-5" />
-                    </div>
+                  <div>
+                    <h2 className="text-lg font-semibold sm:text-xl">
+                      Confirmar Importação de
+                      Notas Fiscais
+                    </h2>
 
-                    <div>
-                      <h2
-                        id="import-excel-title"
-                        className="
-                          text-lg
-                          font-semibold
-                          leading-tight
-                        "
-                      >
-                        Confirmar Importação
-                        de Notas Fiscais
-                      </h2>
-
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        <strong className="text-foreground">
-                          {previewData.length.toLocaleString(
-                            "pt-BR"
-                          )}
-                        </strong>{" "}
-                        nota(s) fiscal(is)
-                        encontrada(s).
-                      </p>
-                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      <strong className="text-foreground">
+                        {previewData.length.toLocaleString(
+                          "pt-BR"
+                        )}
+                      </strong>{" "}
+                      nota(s) fiscal(is)
+                      encontrada(s).
+                      <br />
+                      Confira os dados abaixo
+                      antes de importar.
+                    </p>
                   </div>
 
                   <button
                     type="button"
-                    aria-label="Fechar"
                     disabled={
                       importMutation.isPending
                     }
-                    onClick={
-                      closePreview
-                    }
+                    onClick={() => {
+                      handleCancel();
+                      onOpenChange(false);
+                    }}
                     className="
-                      flex
+                      inline-flex
                       h-9
                       w-9
                       shrink-0
@@ -1102,40 +908,32 @@ export function ImportExcelDialog({
                       justify-center
                       rounded-md
                       border
-                      border-transparent
+                      border-input
+                      bg-background
                       text-muted-foreground
-                      transition
-                      hover:bg-muted
-                      hover:text-foreground
+                      transition-colors
+                      hover:bg-accent
+                      hover:text-accent-foreground
                       disabled:pointer-events-none
                       disabled:opacity-50
                     "
+                    aria-label="Fechar"
                   >
-                    <X className="h-5 w-5" />
+                    <X className="h-4 w-4" />
                   </button>
                 </div>
 
-                {/* =================================================
-                    PROGRESSO
-                    ================================================= */}
+                {/* PROGRESSO */}
 
                 {importMutation.isPending && (
-                  <div
-                    className="
-                      shrink-0
-                      border-b
-                      bg-muted/30
-                      px-5
-                      py-3
-                    "
-                  >
-                    <div className="mb-2 flex items-center justify-between text-sm">
-                      <span className="font-medium">
+                  <div className="shrink-0 border-b bg-muted/30 px-5 py-4 sm:px-6">
+                    <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                      <span>
                         Importando notas
                         fiscais...
                       </span>
 
-                      <span>
+                      <span className="font-medium">
                         {importProgress.toLocaleString(
                           "pt-BR"
                         )}{" "}
@@ -1146,23 +944,9 @@ export function ImportExcelDialog({
                       </span>
                     </div>
 
-                    <div
-                      className="
-                        h-2
-                        w-full
-                        overflow-hidden
-                        rounded-full
-                        bg-muted
-                      "
-                    >
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                       <div
-                        className="
-                          h-full
-                          rounded-full
-                          bg-primary
-                          transition-all
-                          duration-300
-                        "
+                        className="h-full bg-primary transition-all duration-300"
                         style={{
                           width: `${
                             previewData.length >
@@ -1181,30 +965,7 @@ export function ImportExcelDialog({
                   </div>
                 )}
 
-                {/* =================================================
-                    INFORMAÇÃO
-                    ================================================= */}
-
-                {!importMutation.isPending && (
-                  <div
-                    className="
-                      shrink-0
-                      border-b
-                      bg-background
-                      px-5
-                      py-3
-                      text-sm
-                      text-muted-foreground
-                    "
-                  >
-                    Confira os dados abaixo
-                    antes de importar.
-                  </div>
-                )}
-
-                {/* =================================================
-                    TABELA
-                    ================================================= */}
+                {/* TABELA */}
 
                 <div
                   className="
@@ -1214,24 +975,9 @@ export function ImportExcelDialog({
                     bg-background
                   "
                 >
-                  <table
-                    className="
-                      w-full
-                      min-w-[1100px]
-                      border-collapse
-                      text-sm
-                    "
-                  >
-                    <thead>
-                      <tr
-                        className="
-                          sticky
-                          top-0
-                          z-20
-                          border-b
-                          bg-muted
-                        "
-                      >
+                  <table className="w-full min-w-[1100px] border-collapse text-sm">
+                    <thead className="sticky top-0 z-20 bg-muted">
+                      <tr className="border-b">
                         <th className="whitespace-nowrap px-3 py-3 text-left font-semibold">
                           #
                         </th>
@@ -1272,10 +1018,7 @@ export function ImportExcelDialog({
 
                     <tbody>
                       {previewData
-                        .slice(
-                          0,
-                          50
-                        )
+                        .slice(0, 50)
                         .map(
                           (
                             row,
@@ -1283,15 +1026,9 @@ export function ImportExcelDialog({
                           ) => (
                             <tr
                               key={`${row.nf}-${idx}`}
-                              className="
-                                border-b
-                                border-border/60
-                                bg-background
-                                transition-colors
-                                hover:bg-muted/40
-                              "
+                              className="border-b bg-background hover:bg-muted/50"
                             >
-                              <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                              <td className="px-3 py-2 text-muted-foreground">
                                 {idx +
                                   1}
                               </td>
@@ -1301,7 +1038,7 @@ export function ImportExcelDialog({
                                   "—"}
                               </td>
 
-                              <td className="whitespace-nowrap px-3 py-2 font-medium">
+                              <td className="px-3 py-2 font-medium">
                                 {row.nf}
                               </td>
 
@@ -1310,12 +1047,12 @@ export function ImportExcelDialog({
                                   "—"}
                               </td>
 
-                              <td className="max-w-[320px] px-3 py-2">
+                              <td className="max-w-[280px] px-3 py-2">
                                 <div
                                   className="truncate"
                                   title={
                                     row.observacao ??
-                                    undefined
+                                    ""
                                   }
                                 >
                                   {row.observacao ??
@@ -1329,9 +1066,20 @@ export function ImportExcelDialog({
                               </td>
 
                               <td className="whitespace-nowrap px-3 py-2 text-right">
-                                {formatCurrency(
-                                  row.valor
-                                )}
+                                {row.valor !==
+                                null
+                                  ? new Intl.NumberFormat(
+                                      "pt-BR",
+                                      {
+                                        style:
+                                          "currency",
+                                        currency:
+                                          "BRL",
+                                      }
+                                    ).format(
+                                      row.valor
+                                    )
+                                  : "—"}
                               </td>
 
                               <td className="whitespace-nowrap px-3 py-2">
@@ -1350,23 +1098,11 @@ export function ImportExcelDialog({
                   </table>
                 </div>
 
-                {/* =================================================
-                    AVISO DOS 50 PRIMEIROS
-                    ================================================= */}
+                {/* AVISO */}
 
                 {previewData.length >
                   50 && (
-                  <div
-                    className="
-                      shrink-0
-                      border-t
-                      bg-muted/30
-                      px-5
-                      py-3
-                      text-sm
-                      text-muted-foreground
-                    "
-                  >
+                  <div className="shrink-0 border-t bg-muted/30 px-5 py-3 text-sm text-muted-foreground sm:px-6">
                     Mostrando os primeiros{" "}
                     <strong className="text-foreground">
                       50
@@ -1384,9 +1120,7 @@ export function ImportExcelDialog({
                   </div>
                 )}
 
-                {/* =================================================
-                    RODAPÉ
-                    ================================================= */}
+                {/* RODAPÉ */}
 
                 <div
                   className="
@@ -1401,6 +1135,7 @@ export function ImportExcelDialog({
                     sm:flex-row
                     sm:items-center
                     sm:justify-between
+                    sm:px-6
                   "
                 >
                   <button
@@ -1409,7 +1144,7 @@ export function ImportExcelDialog({
                       importMutation.isPending
                     }
                     onClick={
-                      closePreview
+                      handleCancel
                     }
                     className="
                       inline-flex
@@ -1420,11 +1155,11 @@ export function ImportExcelDialog({
                       border
                       border-input
                       bg-background
-                      px-5
+                      px-4
                       text-sm
                       font-medium
-                      transition-colors
-                      hover:bg-muted
+                      hover:bg-accent
+                      hover:text-accent-foreground
                       disabled:pointer-events-none
                       disabled:opacity-50
                     "
@@ -1455,12 +1190,11 @@ export function ImportExcelDialog({
                       justify-center
                       rounded-md
                       bg-primary
-                      px-6
+                      px-5
                       text-sm
                       font-medium
                       text-primary-foreground
-                      shadow-sm
-                      transition-colors
+                      shadow
                       hover:bg-primary/90
                       disabled:pointer-events-none
                       disabled:opacity-50
@@ -1479,26 +1213,55 @@ export function ImportExcelDialog({
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          </div>,
+          document.body
+        )
+      : null;
 
-      {/* ====================================================
-          BOTÃO IMPORTAR EXCEL
-          ==================================================== */}
+  /*
+   * ==========================================================
+   * INTERFACE
+   * ==========================================================
+   */
+
+  return (
+    <>
+      <input
+        ref={fileInput}
+        type="file"
+        accept=".xlsx,.xls,.csv"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+
+      {previewModal}
 
       <Button
-        type="button"
         variant="outline"
         size="sm"
-        onClick={
-          openFileSelector
-        }
+        onClick={() => {
+          if (
+            importMutation.isPending
+          ) {
+            return;
+          }
+
+          setPreviewData([]);
+          setShowPreview(false);
+
+          onOpenChange(true);
+
+          setTimeout(() => {
+            fileInput.current?.click();
+          }, 50);
+        }}
+        className="gap-2"
         disabled={
           importMutation.isPending
         }
-        className="gap-2"
       >
         <Upload className="h-4 w-4" />
+
         Importar Excel
       </Button>
     </>
