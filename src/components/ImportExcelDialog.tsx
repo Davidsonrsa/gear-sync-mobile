@@ -1358,21 +1358,19 @@ export function ImportExcelDialog({
 {/* RODAPÉ */}
 
 <div
-  className="
-    relative
-    z-[100]
-    flex
-    min-h-[72px]
-    shrink-0
-    items-center
-    justify-between
-    gap-4
-    border-t
-    border-gray-300
-    bg-white
-    px-5
-    py-4
-  "
+  style={{
+    position: "relative",
+    zIndex: 9999999,
+    display: "flex",
+    minHeight: "72px",
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "16px",
+    borderTop: "1px solid #d1d5db",
+    backgroundColor: "#ffffff",
+    padding: "16px 20px",
+  }}
 >
   {/* BOTÃO CANCELAR */}
 
@@ -1407,56 +1405,57 @@ export function ImportExcelDialog({
     Cancelar
   </button>
 
-  {/* BOTÃO IMPORTAR */}
+{/* BOTÃO IMPORTAR */}
 
-  <button
-    type="button"
-    disabled={
-      importMutation.isPending ||
-      previewData.length === 0
+<button
+  type="button"
+  disabled={
+    importMutation.isPending ||
+    previewData.length === 0
+  }
+  onClick={() => {
+    if (!importMutation.isPending) {
+      importMutation.mutate(previewData);
     }
-    onClick={() => {
-      if (!importMutation.isPending) {
-        importMutation.mutate(previewData);
-      }
-    }}
-    className="
-      relative
-      z-[101]
-      inline-flex
-      h-11
-      min-w-[190px]
-      cursor-pointer
-      items-center
-      justify-center
-      rounded-md
-      border
-      border-blue-700
-      bg-blue-600
-      px-6
-      text-sm
-      font-bold
-      text-white
-      opacity-100
-      shadow-md
-      transition-colors
-      hover:bg-blue-700
-      disabled:pointer-events-none
-      disabled:opacity-50
-    "
-  >
-    {importMutation.isPending
-      ? `Importando ${importProgress.toLocaleString(
-          "pt-BR"
-        )} / ${previewData.length.toLocaleString(
-          "pt-BR"
-        )}...`
-      : `Importar ${previewData.length.toLocaleString(
-          "pt-BR"
-        )} notas`}
-  </button>
-</div>
-
+  }}
+  style={{
+    position: "relative",
+    zIndex: 99999999,
+    display: "inline-flex",
+    height: "44px",
+    minWidth: "190px",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: importMutation.isPending
+      ? "not-allowed"
+      : "pointer",
+    border: "1px solid #1d4ed8",
+    borderRadius: "6px",
+    backgroundColor: "#2563eb",
+    color: "#ffffff",
+    paddingLeft: "24px",
+    paddingRight: "24px",
+    fontSize: "14px",
+    fontWeight: 700,
+    opacity: importMutation.isPending ? 0.5 : 1,
+    boxShadow:
+      "0 4px 6px -1px rgba(0,0,0,0.15)",
+    pointerEvents: importMutation.isPending
+      ? "none"
+      : "auto",
+  }}
+>
+  {importMutation.isPending
+    ? `Importando ${importProgress.toLocaleString(
+        "pt-BR"
+      )} / ${previewData.length.toLocaleString(
+        "pt-BR"
+      )}...`
+    : `Importar ${previewData.length.toLocaleString(
+        "pt-BR"
+      )} notas`}
+</button>
+</>
   /*
    * ==========================================================
    * INTERFACE
