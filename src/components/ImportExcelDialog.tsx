@@ -1396,7 +1396,7 @@ export function ImportExcelDialog({
                     font-medium
                     text-gray-700
                     transition-colors
-                    hover:bg-gray-100
+                    hover:bg-blue-700
                     disabled:pointer-events-none
                     disabled:opacity-50
                   "
