@@ -411,7 +411,56 @@ function NotasFiscaisList() {
                     <p className="text-sm mt-1 truncate">Descrição: {nota.descricao_produto}</p>
                   )}
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-xs text-muted-foreground">
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 mt-3 text-xs text-muted-foreground">
+  <div>
+    <span className="block">Data de Emissão</span>
+    <strong className="text-foreground">
+      {formatDate(nota.data)}
+    </strong>
+  </div>
+
+  <div>
+    <span className="block">Valor</span>
+    <strong className="text-foreground">
+      {formatCurrency(nota.valor)}
+    </strong>
+  </div>
+
+  <div>
+    <span className="block">Venc. 01</span>
+    <strong className="text-foreground">
+      {formatDate(nota.venc01)}
+    </strong>
+  </div>
+
+  <div>
+    <span className="block">Venc. 02</span>
+    <strong className="text-foreground">
+      {formatDate(nota.venc02)}
+    </strong>
+  </div>
+
+  <div>
+    <span className="block">Venc. 03</span>
+    <strong className="text-foreground">
+      {formatDate(nota.venc03)}
+    </strong>
+  </div>
+
+  <div>
+    <span className="block">Venc. 04</span>
+    <strong className="text-foreground">
+      {formatDate(nota.venc04)}
+    </strong>
+  </div>
+
+  <div>
+    <span className="block">Venc. 05</span>
+    <strong className="text-foreground">
+      {formatDate(nota.venc05)}
+    </strong>
+  </div>
+</div>
                     <div>
                       <span className="block">Data de Emissão</span>
                       <strong className="text-foreground">{formatDate(nota.data)}</strong>
