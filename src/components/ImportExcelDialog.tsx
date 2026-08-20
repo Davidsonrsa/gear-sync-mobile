@@ -4,7 +4,7 @@ import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Upload } from "lucide-react";
+import { Upload, X, FileSpreadsheet } from "lucide-react";
 
 /*
  * ============================================================
@@ -59,6 +59,46 @@ function normalizeColumnName(value: unknown): string {
 
 /*
  * ============================================================
+ * VALIDAÇÃO REAL DA DATA
+ * ============================================================
+ */
+
+function isValidDate(
+  year: number,
+  month: number,
+  day: number
+): boolean {
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day)
+  ) {
+    return false;
+  }
+
+  if (year < 1900 || year > 2200) {
+    return false;
+  }
+
+  if (month < 1 || month > 12) {
+    return false;
+  }
+
+  if (day < 1 || day > 31) {
+    return false;
+  }
+
+  const date = new Date(year, month - 1, day);
+
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  );
+}
+
+/*
+ * ============================================================
  * DATAS
  * ============================================================
  */
@@ -72,17 +112,19 @@ function parseExcelDate(value: unknown): string | null {
     return null;
   }
 
-  if (value instanceof Date && !isNaN(value.getTime())) {
+  /*
+   * Date
+   */
+  if (value instanceof Date) {
+    if (isNaN(value.getTime())) {
+      return null;
+    }
+
     const year = value.getFullYear();
     const month = value.getMonth() + 1;
     const day = value.getDate();
 
-    if (
-      month < 1 ||
-      month > 12 ||
-      day < 1 ||
-      day > 31
-    ) {
+    if (!isValidDate(year, month, day)) {
       return null;
     }
 
@@ -91,28 +133,31 @@ function parseExcelDate(value: unknown): string | null {
     ).padStart(2, "0")}`;
   }
 
+  /*
+   * Número serial do Excel
+   */
   if (typeof value === "number") {
     try {
       const date = XLSX.SSF.parse_date_code(value);
 
-      if (
-        date &&
-        date.y &&
-        date.m >= 1 &&
-        date.m <= 12 &&
-        date.d >= 1 &&
-        date.d <= 31
-      ) {
-        return `${date.y}-${String(date.m).padStart(
-          2,
-          "0"
-        )}-${String(date.d).padStart(2, "0")}`;
+      if (!date) {
+        return null;
       }
+
+      const year = Number(date.y);
+      const month = Number(date.m);
+      const day = Number(date.d);
+
+      if (!isValidDate(year, month, day)) {
+        return null;
+      }
+
+      return `${year}-${String(month).padStart(2, "0")}-${String(
+        day
+      ).padStart(2, "0")}`;
     } catch {
       return null;
     }
-
-    return null;
   }
 
   if (typeof value !== "string") {
@@ -133,47 +178,31 @@ function parseExcelDate(value: unknown): string | null {
   );
 
   if (match) {
-    const [, year, month, day] = match;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
 
-    const monthNumber = Number(month);
-    const dayNumber = Number(day);
-
-    if (
-      monthNumber < 1 ||
-      monthNumber > 12 ||
-      dayNumber < 1 ||
-      dayNumber > 31
-    ) {
+    if (!isValidDate(year, month, day)) {
       return null;
     }
 
-    return `${year}-${String(monthNumber).padStart(
-      2,
-      "0"
-    )}-${String(dayNumber).padStart(2, "0")}`;
+    return `${year}-${String(month).padStart(2, "0")}-${String(
+      day
+    ).padStart(2, "0")}`;
   }
 
   /*
-   * DD/MM/YYYY ou DD/MM/YY
+   * DD/MM/YYYY
+   * DD/MM/YY
    */
   match = text.match(
     /^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/
   );
 
   if (match) {
-    let [, day, month, year] = match;
-
-    const dayNumber = Number(day);
-    const monthNumber = Number(month);
-
-    if (
-      monthNumber < 1 ||
-      monthNumber > 12 ||
-      dayNumber < 1 ||
-      dayNumber > 31
-    ) {
-      return null;
-    }
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    let year = match[3];
 
     if (year.length === 2) {
       year =
@@ -182,10 +211,21 @@ function parseExcelDate(value: unknown): string | null {
           : `20${year}`;
     }
 
-    return `${year}-${String(monthNumber).padStart(
-      2,
-      "0"
-    )}-${String(dayNumber).padStart(2, "0")}`;
+    const yearNumber = Number(year);
+
+    if (
+      !isValidDate(
+        yearNumber,
+        month,
+        day
+      )
+    ) {
+      return null;
+    }
+
+    return `${year}-${String(month).padStart(2, "0")}-${String(
+      day
+    ).padStart(2, "0")}`;
   }
 
   /*
@@ -196,54 +236,65 @@ function parseExcelDate(value: unknown): string | null {
   );
 
   if (match) {
-    const [, day, month, year] = match;
-
-    const dayNumber = Number(day);
-    const monthNumber = Number(month);
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]);
 
     if (
-      monthNumber < 1 ||
-      monthNumber > 12 ||
-      dayNumber < 1 ||
-      dayNumber > 31
+      !isValidDate(
+        year,
+        month,
+        day
+      )
     ) {
       return null;
     }
 
-    return `${year}-${String(monthNumber).padStart(
-      2,
-      "0"
-    )}-${String(dayNumber).padStart(2, "0")}`;
+    return `${year}-${String(month).padStart(2, "0")}-${String(
+      day
+    ).padStart(2, "0")}`;
   }
 
   /*
    * Meses em português
    */
-  const months: Record<string, string> = {
-    jan: "01",
-    janeiro: "01",
-    fev: "02",
-    fevereiro: "02",
-    mar: "03",
-    marco: "03",
-    abr: "04",
-    abril: "04",
-    mai: "05",
-    maio: "05",
-    jun: "06",
-    junho: "06",
-    jul: "07",
-    julho: "07",
-    ago: "08",
-    agosto: "08",
-    set: "09",
-    setembro: "09",
-    out: "10",
-    outubro: "10",
-    nov: "11",
-    novembro: "11",
-    dez: "12",
-    dezembro: "12",
+  const months: Record<string, number> = {
+    jan: 1,
+    janeiro: 1,
+
+    fev: 2,
+    fevereiro: 2,
+
+    mar: 3,
+    marco: 3,
+    março: 3,
+
+    abr: 4,
+    abril: 4,
+
+    mai: 5,
+    maio: 5,
+
+    jun: 6,
+    junho: 6,
+
+    jul: 7,
+    julho: 7,
+
+    ago: 8,
+    agosto: 8,
+
+    set: 9,
+    setembro: 9,
+
+    out: 10,
+    outubro: 10,
+
+    nov: 11,
+    novembro: 11,
+
+    dez: 12,
+    dezembro: 12,
   };
 
   const normalizedText = text
@@ -256,34 +307,37 @@ function parseExcelDate(value: unknown): string | null {
   );
 
   if (match) {
-    const [, day, monthText, yearText] = match;
-
-    const month = months[monthText];
+    const day = Number(match[1]);
+    const month = months[match[2]];
 
     if (!month) {
       return null;
     }
 
-    const dayNumber = Number(day);
+    let year = match[3];
+
+    if (year.length === 2) {
+      year =
+        Number(year) >= 50
+          ? `19${year}`
+          : `20${year}`;
+    }
+
+    const yearNumber = Number(year);
 
     if (
-      dayNumber < 1 ||
-      dayNumber > 31
+      !isValidDate(
+        yearNumber,
+        month,
+        day
+      )
     ) {
       return null;
     }
 
-    const year =
-      yearText.length === 2
-        ? Number(yearText) >= 50
-          ? `19${yearText}`
-          : `20${yearText}`
-        : yearText;
-
-    return `${year}-${month}-${String(dayNumber).padStart(
-      2,
-      "0"
-    )}`;
+    return `${year}-${String(month).padStart(2, "0")}-${String(
+      day
+    ).padStart(2, "0")}`;
   }
 
   return null;
@@ -305,7 +359,9 @@ function parseExcelValue(value: unknown): number | null {
   }
 
   if (typeof value === "number") {
-    return Number.isFinite(value) ? value : null;
+    return Number.isFinite(value)
+      ? value
+      : null;
   }
 
   let text = String(value).trim();
@@ -319,6 +375,9 @@ function parseExcelValue(value: unknown): number | null {
     .replace(/\s/g, "")
     .replace(/\u00A0/g, "");
 
+  /*
+   * 1.011,00 -> 1011.00
+   */
   if (text.includes(",")) {
     text = text
       .replace(/\./g, "")
@@ -366,14 +425,26 @@ function normalizeData(
         ),
 
         fornecedor:
-          normalizedRow.fornecedor
+          normalizedRow.fornecedor !==
+            null &&
+          normalizedRow.fornecedor !==
+            undefined &&
+          String(
+            normalizedRow.fornecedor
+          ).trim() !== ""
             ? String(
                 normalizedRow.fornecedor
               ).trim()
             : null,
 
         identificacao:
-          normalizedRow.identificacao
+          normalizedRow.identificacao !==
+            null &&
+          normalizedRow.identificacao !==
+            undefined &&
+          String(
+            normalizedRow.identificacao
+          ).trim() !== ""
             ? String(
                 normalizedRow.identificacao
               ).trim()
@@ -384,7 +455,13 @@ function normalizeData(
         ),
 
         observacao:
-          normalizedRow.observacao
+          normalizedRow.observacao !==
+            null &&
+          normalizedRow.observacao !==
+            undefined &&
+          String(
+            normalizedRow.observacao
+          ).trim() !== ""
             ? String(
                 normalizedRow.observacao
               ).trim()
@@ -411,7 +488,32 @@ function normalizeData(
         ),
       };
     })
-    .filter((row) => row.nf);
+    .filter(
+      (row) =>
+        row.nf.length > 0
+    );
+}
+
+/*
+ * ============================================================
+ * FORMATAÇÃO DE VALOR
+ * ============================================================
+ */
+
+function formatCurrency(
+  value: number | null
+): string {
+  if (value === null) {
+    return "—";
+  }
+
+  return new Intl.NumberFormat(
+    "pt-BR",
+    {
+      style: "currency",
+      currency: "BRL",
+    }
+  ).format(value);
 }
 
 /*
@@ -469,10 +571,45 @@ export function ImportExcelDialog({
           i + BATCH_SIZE
         );
 
+        /*
+         * Segurança adicional:
+         *
+         * nunca envia uma data inválida
+         * para o PostgreSQL.
+         */
+        const safeBatch =
+          batch.map((row) => ({
+            ...row,
+
+            data: parseExcelDate(
+              row.data
+            ),
+
+            venc01: parseExcelDate(
+              row.venc01
+            ),
+
+            venc02: parseExcelDate(
+              row.venc02
+            ),
+
+            venc03: parseExcelDate(
+              row.venc03
+            ),
+
+            venc04: parseExcelDate(
+              row.venc04
+            ),
+
+            venc05: parseExcelDate(
+              row.venc05
+            ),
+          }));
+
         const { error } =
           await supabase
             .from("notas_fiscais")
-            .insert(batch);
+            .insert(safeBatch);
 
         if (error) {
           console.error(
@@ -487,9 +624,12 @@ export function ImportExcelDialog({
           );
         }
 
-        imported += batch.length;
+        imported +=
+          batch.length;
 
-        setImportProgress(imported);
+        setImportProgress(
+          imported
+        );
       }
 
       return imported;
@@ -503,7 +643,9 @@ export function ImportExcelDialog({
       );
 
       qc.invalidateQueries({
-        queryKey: ["notas-fiscais"],
+        queryKey: [
+          "notas-fiscais",
+        ],
       });
 
       setPreviewData([]);
@@ -549,7 +691,8 @@ export function ImportExcelDialog({
       "Lendo a planilha..."
     );
 
-    const reader = new FileReader();
+    const reader =
+      new FileReader();
 
     reader.onload = (e) => {
       try {
@@ -570,7 +713,8 @@ export function ImportExcelDialog({
           });
 
         if (
-          !workbook.SheetNames.length
+          workbook.SheetNames
+            .length === 0
         ) {
           toast.error(
             "Planilha vazia."
@@ -600,7 +744,9 @@ export function ImportExcelDialog({
             defval: null,
           });
 
-        if (json.length === 0) {
+        if (
+          json.length === 0
+        ) {
           toast.error(
             "Nenhum registro encontrado na planilha."
           );
@@ -608,7 +754,9 @@ export function ImportExcelDialog({
         }
 
         /*
-         * Verifica as colunas
+         * ======================================================
+         * VERIFICA COLUNAS
+         * ======================================================
          */
 
         const columns =
@@ -644,7 +792,9 @@ export function ImportExcelDialog({
         }
 
         /*
-         * Normaliza os dados
+         * ======================================================
+         * NORMALIZA DADOS
+         * ======================================================
          */
 
         const normalized =
@@ -660,11 +810,19 @@ export function ImportExcelDialog({
           return;
         }
 
+        /*
+         * ======================================================
+         * ABRE PREVISUALIZAÇÃO
+         * ======================================================
+         */
+
         setPreviewData(
           normalized
         );
 
-        setShowPreview(true);
+        setShowPreview(
+          true
+        );
 
         toast.success(
           `${normalized.length.toLocaleString(
@@ -695,6 +853,10 @@ export function ImportExcelDialog({
       file
     );
 
+    /*
+     * Permite escolher novamente
+     * o mesmo arquivo.
+     */
     if (fileInput.current) {
       fileInput.current.value =
         "";
@@ -703,11 +865,31 @@ export function ImportExcelDialog({
 
   /*
    * ==========================================================
-   * CANCELAR
+   * FECHAR PREVISUALIZAÇÃO
    * ==========================================================
    */
 
-  function handleCancel() {
+  function closePreview() {
+    if (
+      importMutation.isPending
+    ) {
+      return;
+    }
+
+    setShowPreview(false);
+    setPreviewData([]);
+    setImportProgress(0);
+
+    onOpenChange(false);
+  }
+
+  /*
+   * ==========================================================
+   * ABRIR ARQUIVO
+   * ==========================================================
+   */
+
+  function openFileSelector() {
     if (
       importMutation.isPending
     ) {
@@ -716,7 +898,39 @@ export function ImportExcelDialog({
 
     setPreviewData([]);
     setShowPreview(false);
-    setImportProgress(0);
+
+    onOpenChange(true);
+
+    /*
+     * Pequeno atraso para garantir
+     * que o navegador processe o clique
+     * corretamente.
+     */
+    setTimeout(() => {
+      fileInput.current?.click();
+    }, 100);
+  }
+
+  /*
+   * ==========================================================
+   * BLOQUEAR ESC DURANTE IMPORTAÇÃO
+   * ==========================================================
+   */
+
+  function handleKeyDown(
+    event: React.KeyboardEvent<HTMLDivElement>
+  ) {
+    if (
+      event.key === "Escape"
+    ) {
+      event.preventDefault();
+
+      if (
+        !importMutation.isPending
+      ) {
+        closePreview();
+      }
+    }
   }
 
   /*
@@ -727,346 +941,542 @@ export function ImportExcelDialog({
 
   return (
     <>
-      {/* INPUT DO ARQUIVO */}
+      {/* ====================================================
+          INPUT DO EXCEL
+          ==================================================== */}
 
       <input
         ref={fileInput}
         type="file"
         accept=".xlsx,.xls,.csv"
-        onChange={handleFileSelect}
+        onChange={
+          handleFileSelect
+        }
         className="hidden"
       />
 
       {/* ====================================================
-          MODAL PERSONALIZADO
+          MODAL DE PREVISUALIZAÇÃO
+          
+          IMPORTANTE:
+          Esta estrutura usa UMA única camada fixa.
+          Não utiliza AlertDialog dentro de outro Dialog.
+          Isso evita o efeito de transparência/sobreposição.
           ==================================================== */}
 
       {open &&
         showPreview &&
         previewData.length > 0 && (
           <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            className="fixed inset-0 z-[99999]"
             role="dialog"
             aria-modal="true"
+            aria-labelledby="import-excel-title"
+            onKeyDown={
+              handleKeyDown
+            }
+            tabIndex={-1}
           >
-            {/* FUNDO OPACO */}
-
-            <div
-              className="absolute inset-0 bg-black/70 backdrop-blur-[2px]"
-              onClick={() => {
-                if (
-                  !importMutation.isPending
-                ) {
-                  handleCancel();
-                  onOpenChange(false);
-                }
-              }}
-            />
-
             {/* =================================================
-                JANELA
+                FUNDO DO MODAL
                 ================================================= */}
 
             <div
               className="
-                relative
-                z-[10000]
-                w-[calc(100%-24px)]
-                max-w-6xl
-                max-h-[92vh]
-                overflow-hidden
-                rounded-xl
-                border
-                border-border
-                bg-background
-                text-foreground
-                shadow-2xl
-                flex
-                flex-col
+                absolute
+                inset-0
+                bg-black/80
               "
-              onClick={(event) =>
-                event.stopPropagation()
-              }
+              aria-hidden="true"
+            />
+
+            {/* =================================================
+                CONTAINER CENTRAL
+                ================================================= */}
+
+            <div
+              className="
+                absolute
+                inset-0
+                flex
+                items-center
+                justify-center
+                p-3
+                sm:p-6
+              "
             >
-              {/* CABEÇALHO */}
+              <div
+                className="
+                  relative
+                  flex
+                  h-[92vh]
+                  w-full
+                  max-w-[1400px]
+                  flex-col
+                  overflow-hidden
+                  rounded-xl
+                  border
+                  border-border
+                  bg-background
+                  text-foreground
+                  shadow-2xl
+                "
+                onClick={(event) =>
+                  event.stopPropagation()
+                }
+              >
+                {/* =================================================
+                    CABEÇALHO
+                    ================================================= */}
 
-              <div className="px-6 py-5 border-b bg-background shrink-0">
-                <h2 className="text-xl font-semibold">
-                  Confirmar Importação de
-                  Notas Fiscais
-                </h2>
+                <div
+                  className="
+                    flex
+                    shrink-0
+                    items-center
+                    justify-between
+                    gap-4
+                    border-b
+                    bg-background
+                    px-5
+                    py-4
+                  "
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="
+                        flex
+                        h-10
+                        w-10
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-lg
+                        bg-primary/10
+                        text-primary
+                      "
+                    >
+                      <FileSpreadsheet className="h-5 w-5" />
+                    </div>
 
-                <p className="mt-1 text-sm text-muted-foreground">
-                  <strong className="text-foreground">
-                    {previewData.length.toLocaleString(
-                      "pt-BR"
-                    )}
-                  </strong>{" "}
-                  nota(s) fiscal(is)
-                  encontrada(s).
-                  <br />
-                  Confira os dados antes de
-                  importar.
-                </p>
-              </div>
+                    <div>
+                      <h2
+                        id="import-excel-title"
+                        className="
+                          text-lg
+                          font-semibold
+                          leading-tight
+                        "
+                      >
+                        Confirmar Importação
+                        de Notas Fiscais
+                      </h2>
 
-              {/* PROGRESSO */}
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        <strong className="text-foreground">
+                          {previewData.length.toLocaleString(
+                            "pt-BR"
+                          )}
+                        </strong>{" "}
+                        nota(s) fiscal(is)
+                        encontrada(s).
+                      </p>
+                    </div>
+                  </div>
 
-              {importMutation.isPending && (
-                <div className="px-6 py-4 border-b bg-muted/30 shrink-0">
-                  <div className="flex items-center justify-between text-sm mb-2">
-                    <span>
-                      Importando notas
-                      fiscais...
-                    </span>
+                  <button
+                    type="button"
+                    aria-label="Fechar"
+                    disabled={
+                      importMutation.isPending
+                    }
+                    onClick={
+                      closePreview
+                    }
+                    className="
+                      flex
+                      h-9
+                      w-9
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-md
+                      border
+                      border-transparent
+                      text-muted-foreground
+                      transition
+                      hover:bg-muted
+                      hover:text-foreground
+                      disabled:pointer-events-none
+                      disabled:opacity-50
+                    "
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
 
-                    <span className="font-medium">
-                      {importProgress.toLocaleString(
-                        "pt-BR"
-                      )}{" "}
-                      /{" "}
+                {/* =================================================
+                    PROGRESSO
+                    ================================================= */}
+
+                {importMutation.isPending && (
+                  <div
+                    className="
+                      shrink-0
+                      border-b
+                      bg-muted/30
+                      px-5
+                      py-3
+                    "
+                  >
+                    <div className="mb-2 flex items-center justify-between text-sm">
+                      <span className="font-medium">
+                        Importando notas
+                        fiscais...
+                      </span>
+
+                      <span>
+                        {importProgress.toLocaleString(
+                          "pt-BR"
+                        )}{" "}
+                        /{" "}
+                        {previewData.length.toLocaleString(
+                          "pt-BR"
+                        )}
+                      </span>
+                    </div>
+
+                    <div
+                      className="
+                        h-2
+                        w-full
+                        overflow-hidden
+                        rounded-full
+                        bg-muted
+                      "
+                    >
+                      <div
+                        className="
+                          h-full
+                          rounded-full
+                          bg-primary
+                          transition-all
+                          duration-300
+                        "
+                        style={{
+                          width: `${
+                            previewData.length >
+                            0
+                              ? Math.min(
+                                  100,
+                                  (importProgress /
+                                    previewData.length) *
+                                    100
+                                )
+                              : 0
+                          }%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* =================================================
+                    INFORMAÇÃO
+                    ================================================= */}
+
+                {!importMutation.isPending && (
+                  <div
+                    className="
+                      shrink-0
+                      border-b
+                      bg-background
+                      px-5
+                      py-3
+                      text-sm
+                      text-muted-foreground
+                    "
+                  >
+                    Confira os dados abaixo
+                    antes de importar.
+                  </div>
+                )}
+
+                {/* =================================================
+                    TABELA
+                    ================================================= */}
+
+                <div
+                  className="
+                    min-h-0
+                    flex-1
+                    overflow-auto
+                    bg-background
+                  "
+                >
+                  <table
+                    className="
+                      w-full
+                      min-w-[1100px]
+                      border-collapse
+                      text-sm
+                    "
+                  >
+                    <thead>
+                      <tr
+                        className="
+                          sticky
+                          top-0
+                          z-20
+                          border-b
+                          bg-muted
+                        "
+                      >
+                        <th className="whitespace-nowrap px-3 py-3 text-left font-semibold">
+                          #
+                        </th>
+
+                        <th className="whitespace-nowrap px-3 py-3 text-left font-semibold">
+                          Data
+                        </th>
+
+                        <th className="whitespace-nowrap px-3 py-3 text-left font-semibold">
+                          NF
+                        </th>
+
+                        <th className="whitespace-nowrap px-3 py-3 text-left font-semibold">
+                          Fornecedor
+                        </th>
+
+                        <th className="px-3 py-3 text-left font-semibold">
+                          Observação
+                        </th>
+
+                        <th className="whitespace-nowrap px-3 py-3 text-left font-semibold">
+                          Identificação
+                        </th>
+
+                        <th className="whitespace-nowrap px-3 py-3 text-right font-semibold">
+                          Valor
+                        </th>
+
+                        <th className="whitespace-nowrap px-3 py-3 text-left font-semibold">
+                          Venc. 01
+                        </th>
+
+                        <th className="whitespace-nowrap px-3 py-3 text-left font-semibold">
+                          Venc. 02
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {previewData
+                        .slice(
+                          0,
+                          50
+                        )
+                        .map(
+                          (
+                            row,
+                            idx
+                          ) => (
+                            <tr
+                              key={`${row.nf}-${idx}`}
+                              className="
+                                border-b
+                                border-border/60
+                                bg-background
+                                transition-colors
+                                hover:bg-muted/40
+                              "
+                            >
+                              <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                                {idx +
+                                  1}
+                              </td>
+
+                              <td className="whitespace-nowrap px-3 py-2">
+                                {row.data ??
+                                  "—"}
+                              </td>
+
+                              <td className="whitespace-nowrap px-3 py-2 font-medium">
+                                {row.nf}
+                              </td>
+
+                              <td className="px-3 py-2">
+                                {row.fornecedor ??
+                                  "—"}
+                              </td>
+
+                              <td className="max-w-[320px] px-3 py-2">
+                                <div
+                                  className="truncate"
+                                  title={
+                                    row.observacao ??
+                                    undefined
+                                  }
+                                >
+                                  {row.observacao ??
+                                    "—"}
+                                </div>
+                              </td>
+
+                              <td className="px-3 py-2">
+                                {row.identificacao ??
+                                  "—"}
+                              </td>
+
+                              <td className="whitespace-nowrap px-3 py-2 text-right">
+                                {formatCurrency(
+                                  row.valor
+                                )}
+                              </td>
+
+                              <td className="whitespace-nowrap px-3 py-2">
+                                {row.venc01 ??
+                                  "—"}
+                              </td>
+
+                              <td className="whitespace-nowrap px-3 py-2">
+                                {row.venc02 ??
+                                  "—"}
+                              </td>
+                            </tr>
+                          )
+                        )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* =================================================
+                    AVISO DOS 50 PRIMEIROS
+                    ================================================= */}
+
+                {previewData.length >
+                  50 && (
+                  <div
+                    className="
+                      shrink-0
+                      border-t
+                      bg-muted/30
+                      px-5
+                      py-3
+                      text-sm
+                      text-muted-foreground
+                    "
+                  >
+                    Mostrando os primeiros{" "}
+                    <strong className="text-foreground">
+                      50
+                    </strong>{" "}
+                    registros.
+                    <br />
+                    Os{" "}
+                    <strong className="text-foreground">
                       {previewData.length.toLocaleString(
                         "pt-BR"
                       )}
-                    </span>
+                    </strong>{" "}
+                    registros serão
+                    importados.
                   </div>
+                )}
 
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full bg-primary transition-all duration-300"
-                      style={{
-                        width: `${
-                          previewData.length >
-                          0
-                            ? Math.min(
-                                100,
-                                (importProgress /
-                                  previewData.length) *
-                                  100
-                              )
-                            : 0
-                        }%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
+                {/* =================================================
+                    RODAPÉ
+                    ================================================= */}
 
-              {/* ÁREA DA TABELA */}
-
-              <div className="flex-1 min-h-0 overflow-auto bg-background">
-                <table className="w-full min-w-[1000px] text-sm">
-                  <thead className="sticky top-0 z-10 bg-muted border-b">
-                    <tr>
-                      <th className="px-3 py-3 text-left font-semibold">
-                        #
-                      </th>
-
-                      <th className="px-3 py-3 text-left font-semibold">
-                        Data
-                      </th>
-
-                      <th className="px-3 py-3 text-left font-semibold">
-                        NF
-                      </th>
-
-                      <th className="px-3 py-3 text-left font-semibold">
-                        Fornecedor
-                      </th>
-
-                      <th className="px-3 py-3 text-left font-semibold">
-                        Observação
-                      </th>
-
-                      <th className="px-3 py-3 text-left font-semibold">
-                        Identificação
-                      </th>
-
-                      <th className="px-3 py-3 text-right font-semibold">
-                        Valor
-                      </th>
-
-                      <th className="px-3 py-3 text-left font-semibold">
-                        Venc. 01
-                      </th>
-
-                      <th className="px-3 py-3 text-left font-semibold">
-                        Venc. 02
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {previewData
-                      .slice(0, 50)
-                      .map(
-                        (
-                          row,
-                          idx
-                        ) => (
-                          <tr
-                            key={`${row.nf}-${idx}`}
-                            className="border-b hover:bg-muted/50"
-                          >
-                            <td className="px-3 py-2 text-muted-foreground">
-                              {idx +
-                                1}
-                            </td>
-
-                            <td className="px-3 py-2 whitespace-nowrap">
-                              {row.data ??
-                                "—"}
-                            </td>
-
-                            <td className="px-3 py-2 font-medium">
-                              {row.nf}
-                            </td>
-
-                            <td className="px-3 py-2">
-                              {row.fornecedor ??
-                                "—"}
-                            </td>
-
-                            <td className="px-3 py-2 max-w-[280px] truncate">
-                              {row.observacao ??
-                                "—"}
-                            </td>
-
-                            <td className="px-3 py-2">
-                              {row.identificacao ??
-                                "—"}
-                            </td>
-
-                            <td className="px-3 py-2 text-right whitespace-nowrap">
-                              {row.valor !==
-                              null
-                                ? new Intl.NumberFormat(
-                                    "pt-BR",
-                                    {
-                                      style:
-                                        "currency",
-                                      currency:
-                                        "BRL",
-                                    }
-                                  ).format(
-                                    row.valor
-                                  )
-                                : "—"}
-                            </td>
-
-                            <td className="px-3 py-2 whitespace-nowrap">
-                              {row.venc01 ??
-                                "—"}
-                            </td>
-
-                            <td className="px-3 py-2 whitespace-nowrap">
-                              {row.venc02 ??
-                                "—"}
-                            </td>
-                          </tr>
-                        )
-                      )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* AVISO */}
-
-              {previewData.length >
-                50 && (
-                <div className="px-6 py-3 border-t bg-muted/30 text-sm text-muted-foreground shrink-0">
-                  Mostrando os primeiros{" "}
-                  <strong className="text-foreground">
-                    50
-                  </strong>{" "}
-                  registros.
-                  <br />
-                  Os{" "}
-                  <strong className="text-foreground">
-                    {previewData.length.toLocaleString(
-                      "pt-BR"
-                    )}
-                  </strong>{" "}
-                  registros serão
-                  importados.
-                </div>
-              )}
-
-              {/* RODAPÉ */}
-
-              <div className="flex items-center justify-between gap-3 px-6 py-4 border-t bg-background shrink-0">
-                <button
-                  type="button"
-                  disabled={
-                    importMutation.isPending
-                  }
-                  onClick={
-                    handleCancel
-                  }
+                <div
                   className="
-                    inline-flex
-                    h-10
-                    items-center
-                    justify-center
-                    rounded-md
-                    border
-                    border-input
+                    flex
+                    shrink-0
+                    flex-col-reverse
+                    gap-3
+                    border-t
                     bg-background
-                    px-4
-                    text-sm
-                    font-medium
-                    hover:bg-accent
-                    hover:text-accent-foreground
-                    disabled:pointer-events-none
-                    disabled:opacity-50
-                  "
-                >
-                  Cancelar
-                </button>
-
-                <button
-                  type="button"
-                  disabled={
-                    importMutation.isPending ||
-                    previewData.length ===
-                      0
-                  }
-                  onClick={() => {
-                    if (
-                      !importMutation.isPending
-                    ) {
-                      importMutation.mutate(
-                        previewData
-                      );
-                    }
-                  }}
-                  className="
-                    inline-flex
-                    h-10
-                    items-center
-                    justify-center
-                    rounded-md
-                    bg-primary
                     px-5
-                    text-sm
-                    font-medium
-                    text-primary-foreground
-                    shadow
-                    hover:bg-primary/90
-                    disabled:pointer-events-none
-                    disabled:opacity-50
+                    py-4
+                    sm:flex-row
+                    sm:items-center
+                    sm:justify-between
                   "
                 >
-                  {importMutation.isPending
-                    ? `Importando ${importProgress.toLocaleString(
-                        "pt-BR"
-                      )} / ${previewData.length.toLocaleString(
-                        "pt-BR"
-                      )}...`
-                    : `Importar ${previewData.length.toLocaleString(
-                        "pt-BR"
-                      )} notas`}
-                </button>
+                  <button
+                    type="button"
+                    disabled={
+                      importMutation.isPending
+                    }
+                    onClick={
+                      closePreview
+                    }
+                    className="
+                      inline-flex
+                      h-10
+                      items-center
+                      justify-center
+                      rounded-md
+                      border
+                      border-input
+                      bg-background
+                      px-5
+                      text-sm
+                      font-medium
+                      transition-colors
+                      hover:bg-muted
+                      disabled:pointer-events-none
+                      disabled:opacity-50
+                    "
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={
+                      importMutation.isPending ||
+                      previewData.length ===
+                        0
+                    }
+                    onClick={() => {
+                      if (
+                        !importMutation.isPending
+                      ) {
+                        importMutation.mutate(
+                          previewData
+                        );
+                      }
+                    }}
+                    className="
+                      inline-flex
+                      h-10
+                      items-center
+                      justify-center
+                      rounded-md
+                      bg-primary
+                      px-6
+                      text-sm
+                      font-medium
+                      text-primary-foreground
+                      shadow-sm
+                      transition-colors
+                      hover:bg-primary/90
+                      disabled:pointer-events-none
+                      disabled:opacity-50
+                    "
+                  >
+                    {importMutation.isPending
+                      ? `Importando ${importProgress.toLocaleString(
+                          "pt-BR"
+                        )} / ${previewData.length.toLocaleString(
+                          "pt-BR"
+                        )}...`
+                      : `Importar ${previewData.length.toLocaleString(
+                          "pt-BR"
+                        )} notas`}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1077,31 +1487,18 @@ export function ImportExcelDialog({
           ==================================================== */}
 
       <Button
+        type="button"
         variant="outline"
         size="sm"
-        onClick={() => {
-          if (
-            importMutation.isPending
-          ) {
-            return;
-          }
-
-          setPreviewData([]);
-          setShowPreview(false);
-
-          onOpenChange(true);
-
-          setTimeout(() => {
-            fileInput.current?.click();
-          }, 50);
-        }}
-        className="gap-2"
+        onClick={
+          openFileSelector
+        }
         disabled={
           importMutation.isPending
         }
+        className="gap-2"
       >
-        <Upload className="w-4 h-4" />
-
+        <Upload className="h-4 w-4" />
         Importar Excel
       </Button>
     </>
