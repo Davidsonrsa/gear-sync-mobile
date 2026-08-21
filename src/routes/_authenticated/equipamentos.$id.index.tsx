@@ -576,7 +576,7 @@ function EquipamentoDetail() {
               onChange={(e) => setForm({ ...form, cnh: e.target.value })}
             />
           </Field>
-          <Field label="Aferição taco">
+          <Field label="Vencimento da Aferição do Tacógrafo">
             <Input
               value={form.afericao_taco ?? ""}
               readOnly={ro}
