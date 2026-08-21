@@ -262,7 +262,7 @@ function parseExcelDate(value: unknown): string | null {
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
-  match = normalizedText.match(/^(\d{1,2})[-\/\s]([a-z]+)[-\/\s](\d{2}|\d{4})$/);
+  match = normalizedText.match(/^(\d{1,2})[-/\s]([a-z]+)[-/\s](\d{2}|\d{4})$/);
 
   if (match) {
     const day = Number(match[1]);
