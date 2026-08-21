@@ -5,10 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, ChevronRight, Plus, Gauge } from "lucide-react";
+import { Search, ChevronRight, Plus, Gauge, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Notificacoes } from "@/components/Notificacoes";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -16,6 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/equipamentos/")({
   component: EquipamentosList,
@@ -37,6 +45,92 @@ type Equip = {
   cl: string | null;
   cover_storage_path: string | null;
 };
+
+// Componente do Botão + Modal de Seguro
+function BotaoSeguro() {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [veiculo, setVeiculo] = useState("");
+  const [seguradora, setSeguradora] = useState("");
+  const [dataVencimento, setDataVencimento] = useState("");
+
+  const handleSalvar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const { error } = await supabase.from("seguros").insert([
+      {
+        veiculo_equipamento: veiculo,
+        seguradora: seguradora,
+        data_vencimento: dataVencimento,
+      },
+    ]);
+
+    setLoading(false);
+
+    if (error) {
+      toast.error("Erro ao salvar seguro: " + error.message);
+    } else {
+      toast.success("Seguro cadastrado com sucesso!");
+      setVeiculo("");
+      setSeguradora("");
+      setDataVencimento("");
+      setOpen(false);
+    }
+  };
+
+  return (
+    <>
+      <Button variant="outline" size="sm" className="h-9" onClick={() => setOpen(true)}>
+        <ShieldCheck className="w-4 h-4 mr-1.5" /> Seguro
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Incluir Seguro</DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSalvar} className="space-y-4">
+            <div>
+              <Label className="text-xs">Veículo / Equipamento</Label>
+              <Input
+                required
+                placeholder="Ex: CB-01 ou Escavadeira"
+                value={veiculo}
+                onChange={(e) => setVeiculo(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs">Seguradora</Label>
+              <Input
+                required
+                placeholder="Ex: Porto Seguro"
+                value={seguradora}
+                onChange={(e) => setSeguradora(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs">Data de Vencimento</Label>
+              <Input
+                type="date"
+                required
+                value={dataVencimento}
+                onChange={(e) => setDataVencimento(e.target.value)}
+              />
+            </div>
+
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Salvando..." : "Salvar Seguro"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
 
 function EquipamentosList() {
   const { isAdmin } = useAuth();
@@ -117,7 +211,7 @@ function EquipamentosList() {
           />
         </div>
         <Notificacoes />
-        <div className="flex gap-2 md:shrink-0">
+        <div className="flex gap-2 md:shrink-0 flex-wrap">
           <Select value={cl} onValueChange={setCl}>
             <SelectTrigger className="h-9 flex-1 md:w-40">
               <SelectValue placeholder="Classe (CL)" />
@@ -140,6 +234,9 @@ function EquipamentosList() {
           >
             {onlyOverdue ? "Só vencidos ✓" : "Vencidos"}
           </Button>
+
+          {/* Botão de Seguro Adicionado Aqui */}
+          <BotaoSeguro />
         </div>
         <p className="text-xs text-muted-foreground px-1 md:ml-auto md:whitespace-nowrap">
           {isLoading
