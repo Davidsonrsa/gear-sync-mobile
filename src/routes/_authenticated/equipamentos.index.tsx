@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, ChevronRight, Plus, Gauge, ShieldCheck } from "lucide-react";
+import { Search, ChevronRight, Plus, Gauge, ShieldCheck, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -50,9 +50,27 @@ type Equip = {
 function BotaoSeguro() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [seguros, setSeguros] = useState<any[]>([]);
   const [veiculo, setVeiculo] = useState("");
   const [seguradora, setSeguradora] = useState("");
   const [dataVencimento, setDataVencimento] = useState("");
+
+  const carregarSeguros = async () => {
+    const { data, error } = await supabase
+      .from("seguros")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setSeguros(data);
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      carregarSeguros();
+    }
+  }, [open]);
 
   const handleSalvar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +93,17 @@ function BotaoSeguro() {
       setVeiculo("");
       setSeguradora("");
       setDataVencimento("");
-      setOpen(false);
+      carregarSeguros();
+    }
+  };
+
+  const handleExcluir = async (id: string) => {
+    const { error } = await supabase.from("seguros").delete().eq("id", id);
+    if (error) {
+      toast.error("Erro ao remover seguro.");
+    } else {
+      toast.success("Seguro removido!");
+      carregarSeguros();
     }
   };
 
@@ -86,12 +114,16 @@ function BotaoSeguro() {
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-       <DialogContent className="sm:max-w-md bg-white">
+        <DialogContent className="sm:max-w-md bg-popover text-popover-foreground border border-border shadow-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Incluir Seguro</DialogTitle>
+            <DialogTitle>Gerenciar Seguros</DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleSalvar} className="space-y-4">
+          <form onSubmit={handleSalvar} className="space-y-3 border-b pb-4">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Novo Cadastro
+            </h4>
+
             <div>
               <Label className="text-xs">Veículo / Equipamento</Label>
               <Input
@@ -126,6 +158,51 @@ function BotaoSeguro() {
               {loading ? "Salvando..." : "Salvar Seguro"}
             </Button>
           </form>
+
+          <div className="space-y-2 pt-2">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Seguros Cadastrados
+            </h4>
+            {seguros.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2 text-center">
+                Nenhum seguro cadastrado.
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                {seguros.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-2.5 rounded-md bg-card border border-border text-xs flex justify-between items-center shadow-sm"
+                  >
+                    <div>
+                      <p className="font-semibold">{item.veiculo_equipamento}</p>
+                      <p className="text-muted-foreground">{item.seguradora}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <p className="text-[10px] text-muted-foreground">Vencimento</p>
+                        <p className="font-mono font-medium">
+                          {item.data_vencimento
+                            ? new Date(item.data_vencimento + "T00:00:00").toLocaleDateString(
+                                "pt-BR"
+                              )
+                            : "-"}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                        onClick={() => handleExcluir(item.id)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </>
@@ -144,7 +221,7 @@ function EquipamentosList() {
       const { data, error } = await supabase
         .from("equipamentos")
         .select(
-          "id, numero, identificacao, placa, localizacao, operador_contato, horimetro_atual, h_revisao, limite_revisao, proxima_revisao_horimetro, data_horimetro_atual, status, cl, cover_storage_path",
+          "id, numero, identificacao, placa, localizacao, operador_contato, horimetro_atual, h_revisao, limite_revisao, proxima_revisao_horimetro, data_horimetro_atual, status, cl, cover_storage_path"
         )
         .order("numero", { ascending: true });
 
@@ -258,7 +335,7 @@ function EquipamentosList() {
             e.horimetro_atual && e.proxima_revisao_horimetro
               ? Math.min(
                   100,
-                  (Number(e.horimetro_atual) / Number(e.proxima_revisao_horimetro)) * 100,
+                  (Number(e.horimetro_atual) / Number(e.proxima_revisao_horimetro)) * 100
                 )
               : 0;
           const hrRodado =
@@ -271,7 +348,11 @@ function EquipamentosList() {
             <li key={e.id}>
               <Link to="/equipamentos/$id" params={{ id: e.id }} className="block">
                 <Card
-                  className={`p-3 transition-colors ${overdue ? "border-2 border-destructive bg-destructive/10 ring-2 ring-destructive/40 shadow-md" : "hover:bg-accent/5 active:bg-accent/10"}`}
+                  className={`p-3 transition-colors ${
+                    overdue
+                      ? "border-2 border-destructive bg-destructive/10 ring-2 ring-destructive/40 shadow-md"
+                      : "hover:bg-accent/5 active:bg-accent/10"
+                  }`}
                 >
                   <div className="flex items-start gap-3">
                     {coverUrl ? (
@@ -320,19 +401,27 @@ function EquipamentosList() {
                       <div className="mt-2 flex items-center gap-2">
                         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full ${overdue ? "bg-destructive blink-overdue" : "bg-accent"}`}
+                            className={`h-full rounded-full ${
+                              overdue ? "bg-destructive blink-overdue" : "bg-accent"
+                            }`}
                             style={{ width: `${horaPct}%` }}
                           />
                         </div>
                         <span
-                          className={`text-[11px] font-medium tabular-nums ${overdue ? "text-destructive blink-overdue" : ""}`}
+                          className={`text-[11px] font-medium tabular-nums ${
+                            overdue ? "text-destructive blink-overdue" : ""
+                          }`}
                         >
                           {e.horimetro_atual ?? 0}h
                         </span>
                       </div>
                       {hrRodado != null && (
                         <div
-                          className={`mt-1 text-[11px] ${overdue ? "text-destructive font-semibold blink-overdue" : "text-muted-foreground"}`}
+                          className={`mt-1 text-[11px] ${
+                            overdue
+                              ? "text-destructive font-semibold blink-overdue"
+                              : "text-muted-foreground"
+                          }`}
                         >
                           Hr rodado: <span className="tabular-nums">{hrRodado}h</span>
                           {overdue && (
