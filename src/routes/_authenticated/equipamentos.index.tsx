@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, ChevronRight, Plus, Gauge, ShieldCheck, Trash2, Edit2 } from "lucide-react";
+import { Search, ChevronRight, Plus, Gauge, ShieldCheck, Trash2, Edit2, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -53,7 +53,21 @@ type Seguro = {
   data_vencimento: string;
 };
 
-// Componente do Modal de Seguros (Com fundo 100% branco e abas separadas)
+// Funções auxiliares para cálculo de vencimento em dias
+function calcularDiasVencimento(dataVencimentoStr: string): number | null {
+  if (!dataVencimentoStr) return null;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const [ano, mes, dia] = dataVencimentoStr.split("-").map(Number);
+  const dataVenc = new Date(ano, mes - 1, dia);
+  dataVenc.setHours(0, 0, 0, 0);
+
+  const diffTempo = dataVenc.getTime() - hoje.getTime();
+  return Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
+}
+
+// Componente do Modal de Seguros com Sistema de Alertas
 function BotaoSeguro() {
   const [open, setOpen] = useState(false);
   const [aba, setAba] = useState<"lista" | "novo">("lista");
@@ -70,7 +84,7 @@ function BotaoSeguro() {
     const { data, error } = await supabase
       .from("seguros")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("data_vencimento", { ascending: true });
 
     if (!error && data) {
       setSeguros(data as Seguro[]);
@@ -78,11 +92,23 @@ function BotaoSeguro() {
   };
 
   useEffect(() => {
+    carregarSeguros();
+  }, []);
+
+  useEffect(() => {
     if (open) {
       carregarSeguros();
       setAba("lista");
     }
   }, [open]);
+
+  // Identifica seguros vencidos ou a vencer em até 30 dias
+  const segurosComAlerta = useMemo(() => {
+    return seguros.filter((s) => {
+      const dias = calcularDiasVencimento(s.data_vencimento);
+      return dias !== null && dias <= 30;
+    });
+  }, [seguros]);
 
   const resetForm = () => {
     setEditingId(null);
@@ -169,8 +195,17 @@ function BotaoSeguro() {
 
   return (
     <>
-      <Button variant="outline" size="sm" className="h-9" onClick={() => setOpen(true)}>
-        <ShieldCheck className="w-4 h-4 mr-1.5" /> Seguro
+      <Button variant="outline" size="sm" className="h-9 relative" onClick={() => setOpen(true)}>
+        <ShieldCheck className="w-4 h-4 mr-1.5" />
+        Seguro
+        {segurosComAlerta.length > 0 && (
+          <Badge
+            variant="destructive"
+            className="ml-1.5 px-1.5 py-0 text-[10px] h-4 rounded-full font-bold bg-red-600 text-white"
+          >
+            {segurosComAlerta.length}
+          </Badge>
+        )}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -179,8 +214,8 @@ function BotaoSeguro() {
           className="sm:max-w-md text-slate-900 border border-slate-300 shadow-2xl p-0 overflow-hidden"
         >
           <DialogHeader className="p-4 pb-3 border-b border-slate-200 bg-slate-50">
-            <DialogTitle className="text-slate-900 font-bold text-base">
-              Gerenciar Seguros
+            <DialogTitle className="text-slate-900 font-bold text-base flex items-center justify-between pr-6">
+              <span>Gerenciar Seguros</span>
             </DialogTitle>
 
             <div className="flex gap-2 mt-3">
@@ -214,6 +249,19 @@ function BotaoSeguro() {
           <div className="p-4 max-h-[70vh] overflow-y-auto bg-white">
             {aba === "lista" && (
               <div className="space-y-3">
+                {/* Banner de Aviso de Vencimentos em ate 30 dias */}
+                {segurosComAlerta.length > 0 && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-amber-900 text-xs">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold">Atenção aos Vencimentos!</p>
+                      <p className="text-[11px] text-amber-800">
+                        Existe(m) <strong>{segurosComAlerta.length}</strong> seguro(s) vencido(s) ou que vence(m) nos próximos 30 dias.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="relative">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                   <Input
@@ -230,46 +278,80 @@ function BotaoSeguro() {
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    {segurosFiltrados.map((item) => (
-                      <div
-                        key={item.id}
-                        className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs flex justify-between items-center shadow-sm"
-                      >
-                        <div className="space-y-0.5">
-                          <p className="font-bold text-slate-900 text-sm">{item.veiculo_equipamento}</p>
-                          <p className="text-slate-600 font-medium">{item.seguradora}</p>
-                          <p className="text-[11px] font-mono text-blue-600 font-semibold mt-1">
-                            Vencimento:{" "}
-                            {item.data_vencimento
-                              ? new Date(item.data_vencimento + "T00:00:00").toLocaleDateString("pt-BR")
-                              : "-"}
-                          </p>
-                        </div>
+                    {segurosFiltrados.map((item) => {
+                      const diasRestantes = calcularDiasVencimento(item.data_vencimento);
+                      const isVencido = diasRestantes !== null && diasRestantes < 0;
+                      const isVencendoEmBreve =
+                        diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 30;
 
-                        <div className="flex items-center gap-1">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-slate-600 hover:text-slate-900 hover:bg-slate-200"
-                            title="Editar"
-                            onClick={() => handleIniciarEdicao(item)}
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-red-600 hover:bg-red-50"
-                            title="Excluir"
-                            onClick={() => handleExcluir(item.id)}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
+                      return (
+                        <div
+                          key={item.id}
+                          className={`p-3 rounded-lg border text-xs flex justify-between items-center shadow-sm transition-colors ${
+                            isVencido
+                              ? "bg-red-50 border-red-200"
+                              : isVencendoEmBreve
+                              ? "bg-amber-50 border-amber-200"
+                              : "bg-slate-50 border-slate-200"
+                          }`}
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-slate-900 text-sm">
+                                {item.veiculo_equipamento}
+                              </p>
+
+                              {/* Alertas Visuais */}
+                              {isVencido && (
+                                <Badge className="bg-red-600 text-white text-[10px] px-1.5 py-0">
+                                  Vencido ({Math.abs(diasRestantes!)}d atrás)
+                                </Badge>
+                              )}
+                              {isVencendoEmBreve && (
+                                <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0">
+                                  Vence em {diasRestantes === 0 ? "Hoje" : `${diasRestantes}d`}
+                                </Badge>
+                              )}
+                            </div>
+
+                            <p className="text-slate-600 font-medium">{item.seguradora}</p>
+                            <p className="text-[11px] font-mono text-slate-700 font-medium">
+                              Vencimento:{" "}
+                              <span className="font-bold">
+                                {item.data_vencimento
+                                  ? new Date(item.data_vencimento + "T00:00:00").toLocaleDateString(
+                                      "pt-BR"
+                                    )
+                                  : "-"}
+                              </span>
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-slate-600 hover:text-slate-900 hover:bg-slate-200"
+                              title="Editar"
+                              onClick={() => handleIniciarEdicao(item)}
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-600 hover:bg-red-50"
+                              title="Excluir"
+                              onClick={() => handleExcluir(item.id)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -438,7 +520,7 @@ function EquipamentosList() {
             {onlyOverdue ? "Só vencidos ✓" : "Vencidos"}
           </Button>
 
-          {/* Botão de Seguro com Modal Reformulada */}
+          {/* Botão de Seguro com Notificação de Vencimentos em 30 Dias */}
           <BotaoSeguro />
         </div>
         <p className="text-xs text-muted-foreground px-1 md:ml-auto md:whitespace-nowrap">
