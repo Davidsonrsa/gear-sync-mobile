@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, ChevronRight, Plus, Gauge } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { Notificacoes } from "@/components/Notificacoes";
 import {
   Select,
   SelectContent,
@@ -115,6 +116,7 @@ function EquipamentosList() {
             className="pl-9 h-11"
           />
         </div>
+        <Notificacoes />
         <div className="flex gap-2 md:shrink-0">
           <Select value={cl} onValueChange={setCl}>
             <SelectTrigger className="h-9 flex-1 md:w-40">
