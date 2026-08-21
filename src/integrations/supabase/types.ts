@@ -375,6 +375,33 @@ export type Database = {
         }
         Relationships: []
       }
+      seguros: {
+        Row: {
+          created_at: string
+          data_vencimento: string
+          id: string
+          seguradora: string
+          updated_at: string
+          veiculo_equipamento: string
+        }
+        Insert: {
+          created_at?: string
+          data_vencimento: string
+          id?: string
+          seguradora: string
+          updated_at?: string
+          veiculo_equipamento: string
+        }
+        Update: {
+          created_at?: string
+          data_vencimento?: string
+          id?: string
+          seguradora?: string
+          updated_at?: string
+          veiculo_equipamento?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -401,6 +428,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_notas_fiscais: { Args: never; Returns: boolean }
+      can_view_notas_fiscais: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
