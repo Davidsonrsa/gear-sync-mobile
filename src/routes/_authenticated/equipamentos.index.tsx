@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, ChevronRight, Plus, Gauge, ShieldCheck, Trash2, Edit2, Check, X } from "lucide-react";
+import { Search, ChevronRight, Plus, Gauge, ShieldCheck, Trash2, Edit2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -53,7 +53,7 @@ type Seguro = {
   data_vencimento: string;
 };
 
-// Componente Completo de Gerenciamento de Seguros
+// Componente do Modal de Seguros (Com fundo 100% branco e abas separadas)
 function BotaoSeguro() {
   const [open, setOpen] = useState(false);
   const [aba, setAba] = useState<"lista" | "novo">("lista");
@@ -61,7 +61,6 @@ function BotaoSeguro() {
   const [seguros, setSeguros] = useState<Seguro[]>([]);
   const [filtro, setFiltro] = useState("");
 
-  // Formulário Cadastro/Edição
   const [editingId, setEditingId] = useState<string | null>(null);
   const [veiculo, setVeiculo] = useState("");
   const [seguradora, setSeguradora] = useState("");
@@ -81,6 +80,7 @@ function BotaoSeguro() {
   useEffect(() => {
     if (open) {
       carregarSeguros();
+      setAba("lista");
     }
   }, [open]);
 
@@ -96,7 +96,6 @@ function BotaoSeguro() {
     setLoading(true);
 
     if (editingId) {
-      // Atualizar Seguro Existente
       const { error } = await supabase
         .from("seguros")
         .update({
@@ -111,13 +110,12 @@ function BotaoSeguro() {
       if (error) {
         toast.error("Erro ao atualizar seguro: " + error.message);
       } else {
-        toast.success("Seguro atualizado com sucesso!");
+        toast.success("Seguro atualizado!");
         resetForm();
         setAba("lista");
         carregarSeguros();
       }
     } else {
-      // Inserir Novo Seguro
       const { error } = await supabase.from("seguros").insert([
         {
           veiculo_equipamento: veiculo,
@@ -131,7 +129,7 @@ function BotaoSeguro() {
       if (error) {
         toast.error("Erro ao cadastrar seguro: " + error.message);
       } else {
-        toast.success("Seguro cadastrado com sucesso!");
+        toast.success("Seguro cadastrado!");
         resetForm();
         setAba("lista");
         carregarSeguros();
@@ -148,7 +146,7 @@ function BotaoSeguro() {
   };
 
   const handleExcluir = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este seguro?")) return;
+    if (!confirm("Deseja realmente excluir este seguro?")) return;
 
     const { error } = await supabase.from("seguros").delete().eq("id", id);
     if (error) {
@@ -176,13 +174,15 @@ function BotaoSeguro() {
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md bg-background text-foreground border border-border shadow-2xl p-0 overflow-hidden">
-          <DialogHeader className="p-4 pb-2 border-b">
-            <DialogTitle className="flex justify-between items-center pr-6">
-              <span>Gerenciar Seguros</span>
+        <DialogContent
+          style={{ backgroundColor: "#ffffff", opacity: 1 }}
+          className="sm:max-w-md text-slate-900 border border-slate-300 shadow-2xl p-0 overflow-hidden"
+        >
+          <DialogHeader className="p-4 pb-3 border-b border-slate-200 bg-slate-50">
+            <DialogTitle className="text-slate-900 font-bold text-base">
+              Gerenciar Seguros
             </DialogTitle>
 
-            {/* Navegação entre Lista e Novo Cadastro */}
             <div className="flex gap-2 mt-3">
               <Button
                 type="button"
@@ -206,40 +206,39 @@ function BotaoSeguro() {
                   setAba("novo");
                 }}
               >
-                {editingId ? "Editar Seguro" : "+ Novo Seguro"}
+                {editingId ? "Editar Seguro" : "+ Cadastrar Novo"}
               </Button>
             </div>
           </DialogHeader>
 
-          <div className="p-4 max-h-[70vh] overflow-y-auto">
+          <div className="p-4 max-h-[70vh] overflow-y-auto bg-white">
             {aba === "lista" && (
               <div className="space-y-3">
-                {/* Campo de Filtro/Busca */}
                 <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                   <Input
-                    placeholder="Filtrar por equipamento ou seguradora..."
+                    placeholder="Filtrar equipamento ou seguradora..."
                     value={filtro}
                     onChange={(e) => setFiltro(e.target.value)}
-                    className="pl-8 h-8 text-xs"
+                    className="pl-8 h-8 text-xs bg-white border-slate-300 text-slate-900"
                   />
                 </div>
 
                 {segurosFiltrados.length === 0 ? (
-                  <p className="text-xs text-muted-foreground py-6 text-center">
-                    {filtro ? "Nenhum seguro encontrado para a busca." : "Nenhum seguro cadastrado."}
+                  <p className="text-xs text-slate-500 py-6 text-center">
+                    {filtro ? "Nenhum seguro encontrado." : "Nenhum seguro cadastrado ainda."}
                   </p>
                 ) : (
                   <div className="space-y-2">
                     {segurosFiltrados.map((item) => (
                       <div
                         key={item.id}
-                        className="p-3 rounded-lg bg-card border border-border text-xs flex justify-between items-center shadow-sm"
+                        className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs flex justify-between items-center shadow-sm"
                       >
                         <div className="space-y-0.5">
-                          <p className="font-semibold text-sm">{item.veiculo_equipamento}</p>
-                          <p className="text-muted-foreground">{item.seguradora}</p>
-                          <p className="text-[11px] font-mono text-primary font-medium mt-1">
+                          <p className="font-bold text-slate-900 text-sm">{item.veiculo_equipamento}</p>
+                          <p className="text-slate-600 font-medium">{item.seguradora}</p>
+                          <p className="text-[11px] font-mono text-blue-600 font-semibold mt-1">
                             Vencimento:{" "}
                             {item.data_vencimento
                               ? new Date(item.data_vencimento + "T00:00:00").toLocaleDateString("pt-BR")
@@ -249,18 +248,20 @@ function BotaoSeguro() {
 
                         <div className="flex items-center gap-1">
                           <Button
+                            type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            className="h-8 w-8 text-slate-600 hover:text-slate-900 hover:bg-slate-200"
                             title="Editar"
                             onClick={() => handleIniciarEdicao(item)}
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </Button>
                           <Button
+                            type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            className="h-8 w-8 text-red-600 hover:bg-red-50"
                             title="Excluir"
                             onClick={() => handleExcluir(item.id)}
                           >
@@ -277,50 +278,51 @@ function BotaoSeguro() {
             {aba === "novo" && (
               <form onSubmit={handleSalvar} className="space-y-3">
                 <div>
-                  <Label className="text-xs">Veículo / Equipamento</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Veículo / Equipamento</Label>
                   <Input
                     required
                     placeholder="Ex: CB-01 ou Escavadeira"
                     value={veiculo}
                     onChange={(e) => setVeiculo(e.target.value)}
+                    className="bg-white border-slate-300 text-slate-900"
                   />
                 </div>
 
                 <div>
-                  <Label className="text-xs">Seguradora</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Seguradora</Label>
                   <Input
                     required
                     placeholder="Ex: Porto Seguro"
                     value={seguradora}
                     onChange={(e) => setSeguradora(e.target.value)}
+                    className="bg-white border-slate-300 text-slate-900"
                   />
                 </div>
 
                 <div>
-                  <Label className="text-xs">Data de Vencimento</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Data de Vencimento</Label>
                   <Input
                     type="date"
                     required
                     value={dataVencimento}
                     onChange={(e) => setDataVencimento(e.target.value)}
+                    className="bg-white border-slate-300 text-slate-900"
                   />
                 </div>
 
                 <div className="flex gap-2 pt-2">
-                  {editingId && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-1/2"
-                      onClick={() => {
-                        resetForm();
-                        setAba("lista");
-                      }}
-                    >
-                      Cancelar
-                    </Button>
-                  )}
-                  <Button type="submit" className={editingId ? "w-1/2" : "w-full"} disabled={loading}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-1/2"
+                    onClick={() => {
+                      resetForm();
+                      setAba("lista");
+                    }}
+                  >
+                    Voltar / Cancelar
+                  </Button>
+                  <Button type="submit" className="w-1/2 bg-blue-600 hover:bg-blue-700 text-white" disabled={loading}>
                     {loading ? "Salvando..." : editingId ? "Atualizar" : "Salvar Seguro"}
                   </Button>
                 </div>
@@ -436,7 +438,7 @@ function EquipamentosList() {
             {onlyOverdue ? "Só vencidos ✓" : "Vencidos"}
           </Button>
 
-          {/* Botão de Seguro */}
+          {/* Botão de Seguro com Modal Reformulada */}
           <BotaoSeguro />
         </div>
         <p className="text-xs text-muted-foreground px-1 md:ml-auto md:whitespace-nowrap">
