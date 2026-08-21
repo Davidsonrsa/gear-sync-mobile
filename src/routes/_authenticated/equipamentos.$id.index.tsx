@@ -684,8 +684,6 @@ function EquipamentoDetail() {
           )}
         </Field>
 
-
-
         {isAdmin && (
           <div className="flex gap-2 pt-2">
             <Button onClick={() => save.mutate(form)} disabled={save.isPending} className="flex-1">
@@ -864,7 +862,6 @@ function EquipamentoDetail() {
           </Button>
         </div>
       </Card>
-
 
       <Link to="/equipamentos/$id/manutencao" params={{ id }}>
         <Button variant="outline" className="w-full h-12">

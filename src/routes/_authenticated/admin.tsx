@@ -154,43 +154,41 @@ function Usuarios() {
   const { data: users, isLoading } = useQuery({ queryKey: ["admin-users"], queryFn: () => list() });
 
   const [f, setF] = useState({
-  matricula: "",
-  password: "",
-  fullName: "",
-  phone: "",
-  role: "colaborador" as "admin" | "colaborador",
-});
+    matricula: "",
+    password: "",
+    fullName: "",
+    phone: "",
+    role: "colaborador" as "admin" | "colaborador",
+  });
 
   const m = useMutation({
-  mutationFn: () =>
-    create({
-      data: {
-        matricula: f.matricula,
-        password: f.password,
-        fullName: f.fullName,
-        phone: f.phone || null,
-        role: f.role,
-      },
-    }),
-  onSuccess: () => {
-    toast.success(
-      f.role === "admin"
-        ? "Administrador criado com sucesso"
-        : "Colaborador criado com sucesso"
-    );
+    mutationFn: () =>
+      create({
+        data: {
+          matricula: f.matricula,
+          password: f.password,
+          fullName: f.fullName,
+          phone: f.phone || null,
+          role: f.role,
+        },
+      }),
+    onSuccess: () => {
+      toast.success(
+        f.role === "admin" ? "Administrador criado com sucesso" : "Colaborador criado com sucesso",
+      );
 
-    setF({
-      matricula: "",
-      password: "",
-      fullName: "",
-      phone: "",
-      role: "colaborador",
-    });
+      setF({
+        matricula: "",
+        password: "",
+        fullName: "",
+        phone: "",
+        role: "colaborador",
+      });
 
-    qc.invalidateQueries({ queryKey: ["admin-users"] });
-  },
-  onError: (e: Error) => toast.error(e.message),
-});
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const d = useMutation({
     mutationFn: (userId: string) => del({ data: { userId } }),
@@ -236,32 +234,32 @@ function Usuarios() {
           />
         </div>
         <div>
-  <Label className="text-xs">Perfil *</Label>
-  <select
-    value={f.role}
-    onChange={(e) =>
-      setF({
-        ...f,
-        role: e.target.value as "admin" | "colaborador",
-      })
-    }
-    className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
-  >
-    <option value="colaborador">Colaborador</option>
-    <option value="admin">Administrador</option>
-  </select>
-</div>
+          <Label className="text-xs">Perfil *</Label>
+          <select
+            value={f.role}
+            onChange={(e) =>
+              setF({
+                ...f,
+                role: e.target.value as "admin" | "colaborador",
+              })
+            }
+            className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value="colaborador">Colaborador</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
         <Button onClick={() => m.mutate()} disabled={m.isPending} className="w-full">
-  {m.isPending
-    ? "Criando..."
-    : f.role === "admin"
-      ? "Criar administrador"
-      : "Criar colaborador"}
-</Button>
+          {m.isPending
+            ? "Criando..."
+            : f.role === "admin"
+              ? "Criar administrador"
+              : "Criar colaborador"}
+        </Button>
         <p className="text-[11px] text-muted-foreground">
-  O usuário fará login com a <b>matrícula</b> e a senha definida aqui.
-  Administradores terão acesso ao painel administrativo.
-</p>
+          O usuário fará login com a <b>matrícula</b> e a senha definida aqui. Administradores terão
+          acesso ao painel administrativo.
+        </p>
       </Card>
 
       <Card className="p-4">
@@ -314,4 +312,3 @@ function Usuarios() {
     </div>
   );
 }
-

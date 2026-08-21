@@ -63,7 +63,9 @@ function ManutencaoPage() {
       setTipoRevisao(rascunho.tipo_revisao ?? "");
       setExecutante(rascunho.executante ?? "");
       setObservacoes(rascunho.observacoes ?? "");
-      const arr = Array.isArray(rascunho.itens) ? (rascunho.itens as unknown as ManutencaoItem[]) : [];
+      const arr = Array.isArray(rascunho.itens)
+        ? (rascunho.itens as unknown as ManutencaoItem[])
+        : [];
       setItens(arr.length ? arr : MANUTENCAO_TEMPLATE);
     } else if (e) {
       setHorimetro(e.horimetro_atual != null ? String(e.horimetro_atual) : "");
@@ -119,22 +121,20 @@ function ManutencaoPage() {
         .eq("manutencao_historico_id", currentHistId)
         .like("caption", `${REPORT_TAG}%`);
       if (prev && prev.length) {
-        await supabase.storage
-          .from("equipamento-fotos")
-          .remove(prev.map((p) => p.storage_path));
+        await supabase.storage.from("equipamento-fotos").remove(prev.map((p) => p.storage_path));
         await supabase
           .from("equipamento_fotos")
           .delete()
-          .in("id", prev.map((p) => p.id));
+          .in(
+            "id",
+            prev.map((p) => p.id),
+          );
       }
       const path = `${id}/hist-${currentHistId}/relatorio-${Date.now()}.docx`;
-      const { error: upErr } = await supabase.storage
-        .from("equipamento-fotos")
-        .upload(path, blob, {
-          contentType:
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          upsert: true,
-        });
+      const { error: upErr } = await supabase.storage.from("equipamento-fotos").upload(path, blob, {
+        contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        upsert: true,
+      });
       if (upErr) throw upErr;
       const { error: insErr } = await supabase.from("equipamento_fotos").insert({
         equipamento_id: id,
@@ -208,8 +208,6 @@ function ManutencaoPage() {
     const w = window.open(viewerUrl, "_blank", "noopener,noreferrer");
     if (!w) window.location.href = viewerUrl;
   }
-
-
 
   if (!e) return <div className="p-6 text-center text-muted-foreground">Carregando...</div>;
 
@@ -344,7 +342,11 @@ function ManutencaoPage() {
 
         <div className="mb-3">
           <Label className="text-[11px]">Observações</Label>
-          <Textarea rows={4} value={observacoes} onChange={(ev) => setObservacoes(ev.target.value)} />
+          <Textarea
+            rows={4}
+            value={observacoes}
+            onChange={(ev) => setObservacoes(ev.target.value)}
+          />
         </div>
 
         <div className="no-print">

@@ -46,7 +46,7 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.04 250);
 
-  --primary: oklch(0.36 0.10 250);            /* deep industrial blue */
+  --primary: oklch(0.36 0.1 250); /* deep industrial blue */
   --primary-foreground: oklch(0.99 0.005 240);
 
   --secondary: oklch(0.95 0.015 240);
@@ -55,7 +55,7 @@
   --muted: oklch(0.95 0.012 240);
   --muted-foreground: oklch(0.5 0.03 250);
 
-  --accent: oklch(0.72 0.18 55);              /* orange */
+  --accent: oklch(0.72 0.18 55); /* orange */
   --accent-foreground: oklch(0.15 0.03 250);
 
   --destructive: oklch(0.58 0.22 25);
@@ -99,24 +99,50 @@
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
-  html, body { color: var(--color-foreground); min-height: 100%; }
-  html { background: linear-gradient(160deg, #dbeafe 0%, #eff6ff 40%, #e0e7ff 100%); background-attachment: fixed; }
+  * {
+    border-color: var(--color-border);
+  }
+  html,
+  body {
+    color: var(--color-foreground);
+    min-height: 100%;
+  }
+  html {
+    background: linear-gradient(160deg, #dbeafe 0%, #eff6ff 40%, #e0e7ff 100%);
+    background-attachment: fixed;
+  }
   body {
     background: transparent;
-    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family:
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      "Segoe UI",
+      Roboto,
+      sans-serif;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;
   }
-  .dark html { background: linear-gradient(160deg, #0b1220 0%, #0f172a 45%, #111a2e 100%); }
-  input, textarea, select, button { font-size: 16px; } /* prevents iOS zoom */
+  .dark html {
+    background: linear-gradient(160deg, #0b1220 0%, #0f172a 45%, #111a2e 100%);
+  }
+  input,
+  textarea,
+  select,
+  button {
+    font-size: 16px;
+  } /* prevents iOS zoom */
 }
 
 @keyframes blink-red {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 .blink-overdue {
   animation: blink-red 0.9s ease-in-out infinite;
 }
-

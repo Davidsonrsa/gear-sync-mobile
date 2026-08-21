@@ -154,7 +154,6 @@ function EquipamentosList() {
       )}
 
       <ul className="space-y-2 mt-2 md:space-y-0 md:grid md:grid-cols-2 xl:grid-cols-3 md:gap-3 md:mt-4">
-
         {filtered.map((e) => {
           const horaPct =
             e.horimetro_atual && e.proxima_revisao_horimetro
@@ -237,7 +236,9 @@ function EquipamentosList() {
                           className={`mt-1 text-[11px] ${overdue ? "text-destructive font-semibold blink-overdue" : "text-muted-foreground"}`}
                         >
                           Hr rodado: <span className="tabular-nums">{hrRodado}h</span>
-                          {overdue && <span className="ml-1">⚠ &gt; {Number(e.limite_revisao ?? 500)}h</span>}
+                          {overdue && (
+                            <span className="ml-1">⚠ &gt; {Number(e.limite_revisao ?? 500)}h</span>
+                          )}
                         </div>
                       )}
                     </div>
