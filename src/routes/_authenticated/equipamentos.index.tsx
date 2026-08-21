@@ -86,7 +86,7 @@ function BotaoSeguro() {
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
+       <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
             <DialogTitle>Incluir Seguro</DialogTitle>
           </DialogHeader>
