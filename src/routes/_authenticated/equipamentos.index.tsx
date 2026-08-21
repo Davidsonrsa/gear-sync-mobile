@@ -172,7 +172,7 @@ function EquipamentosList() {
             <li key={e.id}>
               <Link to="/equipamentos/$id" params={{ id: e.id }} className="block">
                 <Card
-                  className={`p-3 hover:bg-accent/5 active:bg-accent/10 transition-colors ${overdue ? "border-destructive ring-1 ring-destructive/40" : ""}`}
+                  className={`p-3 transition-colors ${overdue ? "border-2 border-destructive bg-destructive/10 ring-2 ring-destructive/40 shadow-md" : "hover:bg-accent/5 active:bg-accent/10"}`}
                 >
                   <div className="flex items-start gap-3">
                     {coverUrl ? (
