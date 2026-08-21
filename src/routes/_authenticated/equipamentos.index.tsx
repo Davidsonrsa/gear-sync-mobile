@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, ChevronRight, Plus, Gauge, ShieldCheck, Trash2 } from "lucide-react";
+import { Search, ChevronRight, Plus, Gauge, ShieldCheck, Trash2, Edit2, Check, X } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -46,11 +46,23 @@ type Equip = {
   cover_storage_path: string | null;
 };
 
-// Componente do Botão + Modal de Seguro
+type Seguro = {
+  id: string;
+  veiculo_equipamento: string;
+  seguradora: string;
+  data_vencimento: string;
+};
+
+// Componente Completo de Gerenciamento de Seguros
 function BotaoSeguro() {
   const [open, setOpen] = useState(false);
+  const [aba, setAba] = useState<"lista" | "novo">("lista");
   const [loading, setLoading] = useState(false);
-  const [seguros, setSeguros] = useState<any[]>([]);
+  const [seguros, setSeguros] = useState<Seguro[]>([]);
+  const [filtro, setFiltro] = useState("");
+
+  // Formulário Cadastro/Edição
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [veiculo, setVeiculo] = useState("");
   const [seguradora, setSeguradora] = useState("");
   const [dataVencimento, setDataVencimento] = useState("");
@@ -62,7 +74,7 @@ function BotaoSeguro() {
       .order("created_at", { ascending: false });
 
     if (!error && data) {
-      setSeguros(data);
+      setSeguros(data as Seguro[]);
     }
   };
 
@@ -72,32 +84,72 @@ function BotaoSeguro() {
     }
   }, [open]);
 
+  const resetForm = () => {
+    setEditingId(null);
+    setVeiculo("");
+    setSeguradora("");
+    setDataVencimento("");
+  };
+
   const handleSalvar = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.from("seguros").insert([
-      {
-        veiculo_equipamento: veiculo,
-        seguradora: seguradora,
-        data_vencimento: dataVencimento,
-      },
-    ]);
+    if (editingId) {
+      // Atualizar Seguro Existente
+      const { error } = await supabase
+        .from("seguros")
+        .update({
+          veiculo_equipamento: veiculo,
+          seguradora: seguradora,
+          data_vencimento: dataVencimento,
+        })
+        .eq("id", editingId);
 
-    setLoading(false);
+      setLoading(false);
 
-    if (error) {
-      toast.error("Erro ao salvar seguro: " + error.message);
+      if (error) {
+        toast.error("Erro ao atualizar seguro: " + error.message);
+      } else {
+        toast.success("Seguro atualizado com sucesso!");
+        resetForm();
+        setAba("lista");
+        carregarSeguros();
+      }
     } else {
-      toast.success("Seguro cadastrado com sucesso!");
-      setVeiculo("");
-      setSeguradora("");
-      setDataVencimento("");
-      carregarSeguros();
+      // Inserir Novo Seguro
+      const { error } = await supabase.from("seguros").insert([
+        {
+          veiculo_equipamento: veiculo,
+          seguradora: seguradora,
+          data_vencimento: dataVencimento,
+        },
+      ]);
+
+      setLoading(false);
+
+      if (error) {
+        toast.error("Erro ao cadastrar seguro: " + error.message);
+      } else {
+        toast.success("Seguro cadastrado com sucesso!");
+        resetForm();
+        setAba("lista");
+        carregarSeguros();
+      }
     }
   };
 
+  const handleIniciarEdicao = (seguro: Seguro) => {
+    setEditingId(seguro.id);
+    setVeiculo(seguro.veiculo_equipamento);
+    setSeguradora(seguro.seguradora);
+    setDataVencimento(seguro.data_vencimento);
+    setAba("novo");
+  };
+
   const handleExcluir = async (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir este seguro?")) return;
+
     const { error } = await supabase.from("seguros").delete().eq("id", id);
     if (error) {
       toast.error("Erro ao remover seguro.");
@@ -107,6 +159,16 @@ function BotaoSeguro() {
     }
   };
 
+  const segurosFiltrados = useMemo(() => {
+    const f = filtro.toLowerCase().trim();
+    if (!f) return seguros;
+    return seguros.filter(
+      (s) =>
+        s.veiculo_equipamento.toLowerCase().includes(f) ||
+        s.seguradora.toLowerCase().includes(f)
+    );
+  }, [seguros, filtro]);
+
   return (
     <>
       <Button variant="outline" size="sm" className="h-9" onClick={() => setOpen(true)}>
@@ -114,93 +176,155 @@ function BotaoSeguro() {
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md bg-popover text-popover-foreground border border-border shadow-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Gerenciar Seguros</DialogTitle>
+        <DialogContent className="sm:max-w-md bg-background text-foreground border border-border shadow-2xl p-0 overflow-hidden">
+          <DialogHeader className="p-4 pb-2 border-b">
+            <DialogTitle className="flex justify-between items-center pr-6">
+              <span>Gerenciar Seguros</span>
+            </DialogTitle>
+
+            {/* Navegação entre Lista e Novo Cadastro */}
+            <div className="flex gap-2 mt-3">
+              <Button
+                type="button"
+                size="sm"
+                variant={aba === "lista" ? "default" : "outline"}
+                className="flex-1 text-xs h-8"
+                onClick={() => {
+                  resetForm();
+                  setAba("lista");
+                }}
+              >
+                Seguros Cadastrados ({seguros.length})
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={aba === "novo" ? "default" : "outline"}
+                className="flex-1 text-xs h-8"
+                onClick={() => {
+                  resetForm();
+                  setAba("novo");
+                }}
+              >
+                {editingId ? "Editar Seguro" : "+ Novo Seguro"}
+              </Button>
+            </div>
           </DialogHeader>
 
-          <form onSubmit={handleSalvar} className="space-y-3 border-b pb-4">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Novo Cadastro
-            </h4>
+          <div className="p-4 max-h-[70vh] overflow-y-auto">
+            {aba === "lista" && (
+              <div className="space-y-3">
+                {/* Campo de Filtro/Busca */}
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Filtrar por equipamento ou seguradora..."
+                    value={filtro}
+                    onChange={(e) => setFiltro(e.target.value)}
+                    className="pl-8 h-8 text-xs"
+                  />
+                </div>
 
-            <div>
-              <Label className="text-xs">Veículo / Equipamento</Label>
-              <Input
-                required
-                placeholder="Ex: CB-01 ou Escavadeira"
-                value={veiculo}
-                onChange={(e) => setVeiculo(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label className="text-xs">Seguradora</Label>
-              <Input
-                required
-                placeholder="Ex: Porto Seguro"
-                value={seguradora}
-                onChange={(e) => setSeguradora(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label className="text-xs">Data de Vencimento</Label>
-              <Input
-                type="date"
-                required
-                value={dataVencimento}
-                onChange={(e) => setDataVencimento(e.target.value)}
-              />
-            </div>
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Salvando..." : "Salvar Seguro"}
-            </Button>
-          </form>
-
-          <div className="space-y-2 pt-2">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Seguros Cadastrados
-            </h4>
-            {seguros.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-2 text-center">
-                Nenhum seguro cadastrado.
-              </p>
-            ) : (
-              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                {seguros.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-2.5 rounded-md bg-card border border-border text-xs flex justify-between items-center shadow-sm"
-                  >
-                    <div>
-                      <p className="font-semibold">{item.veiculo_equipamento}</p>
-                      <p className="text-muted-foreground">{item.seguradora}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <p className="text-[10px] text-muted-foreground">Vencimento</p>
-                        <p className="font-mono font-medium">
-                          {item.data_vencimento
-                            ? new Date(item.data_vencimento + "T00:00:00").toLocaleDateString(
-                                "pt-BR"
-                              )
-                            : "-"}
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive hover:bg-destructive/10"
-                        onClick={() => handleExcluir(item.id)}
+                {segurosFiltrados.length === 0 ? (
+                  <p className="text-xs text-muted-foreground py-6 text-center">
+                    {filtro ? "Nenhum seguro encontrado para a busca." : "Nenhum seguro cadastrado."}
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {segurosFiltrados.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-3 rounded-lg bg-card border border-border text-xs flex justify-between items-center shadow-sm"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
+                        <div className="space-y-0.5">
+                          <p className="font-semibold text-sm">{item.veiculo_equipamento}</p>
+                          <p className="text-muted-foreground">{item.seguradora}</p>
+                          <p className="text-[11px] font-mono text-primary font-medium mt-1">
+                            Vencimento:{" "}
+                            {item.data_vencimento
+                              ? new Date(item.data_vencimento + "T00:00:00").toLocaleDateString("pt-BR")
+                              : "-"}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            title="Editar"
+                            onClick={() => handleIniciarEdicao(item)}
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            title="Excluir"
+                            onClick={() => handleExcluir(item.id)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
+            )}
+
+            {aba === "novo" && (
+              <form onSubmit={handleSalvar} className="space-y-3">
+                <div>
+                  <Label className="text-xs">Veículo / Equipamento</Label>
+                  <Input
+                    required
+                    placeholder="Ex: CB-01 ou Escavadeira"
+                    value={veiculo}
+                    onChange={(e) => setVeiculo(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs">Seguradora</Label>
+                  <Input
+                    required
+                    placeholder="Ex: Porto Seguro"
+                    value={seguradora}
+                    onChange={(e) => setSeguradora(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs">Data de Vencimento</Label>
+                  <Input
+                    type="date"
+                    required
+                    value={dataVencimento}
+                    onChange={(e) => setDataVencimento(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  {editingId && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-1/2"
+                      onClick={() => {
+                        resetForm();
+                        setAba("lista");
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  )}
+                  <Button type="submit" className={editingId ? "w-1/2" : "w-full"} disabled={loading}>
+                    {loading ? "Salvando..." : editingId ? "Atualizar" : "Salvar Seguro"}
+                  </Button>
+                </div>
+              </form>
             )}
           </div>
         </DialogContent>
@@ -312,7 +436,7 @@ function EquipamentosList() {
             {onlyOverdue ? "Só vencidos ✓" : "Vencidos"}
           </Button>
 
-          {/* Botão de Seguro Adicionado Aqui */}
+          {/* Botão de Seguro */}
           <BotaoSeguro />
         </div>
         <p className="text-xs text-muted-foreground px-1 md:ml-auto md:whitespace-nowrap">
