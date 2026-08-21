@@ -1488,19 +1488,15 @@ export function ImportExcelDialog({
 
       <Button
         type="button"
-        variant="outline"
-        size="sm"
-        onClick={
-          openFileSelector
-        }
-        disabled={
-          importMutation.isPending
-        }
-        className="gap-2"
+        variant="secondary"
+        onClick={openFileSelector}
+        disabled={importMutation.isPending}
+        className="h-9 gap-2 md:shrink-0"
       >
         <Upload className="h-4 w-4" />
         Importar Excel
       </Button>
+
     </>
   );
 }
