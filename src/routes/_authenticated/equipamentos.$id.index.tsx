@@ -176,6 +176,7 @@ function EquipamentoDetail() {
       toast.success("Alterações salvas");
       qc.invalidateQueries({ queryKey: ["equipamento", id] });
       qc.invalidateQueries({ queryKey: ["equipamentos"] });
+      qc.invalidateQueries({ queryKey: ["notificacoes"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
