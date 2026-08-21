@@ -393,74 +393,91 @@ function NotasFiscaisList() {
 
       {!isLoading && !error && filtered.length > 0 && (
         <div className="mt-4 space-y-2">
-          {filtered.map((nota) => (
-            <Card key={nota.id} className="p-4">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-bold text-primary">NF {nota.nf}</span>
-                  {nota.fornecedor && <Badge variant="secondary">{nota.fornecedor}</Badge>}
-                </div>
+{filtered.map((nota) => (
+  <Card key={nota.id} className="p-4">
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-bold text-primary">NF {nota.nf}</span>
 
-                {nota.identificacao && (
-                  <p className="text-sm mt-1 truncate">Equipamento: {nota.identificacao}</p>
-                )}
+          {nota.fornecedor && <Badge variant="secondary">{nota.fornecedor}</Badge>}
+        </div>
 
-                {nota.descricao_produto && (
-                  <p className="text-sm mt-1 truncate">Descrição: {nota.descricao_produto}</p>
-                )}
+        {nota.identificacao && (
+          <p className="text-sm mt-1 truncate">Equipamento: {nota.identificacao}</p>
+        )}
 
-                <div className="mt-3 text-xs text-muted-foreground">
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <div>
-                      <span className="block">Data de Emissão</span>
-                      <strong className="text-foreground">{formatDate(nota.data)}</strong>
-                    </div>
-                    <div>
-                      <span className="block">Valor</span>
-                      <strong className="text-foreground">{formatCurrency(nota.valor)}</strong>
-                    </div>
-                  </div>
+        {nota.descricao_produto && (
+          <p className="text-sm mt-1 truncate">Descrição: {nota.descricao_produto}</p>
+        )}
 
-                  <div className="border-t pt-3">
-                    <span className="block mb-2 font-medium text-foreground">Vencimentos</span>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                      <div>
-                        <span className="block">Venc. 01</span>
-                        <strong className="text-foreground">{formatDate(nota.venc01)}</strong>
-                      </div>
-                      <div>
-                        <span className="block">Venc. 02</span>
-                        <strong className="text-foreground">{formatDate(nota.venc02)}</strong>
-                      </div>
-                      <div>
-                        <span className="block">Venc. 03</span>
-                        <strong className="text-foreground">{formatDate(nota.venc03)}</strong>
-                      </div>
-                      <div>
-                        <span className="block">Venc. 04</span>
-                        <strong className="text-foreground">{formatDate(nota.venc04)}</strong>
-                      </div>
-                      <div>
-                        <span className="block">Venc. 05</span>
-                        <strong className="text-foreground">{formatDate(nota.venc05)}</strong>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+        <div className="mt-3 text-xs text-muted-foreground">
+          {/* DATA E VALOR */}
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div>
+              <span className="block">Data de Emissão</span>
+              <strong className="text-foreground">{formatDate(nota.data)}</strong>
+            </div>
 
-                <div className="mt-3">
+            <div>
+              <span className="block">Valor</span>
+              <strong className="text-foreground">{formatCurrency(nota.valor)}</strong>
+            </div>
+          </div>
+
+          {/* VENCIMENTOS */}
+          <div className="border-t pt-3">
+            <span className="block mb-2 font-medium text-foreground">Vencimentos</span>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+              <div>
+                <span className="block">Venc. 01</span>
+                <strong className="text-foreground">{formatDate(nota.venc01)}</strong>
+              </div>
+
+              <div>
+                <span className="block">Venc. 02</span>
+                <strong className="text-foreground">{formatDate(nota.venc02)}</strong>
+              </div>
+
+              <div>
+                <span className="block">Venc. 03</span>
+                <strong className="text-foreground">{formatDate(nota.venc03)}</strong>
+              </div>
+
+              <div>
+                <span className="block">Venc. 04</span>
+                <strong className="text-foreground">{formatDate(nota.venc04)}</strong>
+              </div>
+
+              <div>
+                <span className="block">Venc. 05</span>
+                <strong className="text-foreground">{formatDate(nota.venc05)}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <Link to="/notas-fiscais/$id" params={{ id: nota.id }} className="shrink-0">
+          <Button variant="outline" size="sm">
+            Visualizar
+          </Button>
+        </Link>
+      </div>
+    </div>
+  </Card>
+))}
+                
                   <Link to="/notas-fiscais/$id" params={{ id: nota.id }} className="shrink-0">
-                    <Button variant="outline" size="sm">
-                      Visualizar
-                    </Button>
-                  </Link>
-                </div>
+                  <Button variant="outline" size="sm">
+                    Visualizar
+                  </Button>
+                </Link>
               </div>
             </Card>
           ))}
         </div>
       )}
-
 
       {isAdmin && (
         <p className="text-xs text-muted-foreground mt-4">
