@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, ChevronRight, Plus, Gauge, ShieldCheck, Trash2, Edit2, AlertTriangle } from "lucide-react";
+import { Search, ChevronRight, Plus, Gauge, ShieldCheck, Trash2, Edit2, AlertTriangle, Calendar } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -53,7 +53,6 @@ type Seguro = {
   data_vencimento: string;
 };
 
-// Funções auxiliares para cálculo de vencimento em dias
 function calcularDiasVencimento(dataVencimentoStr: string): number | null {
   if (!dataVencimentoStr) return null;
   const hoje = new Date();
@@ -67,7 +66,106 @@ function calcularDiasVencimento(dataVencimentoStr: string): number | null {
   return Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
 }
 
-// Componente do Modal de Seguros com Sistema de Alertas
+// ----------------------------------------------------
+// COMPONENTE: TACOGRAFO (Lendo da VIEW)
+// ----------------------------------------------------
+function BotaoTacografo() {
+  const [open, setOpen] = useState(false);
+  const [filtro, setFiltro] = useState("");
+
+  const { data: tacografos, isLoading } = useQuery({
+    queryKey: ["tacografos-vencimentos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tacografos_vencimentos")
+        .select("*");
+
+      if (error) {
+        console.error("Erro ao carregar tacógrafos:", error);
+        return [];
+      }
+      return data ?? [];
+    },
+    enabled: open,
+  });
+
+  const listaFiltrada = useMemo(() => {
+    if (!tacografos) return [];
+    const f = filtro.toLowerCase().trim();
+    if (!f) return tacografos;
+    return tacografos.filter((item: any) =>
+      Object.values(item).some((val) =>
+        String(val ?? "").toLowerCase().includes(f)
+      )
+    );
+  }, [tacografos, filtro]);
+
+  return (
+    <>
+      <Button variant="outline" size="sm" className="h-9 relative" onClick={() => setOpen(true)}>
+        <Calendar className="w-4 h-4 mr-1.5" />
+        Tacógrafo
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent
+          style={{ backgroundColor: "#ffffff", opacity: 1 }}
+          className="sm:max-w-md text-slate-900 border border-slate-300 shadow-2xl p-0 overflow-hidden"
+        >
+          <DialogHeader className="p-4 pb-3 border-b border-slate-200 bg-slate-50">
+            <DialogTitle className="text-slate-900 font-bold text-base">
+              Vencimentos de Tacógrafo
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="p-4 max-h-[70vh] overflow-y-auto space-y-3 bg-white">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <Input
+                placeholder="Filtrar registro..."
+                value={filtro}
+                onChange={(e) => setFiltro(e.target.value)}
+                className="pl-8 h-8 text-xs bg-white border-slate-300 text-slate-900"
+              />
+            </div>
+
+            {isLoading ? (
+              <p className="text-xs text-slate-500 text-center py-4">Carregando dados...</p>
+            ) : listaFiltrada.length === 0 ? (
+              <p className="text-xs text-slate-500 text-center py-4">Nenhum registro de tacógrafo encontrado.</p>
+            ) : (
+              <div className="space-y-2">
+                {listaFiltrada.map((item: any, idx: number) => (
+                  <div
+                    key={item.id || idx}
+                    className="p-3 rounded-lg border border-slate-200 bg-slate-50 text-xs flex justify-between items-center shadow-sm"
+                  >
+                    <div>
+                      <p className="font-bold text-slate-900">
+                        {item.numero || item.veiculo_equipamento || item.equipamento || "Equipamento"}
+                      </p>
+                      {item.placa && <p className="text-slate-500 font-mono">{item.placa}</p>}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-slate-500 font-medium">Vencimento:</p>
+                      <p className="font-bold text-slate-900">
+                        {item.data_vencimento || item.vencimento_tacografo || item.vencimento || "-"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// ----------------------------------------------------
+// COMPONENTE: SEGURO
+// ----------------------------------------------------
 function BotaoSeguro() {
   const [open, setOpen] = useState(false);
   const [aba, setAba] = useState<"lista" | "novo">("lista");
@@ -102,7 +200,6 @@ function BotaoSeguro() {
     }
   }, [open]);
 
-  // Identifica seguros vencidos ou a vencer em até 30 dias
   const segurosComAlerta = useMemo(() => {
     return seguros.filter((s) => {
       const dias = calcularDiasVencimento(s.data_vencimento);
@@ -249,7 +346,6 @@ function BotaoSeguro() {
           <div className="p-4 max-h-[70vh] overflow-y-auto bg-white">
             {aba === "lista" && (
               <div className="space-y-3">
-                {/* Banner de Aviso de Vencimentos em ate 30 dias */}
                 {segurosComAlerta.length > 0 && (
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-amber-900 text-xs">
                     <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
@@ -287,7 +383,7 @@ function BotaoSeguro() {
                       return (
                         <div
                           key={item.id}
-                          className={`p-3 rounded-lg border text-xs flex justify-between items-center shadow-sm transition-colors ${
+                          className={`p-3 rounded-lg border text-xs flex justify-between items-center shadow-sm ${
                             isVencido
                               ? "bg-red-50 border-red-200"
                               : isVencendoEmBreve
@@ -301,10 +397,9 @@ function BotaoSeguro() {
                                 {item.veiculo_equipamento}
                               </p>
 
-                              {/* Alertas Visuais */}
                               {isVencido && (
                                 <Badge className="bg-red-600 text-white text-[10px] px-1.5 py-0">
-                                  Vencido ({Math.abs(diasRestantes!)}d atrás)
+                                  Vencido
                                 </Badge>
                               )}
                               {isVencendoEmBreve && (
@@ -417,6 +512,9 @@ function BotaoSeguro() {
   );
 }
 
+// ----------------------------------------------------
+// TELA PRINCIPAL
+// ----------------------------------------------------
 function EquipamentosList() {
   const { isAdmin } = useAuth();
   const [q, setQ] = useState("");
@@ -497,6 +595,8 @@ function EquipamentosList() {
         </div>
         <Notificacoes />
         <div className="flex gap-2 md:shrink-0 flex-wrap">
+          <BotaoTacografo />
+
           <Select value={cl} onValueChange={setCl}>
             <SelectTrigger className="h-9 flex-1 md:w-40">
               <SelectValue placeholder="Classe (CL)" />
@@ -520,7 +620,6 @@ function EquipamentosList() {
             {onlyOverdue ? "Só vencidos ✓" : "Vencidos"}
           </Button>
 
-          {/* Botão de Seguro com Notificação de Vencimentos em 30 Dias */}
           <BotaoSeguro />
         </div>
         <p className="text-xs text-muted-foreground px-1 md:ml-auto md:whitespace-nowrap">
