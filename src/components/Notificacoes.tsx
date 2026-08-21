@@ -75,30 +75,34 @@ export function Notificacoes() {
 
   return (
     <div className="relative">
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        className="relative h-9 w-9"
-        onClick={() => setAberto((v) => !v)}
-        aria-label="Notificações"
-      >
-        <Bell className="w-4 h-4" />
+    <Button
+  type="button"
+  variant="outline"
+  size="sm"
+  className="relative h-9 gap-2 px-3 bg-background"
+  onClick={() => setAberto((v) => !v)}
+  aria-label="Notificações de Tacógrafo"
+>
+  <Bell className="w-4 h-4" />
+  <span className="text-xs font-medium">Tacógrafo</span>
 
-        {quantidade > 0 && (
-          <span className="absolute -right-1 -top-1 flex min-w-5 h-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
-            {quantidade > 99 ? "99+" : quantidade}
-          </span>
-        )}
-      </Button>
+  {quantidade > 0 && (
+    <span className="absolute -right-1 -top-1 flex min-w-5 h-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
+      {quantidade > 99 ? "99+" : quantidade}
+    </span>
+  )}
+</Button>
 
       {aberto && (
-        <div className="fixed inset-0 z-40" onClick={() => setAberto(false)}>
+        <div
+  className="fixed inset-0 z-40 bg-black/20"
+  onClick={() => setAberto(false)}
+>
           <div
-            className="absolute right-3 top-[110px] w-[calc(100vw-24px)] max-w-md md:right-6 md:w-96"
+          className="absolute right-3 top-[110px] w-[calc(100vw-24px)] max-w-md md:right-6 md:w-96 bg-background"
             onClick={(e) => e.stopPropagation()}
           >
-            <Card className="overflow-hidden shadow-xl border">
+            <Card className="overflow-hidden shadow-xl border bg-background">
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <div>
                   <h3 className="font-semibold">Notificações</h3>
