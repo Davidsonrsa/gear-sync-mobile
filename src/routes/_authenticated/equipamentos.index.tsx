@@ -86,25 +86,50 @@ function BotaoTacografo() {
       }
       return data ?? [];
     },
-    enabled: open,
   });
 
-  const listaFiltrada = useMemo(() => {
+  // 1. Filtra apenas registros com data válida
+  const tacografosComData = useMemo(() => {
     if (!tacografos) return [];
+    return tacografos.filter((item: any) => {
+      const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento;
+      return Boolean(dataVal);
+    });
+  }, [tacografos]);
+
+  // 2. Identifica registros com 30 dias ou menos para vencer (ou já vencidos)
+  const tacografosComAlerta = useMemo(() => {
+    return tacografosComData.filter((item: any) => {
+      const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento;
+      const dias = calcularDiasVencimento(dataVal);
+      return dias !== null && dias <= 30;
+    });
+  }, [tacografosComData]);
+
+  // 3. Aplica o filtro de busca de texto
+  const listaFiltrada = useMemo(() => {
     const f = filtro.toLowerCase().trim();
-    if (!f) return tacografos;
-    return tacografos.filter((item: any) =>
+    if (!f) return tacografosComData;
+    return tacografosComData.filter((item: any) =>
       Object.values(item).some((val) =>
         String(val ?? "").toLowerCase().includes(f)
       )
     );
-  }, [tacografos, filtro]);
+  }, [tacografosComData, filtro]);
 
   return (
     <>
       <Button variant="outline" size="sm" className="h-9 relative" onClick={() => setOpen(true)}>
         <Calendar className="w-4 h-4 mr-1.5" />
         Tacógrafo
+        {tacografosComAlerta.length > 0 && (
+          <Badge
+            variant="destructive"
+            className="ml-1.5 px-1.5 py-0 text-[10px] h-4 rounded-full font-bold bg-amber-500 hover:bg-amber-600 text-white"
+          >
+            {tacografosComAlerta.length}
+          </Badge>
+        )}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -119,10 +144,23 @@ function BotaoTacografo() {
           </DialogHeader>
 
           <div className="p-4 max-h-[70vh] overflow-y-auto space-y-3 bg-white">
+            {/* Mensagem de Alerta para vencimentos em 30 dias */}
+            {tacografosComAlerta.length > 0 && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-amber-900 text-xs">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold">Atenção aos Vencimentos!</p>
+                  <p className="text-[11px] text-amber-800">
+                    Existe(m) <strong>{tacografosComAlerta.length}</strong> tacógrafo(s) vencido(s) ou que vence(m) nos próximos 30 dias.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <Input
-                placeholder="Filtrar registro..."
+                placeholder="Filtrar por equipamento, placa..."
                 value={filtro}
                 onChange={(e) => setFiltro(e.target.value)}
                 className="pl-8 h-8 text-xs bg-white border-slate-300 text-slate-900"
@@ -132,28 +170,64 @@ function BotaoTacografo() {
             {isLoading ? (
               <p className="text-xs text-slate-500 text-center py-4">Carregando dados...</p>
             ) : listaFiltrada.length === 0 ? (
-              <p className="text-xs text-slate-500 text-center py-4">Nenhum registro de tacógrafo encontrado.</p>
+              <p className="text-xs text-slate-500 text-center py-4">
+                {filtro
+                  ? "Nenhum registro encontrado."
+                  : "Nenhum equipamento com data de tacógrafo cadastrada."}
+              </p>
             ) : (
               <div className="space-y-2">
-                {listaFiltrada.map((item: any, idx: number) => (
-                  <div
-                    key={item.id || idx}
-                    className="p-3 rounded-lg border border-slate-200 bg-slate-50 text-xs flex justify-between items-center shadow-sm"
-                  >
-                    <div>
-                      <p className="font-bold text-slate-900">
-                        {item.numero || item.veiculo_equipamento || item.equipamento || "Equipamento"}
-                      </p>
-                      {item.placa && <p className="text-slate-500 font-mono">{item.placa}</p>}
+                {listaFiltrada.map((item: any, idx: number) => {
+                  const dataVal =
+                    item.data_vencimento || item.vencimento_tacografo || item.vencimento;
+                  const diasRestantes = calcularDiasVencimento(dataVal);
+                  const isVencido = diasRestantes !== null && diasRestantes < 0;
+                  const isVencendoEmBreve =
+                    diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 30;
+
+                  return (
+                    <div
+                      key={item.id || idx}
+                      className={`p-3 rounded-lg border text-xs flex justify-between items-center shadow-sm ${
+                        isVencido
+                          ? "bg-red-50 border-red-200"
+                          : isVencendoEmBreve
+                          ? "bg-amber-50 border-amber-200"
+                          : "bg-slate-50 border-slate-200"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-slate-900">
+                            {item.numero ||
+                              item.veiculo_equipamento ||
+                              item.equipamento ||
+                              "Equipamento"}
+                          </p>
+                          {isVencido && (
+                            <Badge className="bg-red-600 text-white text-[10px] px-1.5 py-0">
+                              Vencido
+                            </Badge>
+                          )}
+                          {isVencendoEmBreve && (
+                            <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0">
+                              Vence em {diasRestantes === 0 ? "Hoje" : `${diasRestantes}d`}
+                            </Badge>
+                          )}
+                        </div>
+                        {item.placa && <p className="text-slate-500 font-mono mt-0.5">{item.placa}</p>}
+                      </div>
+                      <div className="text-right">
+                        <p className="text-slate-500 font-medium">Vencimento:</p>
+                        <p className="font-bold text-slate-900">
+                          {dataVal
+                            ? new Date(dataVal + "T00:00:00").toLocaleDateString("pt-BR")
+                            : "-"}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-slate-500 font-medium">Vencimento:</p>
-                      <p className="font-bold text-slate-900">
-                        {item.data_vencimento || item.vencimento_tacografo || item.vencimento || "-"}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
