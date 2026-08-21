@@ -1076,6 +1076,12 @@ export function ImportExcelDialog({
                     importMutation.mutate(previewData);
                   }
                 }}
+                style={{
+                  backgroundColor: "#1d4ed8",
+                  borderColor: "#1e40af",
+                  color: "#ffffff",
+                  opacity: importMutation.isPending || previewData.length === 0 ? 0.6 : 1,
+                }}
                 className="
                     relative
                     z-[101]
@@ -1086,19 +1092,15 @@ export function ImportExcelDialog({
                     justify-center
                     rounded-md
                     border
-                    !border-blue-700
-                    !bg-blue-600
                     px-6
                     text-sm
                     font-bold
-                    !text-white
                     shadow-sm
                     transition-colors
-                    hover:!bg-blue-700
                     disabled:pointer-events-none
-                    disabled:!opacity-50
                     cursor-pointer
                   "
+
               >
                 {importMutation.isPending
                   ? `Importando ${importProgress.toLocaleString("pt-BR")} / ${previewData.length.toLocaleString("pt-BR")}...`
