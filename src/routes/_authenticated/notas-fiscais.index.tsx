@@ -467,15 +467,6 @@ function NotasFiscaisList() {
     </div>
   </Card>
 ))}
-                
-                  <Link to="/notas-fiscais/$id" params={{ id: nota.id }} className="shrink-0">
-                  <Button variant="outline" size="sm">
-                    Visualizar
-                  </Button>
-                </Link>
-              </div>
-            </Card>
-          ))}
         </div>
       )}
 
