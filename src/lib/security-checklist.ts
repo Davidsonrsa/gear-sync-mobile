@@ -3,86 +3,86 @@
 
 /**
  * CHECKLIST DE SEGURANÇA - NOTAS FISCAIS
- * 
+ *
  * ========================================
  * 1. AUTENTICAÇÃO & AUTORIZAÇÃO
  * ========================================
- * 
+ *
  * ✅ Usuário não autenticado
  *    - Não consegue acessar /notas-fiscais
  *    - É redirecionado para /auth
- *    
+ *
  * ✅ Usuário autenticado SEM permissão
  *    - Vê mensagem "Acesso Negado"
  *    - Não consegue visualizar notas
  *    - Botão "Nova Nota Fiscal" está desabilitado
  *    - Aba de Notas Fiscais NÃO aparece no menu
- *    
+ *
  * ✅ Usuário autenticado COM permissão (visualizar)
  *    - Consegue visualizar a listagem
  *    - Consegue clicar em "Visualizar"
  *    - Botão "Nova Nota Fiscal" está desabilitado
  *    - Botão "Editar" está desabilitado na visualização
- *    
+ *
  * ✅ Usuário autenticado COM permissão (gerenciar)
  *    - Consegue visualizar a listagem
  *    - Consegue clicar em "Visualizar"
  *    - Botão "Nova Nota Fiscal" está HABILITADO
  *    - Botão "Importar Excel" está HABILITADO
  *    - Botão "Editar" está HABILITADO na visualização
- *    
+ *
  * ✅ Admin
  *    - Acesso COMPLETO (visualizar + gerenciar + deletar)
  *    - Botão "Deletar" está HABILITADO
  *    - Mensagem indicando acesso admin
- * 
+ *
  * ========================================
  * 2. ROW LEVEL SECURITY (RLS) - Backend
  * ========================================
- * 
+ *
  * ✅ SELECT (can_view_notas_fiscais)
  *    - Admin pode ver todas as notas
  *    - Colaborador com visualizar=true pode ver
  *    - Colaborador sem permissão: erro RLS
- *    
+ *
  * ✅ INSERT (can_manage_notas_fiscais)
  *    - Admin pode inserir
  *    - Colaborador com gerenciar=true pode inserir
  *    - Colaborador sem permissão: erro RLS
- *    
+ *
  * ✅ UPDATE (can_manage_notas_fiscais)
  *    - Admin pode editar
  *    - Colaborador com gerenciar=true pode editar
  *    - Colaborador sem permissão: erro RLS
- *    
+ *
  * ✅ DELETE (apenas admin)
  *    - Admin pode deletar
  *    - Colaborador não pode deletar (mesmo com gerenciar=true)
- * 
+ *
  * ========================================
  * 3. DADOS & IMPORTAÇÃO
  * ========================================
- * 
+ *
  * ✅ Importação de Excel
  *    - Somente usuários com gerenciar=true ou admin podem importar
  *    - Validação de colunas obrigatórias
  *    - Conversão correta de datas (DD/MM/YYYY → YYYY-MM-DD)
  *    - Tratamento de erros adequado
- *    
+ *
  * ✅ Datas
  *    - Formato: YYYY-MM-DD (ISO 8601)
  *    - Conversão de Excel funciona
  *    - Datas vazias são NULL
- *    
+ *
  * ✅ Valores
  *    - Números com 2 casas decimais
  *    - Conversão de string para float
  *    - NULL para valores vazios
- * 
+ *
  * ========================================
  * 4. TESTES MANUAIS
  * ========================================
- * 
+ *
  * Cenário 1: Usuário SEM permissão
  * --------------------------------
  * 1. Fazer login com usuário sem permissão em notas_fiscais_permissoes
@@ -90,7 +90,7 @@
  *    - Aba "Notas Fiscais" NÃO aparece no menu
  *    - Se tentar acessar /notas-fiscais direto, vê mensagem de acesso negado
  *    - Tenta fazer query ao supabase: erro RLS
- * 
+ *
  * Cenário 2: Usuário COM permissão (apenas visualizar)
  * --------------------------------------------------
  * 1. Fazer login com usuário que tem visualizar=true, gerenciar=false
@@ -102,7 +102,7 @@
  *    - Botão "Importar Excel" está desabilitado
  *    - Botão "Editar" está desabilitado
  *    - Tenta editar via console: erro RLS
- * 
+ *
  * Cenário 3: Usuário COM permissão (visualizar + gerenciar)
  * -------------------------------------------------------
  * 1. Fazer login com usuário que tem visualizar=true, gerenciar=true
@@ -113,7 +113,7 @@
  *    - Botão "Importar Excel" está HABILITADO
  *    - Consegue editar uma nota
  *    - Tenta deletar via console: erro RLS (apenas admin pode)
- * 
+ *
  * Cenário 4: Admin
  * ----------------
  * 1. Fazer login com usuário admin
@@ -126,38 +126,38 @@
  *    - Botão "Deletar" está HABILITADO
  *    - Consegue editar uma nota
  *    - Consegue deletar uma nota
- * 
+ *
  * ========================================
  * 5. TESTES VIA SQL (Supabase Console)
  * ========================================
- * 
+ *
  * Teste 1: Verificar se RLS está habilitado
  * -----------------------------------------
  * SELECT * FROM pg_tables
  * WHERE tablename = 'notas_fiscais' AND schemaname = 'public';
- * 
+ *
  * -- Deve mostrar row_security = true
- * 
+ *
  * Teste 2: Listar policies
  * -----------------------
  * SELECT * FROM pg_policies
  * WHERE tablename IN ('notas_fiscais', 'notas_fiscais_permissoes');
- * 
+ *
  * Teste 3: Testar função can_view_notas_fiscais()
  * -----------------------------------------------
  * -- Conectar como admin
  * SELECT public.can_view_notas_fiscais();  -- Deve retornar true
- * 
+ *
  * -- Conectar como colaborador sem permissão
  * SELECT public.can_view_notas_fiscais();  -- Deve retornar false
- * 
+ *
  * -- Conectar como colaborador com permissão
  * SELECT public.can_view_notas_fiscais();  -- Deve retornar true
- * 
+ *
  * ========================================
  * 6. PONTOS DE ATENÇÃO
  * ========================================
- * 
+ *
  * ⚠️ Verificar se auth.uid() está correto no contexto RLS
  * ⚠️ Verificar se private.has_role() funciona corretamente
  * ⚠️ Verificar se as triggers de updated_at estão funcionando
@@ -166,7 +166,7 @@
  * ⚠️ Testar importação com arquivo corrompido
  * ⚠️ Testar importação com 1000+ linhas
  * ⚠️ Verificar performance de query com filtros
- * 
+ *
  * ========================================
  * 7. SCRIPT DE TESTE RÁPIDO (Console do Navegador)
  * ========================================
@@ -213,7 +213,7 @@ export const SECURITY_CHECKLIST = [
 
 /**
  * VERIFICAÇÃO RÁPIDA VIA SUPABASE CONSOLE
- * 
+ *
  * 1. Ir para SQL Editor no Supabase
  * 2. Executar:
  */
@@ -227,7 +227,7 @@ const TEST_QUERIES = {
     FROM pg_tables 
     WHERE tablename IN ('notas_fiscais', 'notas_fiscais_permissoes');
   `,
-  
+
   check_policies: `
     SELECT 
       schemaname,
@@ -239,7 +239,7 @@ const TEST_QUERIES = {
     WHERE tablename IN ('notas_fiscais', 'notas_fiscais_permissoes')
     ORDER BY tablename, policyname;
   `,
-  
+
   check_user_permissions: `
     SELECT 
       user_id,
@@ -249,7 +249,7 @@ const TEST_QUERIES = {
     FROM public.notas_fiscais_permissoes
     WHERE user_id = auth.uid();
   `,
-  
+
   check_admin_role: `
     SELECT 
       user_id,
@@ -261,20 +261,20 @@ const TEST_QUERIES = {
 
 /**
  * ESTRUTURA ESPERADA DE PERMISSÕES
- * 
+ *
  * Tabela: notas_fiscais_permissoes
- * 
+ *
  * Usuário Admin:
  * - Não precisa estar na tabela
  * - Funções RLS verificam private.has_role('admin') primeiro
- * 
+ *
  * Colaborador:
  * - Deve ter uma linha em notas_fiscais_permissoes
  * - Coluna "visualizar" = true para poder ler
  * - Coluna "gerenciar" = true para poder editar/criar
- * 
+ *
  * Exemplo de dados:
- * 
+ *
  * | id | user_id | visualizar | gerenciar | created_at |
  * |----|---------|------------|-----------|----|
  * | 1  | uuid-1  | true       | false     | now |

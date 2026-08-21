@@ -25,7 +25,7 @@ function AuthenticatedLayout() {
   const { isAdmin, fullName, notasFiscais } = useAuth();
   const navigate = useNavigate();
   const loc = useLocation();
-  
+
   const canAccessNotasFiscais = isAdmin || notasFiscais.autorizado;
 
   async function handleSignOut() {
@@ -43,7 +43,11 @@ function AuthenticatedLayout() {
           style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
         >
           <div className="w-9 h-9 md:w-11 md:h-11 rounded-lg bg-white p-0.5 shrink-0 flex items-center justify-center overflow-hidden">
-            <img src="/logo SPX MAFRA JHM.png" alt="SPH JHM Mafra" className="w-full h-full object-contain" />
+            <img
+              src="/logo SPX MAFRA JHM.png"
+              alt="SPH JHM Mafra"
+              className="w-full h-full object-contain"
+            />
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-sm md:text-lg font-bold leading-tight truncate">
@@ -59,7 +63,9 @@ function AuthenticatedLayout() {
             <Link
               to="/equipamentos"
               className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                !isAdminRoute && !loc.pathname.startsWith("/notas-fiscais") ? "bg-primary-foreground/15" : "hover:bg-primary-foreground/10"
+                !isAdminRoute && !loc.pathname.startsWith("/notas-fiscais")
+                  ? "bg-primary-foreground/15"
+                  : "hover:bg-primary-foreground/10"
               }`}
             >
               <List className="w-4 h-4" />
@@ -69,7 +75,9 @@ function AuthenticatedLayout() {
               <Link
                 to="/notas-fiscais"
                 className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                  loc.pathname.startsWith("/notas-fiscais") ? "bg-primary-foreground/15" : "hover:bg-primary-foreground/10"
+                  loc.pathname.startsWith("/notas-fiscais")
+                    ? "bg-primary-foreground/15"
+                    : "hover:bg-primary-foreground/10"
                 }`}
               >
                 <FileText className="w-4 h-4" />
@@ -108,13 +116,17 @@ function AuthenticatedLayout() {
         className="fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.06)] md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className={`grid max-w-md mx-auto ${
-          canAccessNotasFiscais ? "grid-cols-3" : "grid-cols-2"
-        }`}>
+        <div
+          className={`grid max-w-md mx-auto ${
+            canAccessNotasFiscais ? "grid-cols-3" : "grid-cols-2"
+          }`}
+        >
           <Link
             to="/equipamentos"
             className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-              !isAdminRoute && !loc.pathname.startsWith("/notas-fiscais") ? "text-primary" : "text-muted-foreground"
+              !isAdminRoute && !loc.pathname.startsWith("/notas-fiscais")
+                ? "text-primary"
+                : "text-muted-foreground"
             }`}
           >
             <List className="w-5 h-5" />
@@ -146,5 +158,4 @@ function AuthenticatedLayout() {
       </nav>
     </div>
   );
-
 }

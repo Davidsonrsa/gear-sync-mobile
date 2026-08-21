@@ -28,10 +28,7 @@ export async function buildReportDocx(params: {
 }) {
   const border = { style: BorderStyle.SINGLE, size: 4, color: "999999" };
   const borders = { top: border, bottom: border, left: border, right: border };
-  const cell = (
-    text: string,
-    opts: { bold?: boolean; shade?: string; width?: number } = {},
-  ) =>
+  const cell = (text: string, opts: { bold?: boolean; shade?: string; width?: number } = {}) =>
     new TableCell({
       borders,
       width: opts.width ? { size: opts.width, type: WidthType.DXA } : undefined,
@@ -49,8 +46,8 @@ export async function buildReportDocx(params: {
   const cols = [1600, 2200, 1800, 500, 1200, 500, 1560];
   const headerRow = new TableRow({
     tableHeader: true,
-    children: ["Sistema", "Item", "Ação", "P/M", "Código", "Qtd", "Status"].map(
-      (h, i) => cell(h, { bold: true, shade: "E5E7EB", width: cols[i] }),
+    children: ["Sistema", "Item", "Ação", "P/M", "Código", "Qtd", "Status"].map((h, i) =>
+      cell(h, { bold: true, shade: "E5E7EB", width: cols[i] }),
     ),
   });
   const itemRows = params.itens.map(
@@ -143,16 +140,12 @@ export async function buildReportDocx(params: {
           new Paragraph({ children: [new TextRun("")] }),
           new Paragraph({
             children: [
-              new TextRun(
-                "___________________________            ___________________________",
-              ),
+              new TextRun("___________________________            ___________________________"),
             ],
           }),
           new Paragraph({
             children: [
-              new TextRun(
-                "     Mecânico responsável                                 Supervisor",
-              ),
+              new TextRun("     Mecânico responsável                                 Supervisor"),
             ],
           }),
         ],

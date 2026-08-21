@@ -7,7 +7,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save, Printer, Camera, Trash2, ImagePlus, Paperclip, FileIcon, Download, FileSpreadsheet } from "lucide-react";
+import {
+  ArrowLeft,
+  Save,
+  Printer,
+  Camera,
+  Trash2,
+  ImagePlus,
+  Paperclip,
+  FileIcon,
+  Download,
+  FileSpreadsheet,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { MANUTENCAO_TEMPLATE, type ManutencaoItem, STATUS_LABELS } from "@/lib/manutencao-template";
@@ -45,7 +56,9 @@ async function buildReportDocx(params: {
     new TableCell({
       borders,
       width: opts.width ? { size: opts.width, type: WidthType.DXA } : undefined,
-      shading: opts.shade ? { fill: opts.shade, type: ShadingType.CLEAR, color: "auto" } : undefined,
+      shading: opts.shade
+        ? { fill: opts.shade, type: ShadingType.CLEAR, color: "auto" }
+        : undefined,
       margins: { top: 60, bottom: 60, left: 100, right: 100 },
       children: [
         new Paragraph({
@@ -104,9 +117,7 @@ async function buildReportDocx(params: {
           }),
           new Paragraph({
             alignment: AlignmentType.CENTER,
-            children: [
-              new TextRun({ text: "SPH JHM Mafra — Registro de manutenção", size: 20 }),
-            ],
+            children: [new TextRun({ text: "SPH JHM Mafra — Registro de manutenção", size: 20 })],
           }),
           new Paragraph({ children: [new TextRun("")] }),
           new Table({
@@ -224,9 +235,7 @@ function ManutencaoFormPage() {
       .from("equipamento-fotos")
       .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
     if (upErr) return toast.error(upErr.message);
-    const captionWithName = caption
-      ? `${caption} — ${file.name}`
-      : file.name;
+    const captionWithName = caption ? `${caption} — ${file.name}` : file.name;
     const { error: insErr } = await supabase.from("equipamento_fotos").insert({
       equipamento_id: id,
       manutencao_historico_id: histId,
@@ -311,9 +320,7 @@ function ManutencaoFormPage() {
         .eq("manutencao_historico_id", histId)
         .like("caption", `${REPORT_TAG}%`);
       if (prev && prev.length) {
-        await supabase.storage
-          .from("equipamento-fotos")
-          .remove(prev.map((p) => p.storage_path));
+        await supabase.storage.from("equipamento-fotos").remove(prev.map((p) => p.storage_path));
         await supabase
           .from("equipamento_fotos")
           .delete()
@@ -323,13 +330,10 @@ function ManutencaoFormPage() {
           );
       }
       const path = `${id}/hist-${histId}/relatorio-${Date.now()}.docx`;
-      const { error: upErr } = await supabase.storage
-        .from("equipamento-fotos")
-        .upload(path, blob, {
-          contentType:
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          upsert: true,
-        });
+      const { error: upErr } = await supabase.storage.from("equipamento-fotos").upload(path, blob, {
+        contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        upsert: true,
+      });
       if (upErr) throw upErr;
       const { error: insErr } = await supabase.from("equipamento_fotos").insert({
         equipamento_id: id,
@@ -349,7 +353,6 @@ function ManutencaoFormPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
-
 
   function updateItem(idx: number, patch: Partial<ManutencaoItem>) {
     setItens((arr) => arr.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
@@ -379,7 +382,15 @@ function ManutencaoFormPage() {
       ["Observações", observacoes],
     ];
     const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws["!cols"] = [{ wch: 22 }, { wch: 30 }, { wch: 18 }, { wch: 8 }, { wch: 14 }, { wch: 8 }, { wch: 14 }];
+    ws["!cols"] = [
+      { wch: 22 },
+      { wch: 30 },
+      { wch: 18 },
+      { wch: 8 },
+      { wch: 14 },
+      { wch: 8 },
+      { wch: 14 },
+    ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Manutenção");
     XLSX.writeFile(wb, `manutencao-${equip?.numero ?? id}-${data || "sem-data"}.xlsx`);
@@ -600,7 +611,9 @@ function ManutencaoFormPage() {
                           className="w-full h-full flex flex-col items-center justify-center gap-1 p-2 text-center hover:bg-muted/70"
                         >
                           <FileIcon className="w-8 h-8 text-primary" />
-                          <span className="text-[10px] uppercase font-semibold">{ext || "arquivo"}</span>
+                          <span className="text-[10px] uppercase font-semibold">
+                            {ext || "arquivo"}
+                          </span>
                           <Download className="w-3 h-3 text-muted-foreground" />
                         </a>
                       )}

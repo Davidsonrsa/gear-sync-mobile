@@ -29,12 +29,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/equipamentos/$id/historico")({
   component: HistoricoPage,
@@ -357,9 +352,7 @@ function HistoricoPage() {
                       )}
                     </div>
                     {f.caption && (
-                      <p className="text-[10px] px-1.5 py-0.5 border-t line-clamp-2">
-                        {f.caption}
-                      </p>
+                      <p className="text-[10px] px-1.5 py-0.5 border-t line-clamp-2">{f.caption}</p>
                     )}
                   </button>
                 );
