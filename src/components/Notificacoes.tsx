@@ -93,129 +93,127 @@ export function Notificacoes() {
   )}
 </Button>
 
-      {aberto && (
-        <div
-  className="fixed inset-0 z-40 bg-black/20"
-  onClick={() => setAberto(false)}
->
-          <div
-          className="absolute right-3 top-[110px] w-[calc(100vw-24px)] max-w-md md:right-6 md:w-96 bg-background"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Card className="overflow-hidden shadow-xl border bg-background">
-              <div className="flex items-center justify-between border-b px-4 py-3">
-                <div>
-                  <h3 className="font-semibold">Notificações</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {quantidade === 0
-                      ? "Nenhuma pendência"
-                      : `${quantidade} pendência${quantidade === 1 ? "" : "s"}`}
-                  </p>
-                </div>
+    {aberto && (
+  <div
+    className="fixed inset-0 z-[100] bg-black/20"
+    onClick={() => setAberto(false)}
+  >
+    <div
+      className="absolute right-3 top-[110px] w-[calc(100vw-24px)] max-w-md md:right-6 md:w-96"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <Card className="overflow-hidden border border-gray-300 bg-white text-gray-900 shadow-2xl dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <div>
+            <h3 className="font-semibold">Notificações</h3>
 
-                <div className="flex items-center gap-1">
-                  {quantidade > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {quantidade === 0
+                ? "Nenhuma pendência"
+                : `${quantidade} pendência${quantidade === 1 ? "" : "s"}`}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-1">
+            {quantidade > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={marcarTodasComoLidas}
+              >
+                <Check className="mr-1 h-4 w-4" />
+                Ler todas
+              </Button>
+            )}
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setAberto(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="max-h-[60vh] overflow-y-auto bg-white dark:bg-gray-900">
+          {isLoading && (
+            <div className="p-6 text-center text-sm text-muted-foreground">
+              Carregando notificações...
+            </div>
+          )}
+
+          {!isLoading && notificacoes.length === 0 && (
+            <div className="p-8 text-center">
+              <Check className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+
+              <p className="text-sm font-medium">
+                Tudo em dia!
+              </p>
+
+              <p className="mt-1 text-xs text-muted-foreground">
+                Não existem notificações pendentes.
+              </p>
+            </div>
+          )}
+
+          {notificacoes.map((n) => {
+            const vencido = Number(n.dias ?? 0) < 0;
+
+            return (
+              <div
+                key={n.id}
+                className="border-b bg-white p-4 last:border-b-0 dark:bg-gray-900"
+              >
+                <div className="flex gap-3">
+                  <div
+                    className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                      vencido
+                        ? "bg-destructive/10 text-destructive"
+                        : "bg-warning/10 text-warning"
+                    }`}
+                  >
+                    <AlertTriangle className="h-4 w-4" />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-semibold">
+                        {n.titulo}
+                      </p>
+
+                      {n.dias != null && (
+                        <Badge
+                          variant={vencido ? "destructive" : "secondary"}
+                          className="shrink-0 text-[10px]"
+                        >
+                          {vencido
+                            ? `${Math.abs(n.dias)}d vencido`
+                            : `${n.dias}d`}
+                        </Badge>
+                      )}
+                    </div>
+
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {n.mensagem}
+                    </p>
+
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={marcarTodasComoLidas}
+                      className="mt-2 h-7 px-2 text-xs"
+                      onClick={() => marcarComoLida(n.id)}
                     >
-                      <Check className="w-4 h-4 mr-1" />
-                      Ler todas
+                      <Check className="mr-1 h-3 w-3" />
+                      Marcar como lida
                     </Button>
-                  )}
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setAberto(false)}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+                  </div>
                 </div>
               </div>
-
-              <div className="max-h-[60vh] overflow-y-auto">
-                {isLoading && (
-                  <div className="p-6 text-center text-sm text-muted-foreground">
-                    Carregando notificações...
-                  </div>
-                )}
-
-                {!isLoading && notificacoes.length === 0 && (
-                  <div className="p-8 text-center">
-                    <Check className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-                    <p className="text-sm font-medium">
-                      Tudo em dia!
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Não existem notificações pendentes.
-                    </p>
-                  </div>
-                )}
-
-                {notificacoes.map((n) => {
-                  const vencido = Number(n.dias ?? 0) < 0;
-
-                  return (
-                    <div
-                      key={n.id}
-                      className="border-b last:border-b-0 p-4"
-                    >
-                      <div className="flex gap-3">
-                        <div
-                          className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                            vencido
-                              ? "bg-destructive/10 text-destructive"
-                              : "bg-warning/10 text-warning"
-                          }`}
-                        >
-                          <AlertTriangle className="h-4 w-4" />
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm font-semibold">
-                              {n.titulo}
-                            </p>
-
-                            {n.dias != null && (
-                              <Badge
-                                variant={
-                                  vencido ? "destructive" : "secondary"
-                                }
-                                className="shrink-0 text-[10px]"
-                              >
-                                {vencido
-                                  ? `${Math.abs(n.dias)}d vencido`
-                                  : `${n.dias}d`}
-                              </Badge>
-                            )}
-                          </div>
-
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {n.mensagem}
-                          </p>
-
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="mt-2 h-7 px-2 text-xs"
-                            onClick={() => marcarComoLida(n.id)}
-                          >
-                            <Check className="mr-1 h-3 w-3" />
-                            Marcar como lida
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-          </div>
+            );
+          })}
         </div>
-      )}
+      </Card>
     </div>
-  );
-}
+  </div>
+)}
