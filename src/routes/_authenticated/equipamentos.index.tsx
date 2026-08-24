@@ -657,178 +657,168 @@ function EquipamentosList() {
   }, [data, q, cl, onlyOverdue]);
 
   return (
-    <div className="px-3 py-3 md:px-6 md:py-6 max-w-md md:max-w-7xl mx-auto w-full">
-      <div className="sticky top-[60px] md:top-[76px] z-20 -mx-3 px-3 md:-mx-6 md:px-6 py-2 bg-background/85 backdrop-blur space-y-2 md:space-y-0 md:flex md:items-center md:gap-3">
-        <div className="relative md:flex-1 md:max-w-lg">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+    <div className="p-4 md:p-6 max-w-7xl mx-auto w-full space-y-4">
+      {/* Header & Filtros */}
+      <div className="sticky top-[60px] md:top-[76px] z-20 p-3 bg-white/90 backdrop-blur-md rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div className="relative w-full md:max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
-            placeholder="Buscar nº, placa, local, operador..."
+            placeholder="Buscar veículo, placa, local..."
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="pl-9 h-11"
+            className="pl-9 h-9 text-xs border-slate-200 bg-slate-50/50 focus:bg-white transition-colors"
           />
         </div>
-        <Notificacoes />
-        <div className="flex gap-2 md:shrink-0 flex-wrap">
+
+        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
           <BotaoTacografo />
+          <BotaoSeguro />
 
           <Select value={cl} onValueChange={setCl}>
-            <SelectTrigger className="h-9 flex-1 md:w-40">
+            <SelectTrigger className="h-9 text-xs w-[130px] bg-white border-slate-200">
               <SelectValue placeholder="Classe (CL)" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all">Todas as CL</SelectItem>
               {clOptions.map((c) => (
-                <SelectItem key={c} value={c}>
-                  CL {c}
-                </SelectItem>
+                <SelectItem key={c} value={c}>CL {c}</SelectItem>
               ))}
             </SelectContent>
           </Select>
+
           <Button
             type="button"
             size="sm"
             variant={onlyOverdue ? "destructive" : "outline"}
             onClick={() => setOnlyOverdue((v) => !v)}
-            className="h-9"
+            className="h-9 text-xs border-slate-200"
           >
-            {onlyOverdue ? "Só vencidos ✓" : "Vencidos"}
+            {onlyOverdue ? "Apenas Vencidos" : "Vencidos"}
           </Button>
 
-          <BotaoSeguro />
+          <Notificacoes />
         </div>
-        <p className="text-xs text-muted-foreground px-1 md:ml-auto md:whitespace-nowrap">
-          {isLoading
-            ? "Carregando..."
-            : `${filtered.length} equipamento${filtered.length === 1 ? "" : "s"}`}
+      </div>
+
+      {/* Contador de Equipamentos */}
+      <div className="flex justify-between items-center px-1">
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          {isLoading ? "Carregando..." : `Frota Cadastrada (${filtered.length})`}
         </p>
       </div>
 
+      {/* Lista/Grid de Cards de Frota */}
       {!isLoading && filtered.length === 0 && (
-        <Card className="p-8 text-center mt-4">
-          <Gauge className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Nenhum equipamento encontrado.</p>
+        <Card className="p-12 text-center border-dashed border-slate-200 bg-slate-50">
+          <Gauge className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+          <p className="text-xs font-medium text-slate-600">Nenhum equipamento localizado.</p>
         </Card>
       )}
 
-      <ul className="space-y-2 mt-2 md:space-y-0 md:grid md:grid-cols-2 xl:grid-cols-3 md:gap-3 md:mt-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.map((e) => {
-          const horaPct =
-            e.horimetro_atual && e.proxima_revisao_horimetro
-              ? Math.min(
-                  100,
-                  (Number(e.horimetro_atual) / Number(e.proxima_revisao_horimetro)) * 100
-                )
-              : 0;
           const hrRodado =
             e.horimetro_atual != null && e.h_revisao != null
               ? Math.max(0, Number(e.horimetro_atual) - Number(e.h_revisao))
               : null;
           const overdue = hrRodado != null && hrRodado > Number(e.limite_revisao ?? 500);
           const coverUrl = e.cover_storage_path ? covers[e.cover_storage_path] : null;
+
           return (
-            <li key={e.id}>
-              <Link to="/equipamentos/$id" params={{ id: e.id }} className="block">
-                <Card
-                  className={`p-3 transition-colors ${
-                    overdue
-                      ? "border-2 border-destructive bg-destructive/10 ring-2 ring-destructive/40 shadow-md"
-                      : "hover:bg-accent/5 active:bg-accent/10"
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    {coverUrl ? (
-                      <img
-                        src={coverUrl}
-                        alt=""
-                        className="w-14 h-14 rounded-md object-cover border border-border shrink-0"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-14 h-14 rounded-md bg-muted flex items-center justify-center shrink-0">
-                        <Gauge className="w-6 h-6 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-base text-primary">{e.numero}</span>
-                        {e.cl && (
-                          <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
-                            CL {e.cl}
-                          </Badge>
-                        )}
-                        {e.status && (
-                          <Badge className="text-[10px] h-4 px-1.5 bg-warning text-warning-foreground">
-                            {e.status}
-                          </Badge>
-                        )}
-                        {overdue && (
-                          <Badge
-                            variant="destructive"
-                            className="text-[10px] h-4 px-1.5 blink-overdue"
-                          >
-                            Revisão vencida
-                          </Badge>
-                        )}
-                      </div>
-                      {e.identificacao && (
-                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                          {e.identificacao}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground flex-wrap">
-                        {e.placa && <span className="font-mono">{e.placa}</span>}
-                        {e.localizacao && <span>· {e.localizacao}</span>}
-                      </div>
-                      <div className="mt-2 flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${
-                              overdue ? "bg-destructive blink-overdue" : "bg-accent"
-                            }`}
-                            style={{ width: `${horaPct}%` }}
-                          />
-                        </div>
-                        <span
-                          className={`text-[11px] font-medium tabular-nums ${
-                            overdue ? "text-destructive blink-overdue" : ""
-                          }`}
-                        >
-                          {e.horimetro_atual ?? 0}h
+            <Link key={e.id} to="/equipamentos/$id" params={{ id: e.id }} className="group block">
+              <Card className={`p-4 transition-all duration-200 hover:shadow-md border ${
+                overdue 
+                  ? "border-red-300 bg-red-50/30 hover:border-red-400" 
+                  : "border-slate-200 bg-white hover:border-slate-300"
+              }`}>
+                <div className="flex gap-3 items-start">
+                  {/* Imagem / Avatar do Equipamento */}
+                  {coverUrl ? (
+                    <img
+                      src={coverUrl}
+                      alt={e.numero}
+                      className="w-16 h-16 rounded-lg object-cover border border-slate-200 bg-slate-100 shrink-0"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 text-slate-400">
+                      <Gauge className="w-6 h-6" />
+                    </div>
+                  )}
+
+                  {/* Conteúdo Principal */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-slate-900 group-hover:text-blue-600 transition-colors">
+                          {e.numero}
                         </span>
+                        {e.cl && (
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                            CL {e.cl}
+                          </span>
+                        )}
                       </div>
-                      {hrRodado != null && (
-                        <div
-                          className={`mt-1 text-[11px] ${
-                            overdue
-                              ? "text-destructive font-semibold blink-overdue"
-                              : "text-muted-foreground"
-                          }`}
-                        >
-                          Hr rodado: <span className="tabular-nums">{hrRodado}h</span>
-                          {overdue && (
-                            <span className="ml-1">⚠ &gt; {Number(e.limite_revisao ?? 500)}h</span>
-                          )}
-                        </div>
-                      )}
+                      <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
                     </div>
 
-                    <ChevronRight className="w-4 h-4 text-muted-foreground mt-1" />
+                    {e.identificacao && (
+                      <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
+                        {e.identificacao}
+                      </p>
+                    )}
+
+                    {/* Detalhes de Placa e Localização */}
+                    <div className="flex items-center gap-2 mt-2 text-[11px] text-slate-500 font-mono">
+                      {e.placa && <span className="bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">{e.placa}</span>}
+                      {e.localizacao && <span className="truncate">{e.localizacao}</span>}
+                    </div>
                   </div>
-                </Card>
-              </Link>
-            </li>
+                </div>
+
+                {/* Status e Métrica do Horímetro */}
+                <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <div>
+                    {overdue ? (
+                      <Badge variant="destructive" className="text-[10px] font-semibold bg-red-600">
+                        Revisão vencida
+                      </Badge>
+                    ) : e.status ? (
+                      <Badge className="text-[10px] font-medium bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">
+                        {e.status}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px] text-slate-500 font-normal">
+                        Operacional
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-slate-400 text-[10px] block">Horímetro</span>
+                    <span className={`font-bold font-mono ${overdue ? "text-red-600" : "text-slate-700"}`}>
+                      {e.horimetro_atual ?? 0}h
+                    </span>
+                    {hrRodado != null && (
+                      <span className="text-[10px] text-slate-400 ml-1">
+                        ({hrRodado}h rodados)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            </Link>
           );
         })}
-      </ul>
+      </div>
 
       {isAdmin && (
         <Link to="/admin">
           <Button
             size="icon"
-            className="fixed bottom-24 right-4 h-14 w-14 rounded-full shadow-lg bg-accent text-accent-foreground hover:bg-accent/90 z-30"
+            className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 text-white z-30"
           >
-            <Plus className="w-6 h-6" />
+            <Plus className="w-5 h-5" />
           </Button>
         </Link>
       )}
