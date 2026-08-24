@@ -10,7 +10,7 @@ import { matToEmail } from "@/lib/mat";
 import { Eye, EyeOff } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Entrar — SPH JHM Mafra" }] }),
+  head: () => ({ meta: [{ title: "Entrar — GIF - Gestão Integrada de Frotas" }] }),
   component: AuthPage,
 });
 
@@ -50,7 +50,7 @@ function AuthPage() {
                 className="w-full h-full object-contain"
               />
             </div>
-            <h1 className="text-lg font-bold text-center">Controle de Horímetros</h1>
+            <h1 className="text-lg font-bold text-center">GIF - Gestão Integrada de Frotas</h1>
             <p className="text-xs text-muted-foreground text-center">
               Acesso restrito aos colaboradores
             </p>
