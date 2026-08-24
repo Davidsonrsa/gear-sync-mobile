@@ -211,27 +211,12 @@ export function Notificacoes() {
 
   return (
     <div className="relative">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="relative h-9 gap-2 px-3 bg-background"
-        onClick={() => setAberto((v) => !v)}
-        aria-label="Notificações de Tacógrafo"
-      >
-        <Bell className="w-4 h-4" />
-        <span className="text-xs font-medium">Tacógrafo</span>
-
-        {quantidade > 0 && (
-          <span className="absolute -right-1 -top-1 flex min-w-5 h-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
-            {quantidade > 99 ? "99+" : quantidade}
-          </span>
-        )}
-      </Button>
+    
+       
 
       {/* Monta o overlay direto no <body> via portal, escapando de
           qualquer contexto de empilhamento (transform/filter/overflow)
-          criado por ancestrais como o header/toolbar. */}
+        <Button    criado por ancestrais como o header/toolbar. */}
       {typeof document !== "undefined" &&
         painel &&
         createPortal(painel, document.body)}
