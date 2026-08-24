@@ -716,7 +716,8 @@ function EquipamentosList() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-       {filtered.map((e) => {
+
+{filtered.map((e) => {
   const hrRodado =
     e.horimetro_atual != null && e.h_revisao != null
       ? Math.max(0, Number(e.horimetro_atual) - Number(e.h_revisao))
@@ -731,9 +732,17 @@ function EquipamentosList() {
       <Card
         className={`p-3.5 rounded-2xl transition-all border-2 relative ${
           overdue
-            ? "animate-blink-overdue border-red-500 bg-red-50/60"
-            : "border-slate-200 bg-white"
+            ? "border-red-500 bg-red-50 animate-pulse"
+            : "border-slate-200 bg-white hover:border-slate-300"
         }`}
+        style={
+          overdue
+            ? {
+                backgroundColor: "#fef2f2",
+                borderColor: "#ef4444",
+              }
+            : undefined
+        }
       >
         <div className="flex gap-3 items-start">
           {/* Foto / Ícone */}
@@ -757,12 +766,15 @@ function EquipamentosList() {
                   {e.numero}
                 </span>
                 {e.cl && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200/60 text-slate-600">
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200/70 text-slate-700">
                     CL {e.cl}
                   </span>
                 )}
                 {overdue && (
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-500 text-white shadow-sm">
+                  <span
+                    className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow-sm"
+                    style={{ backgroundColor: "#ef4444", color: "#ffffff" }}
+                  >
                     Revisão vencida
                   </span>
                 )}
@@ -771,27 +783,28 @@ function EquipamentosList() {
             </div>
 
             {e.identificacao && (
-              <p className={`text-xs mt-0.5 truncate ${overdue ? "text-red-700/80" : "text-slate-500"}`}>
+              <p className={`text-xs mt-0.5 truncate ${overdue ? "text-red-800" : "text-slate-500"}`}>
                 {e.identificacao}
               </p>
             )}
 
-            <div className={`flex items-center gap-2 mt-1 text-[11px] font-mono ${overdue ? "text-red-700/70" : "text-slate-500"}`}>
+            <div className={`flex items-center gap-2 mt-1 text-[11px] font-mono ${overdue ? "text-red-700" : "text-slate-500"}`}>
               {e.placa && <span>{e.placa}</span>}
               {e.localizacao && <span>• {e.localizacao}</span>}
             </div>
           </div>
         </div>
 
-        {/* Barra de Progresso do Horímetro */}
+        {/* Barra de Progresso e Horímetro */}
         <div className="mt-3 space-y-1">
           <div className="flex items-center gap-2">
-            <div className="flex-1 bg-slate-200/70 h-2 rounded-full overflow-hidden">
+            <div className="flex-1 bg-slate-200 h-2 rounded-full overflow-hidden">
               <div
-                className={`h-full transition-all duration-300 ${
-                  overdue ? "bg-red-500" : "bg-amber-500"
-                }`}
-                style={{ width: `${pct}%` }}
+                className="h-full transition-all duration-300"
+                style={{
+                  width: `${pct}%`,
+                  backgroundColor: overdue ? "#ef4444" : "#f59e0b",
+                }}
               />
             </div>
             <span className={`text-xs font-bold font-mono ${overdue ? "text-red-800" : "text-slate-700"}`}>
@@ -800,10 +813,10 @@ function EquipamentosList() {
           </div>
 
           <div className="flex justify-between items-center text-[10px]">
-            <span className={overdue ? "text-red-600/90 font-medium" : "text-slate-400"}>
+            <span className={overdue ? "text-red-700 font-semibold" : "text-slate-400"}>
               Hr rodado: {hrRodado}h
             </span>
-            <span className={overdue ? "text-red-600/90 font-medium" : "text-slate-400"}>
+            <span className={overdue ? "text-red-700 font-semibold" : "text-slate-400"}>
               limite: {limite}h
             </span>
           </div>
