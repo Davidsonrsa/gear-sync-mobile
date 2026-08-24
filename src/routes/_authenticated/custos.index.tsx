@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// Adicione a barra "/" no final de custos/
 export const Route = createFileRoute("/_authenticated/custos/")({
   component: CustosPage,
 });
