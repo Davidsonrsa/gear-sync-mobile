@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,7 @@ import {
   Building2,
   Truck,
   DollarSign,
+  FileText,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/notas-fiscais/")({
@@ -36,8 +38,7 @@ export interface NotaFiscalItem {
   emissao: string;
   valor_total: number;
   parcelas: string;
-  vencimento?: string;
-  observacao?: string;
+  observacao: string;
 }
 
 function NotasFiscaisPage() {
@@ -54,13 +55,14 @@ function NotasFiscaisPage() {
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
 
-  // Formulário de Cadastro
+  // Formulário
   const [numeroNf, setNumeroNf] = useState("");
   const [fornecedor, setFornecedor] = useState("");
   const [equipamento, setEquipamento] = useState("");
   const [emissao, setEmissao] = useState("");
   const [valorTotal, setValorTotal] = useState("");
   const [vencimento, setVencimento] = useState("");
+  const [observacao, setObservacao] = useState("");
 
   const formatBRL = (val: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -81,7 +83,7 @@ function NotasFiscaisPage() {
     }
   };
 
-  // Funções de Extração com Múltiplas Variações de Nomes de Coluna
+  // Funções de Extração de Dados
   const extractNumeroNF = (item: any): string => {
     const raw =
       item.numero_nf ||
@@ -90,15 +92,18 @@ function NotasFiscaisPage() {
       item.num_nf ||
       item.nota_fiscal ||
       item.nota ||
+      item.nf ||
       item.num_documento ||
       item.documento;
 
-    if (!raw || raw === "—") return "NF 000";
-    const str = String(raw).trim();
-    return str.toUpperCase().startsWith("NF") ? str : `NF ${str}`;
+    if (!raw) return "—";
+    return String(raw).trim();
   };
 
   const extractFornecedor = (item: any): string => {
+    if (typeof item.fornecedor === "object" && item.fornecedor !== null) {
+      return item.fornecedor.nome || item.fornecedor.razao_social || "—";
+    }
     return (
       item.fornecedor ||
       item.razao_social ||
@@ -109,13 +114,21 @@ function NotasFiscaisPage() {
   };
 
   const extractEquipamento = (item: any): string => {
+    if (typeof item.equipamentos === "object" && item.equipamentos !== null) {
+      return item.equipamentos.nome || item.equipamentos.tag || item.equipamentos.codigo || "—";
+    }
+    if (typeof item.equipamento === "object" && item.equipamento !== null) {
+      return item.equipamento.nome || item.equipamento.tag || item.equipamento.codigo || "—";
+    }
     return (
       item.equipamento ||
+      item.equipamentos ||
       item.cod_equipamento ||
       item.nome_equipamento ||
       item.veiculo ||
       item.frota ||
-      item.equipamento_id ||
+      item.tag ||
+      item.maquina ||
       "—"
     );
   };
@@ -131,25 +144,41 @@ function NotasFiscaisPage() {
     );
   };
 
-  const extractVencimento = (item: any): string => {
+  const extractParcelasEVencimento = (item: any): string => {
     const rawVenc =
       item.vencimento ||
       item.data_vencimento ||
       item.dt_vencimento ||
+      item.vencimentos ||
       item.vencimento_1 ||
       item.primeiro_vencimento ||
       item.vencimento_parcela;
 
-    if (rawVenc) {
-      return `1ª: ${formatDate(rawVenc)}`;
+    const rawParcelas = item.parcelas || item.parcela || item.qtd_parcelas;
+
+    if (rawVenc && rawParcelas) {
+      return `${rawParcelas}x (${formatDate(rawVenc)})`;
     }
-    if (item.parcelas && item.parcelas !== "—") {
-      return item.parcelas;
+    if (rawVenc) {
+      return `Venc: ${formatDate(rawVenc)}`;
+    }
+    if (rawParcelas) {
+      return `${rawParcelas} Parcela(s)`;
     }
     return "—";
   };
 
-  // Buscar notas do Supabase
+  const extractObservacao = (item: any): string => {
+    return (
+      item.observacao ||
+      item.observacoes ||
+      item.obs ||
+      item.descricao ||
+      item.detalhes ||
+      "—"
+    );
+  };
+
   const fetchNotas = async () => {
     setLoading(true);
     try {
@@ -170,9 +199,8 @@ function NotasFiscaisPage() {
           valor_total: Number(
             item.valor_total || item.valor || item.valor_nota || item.val_total || 0
           ),
-          parcelas: extractVencimento(item),
-          vencimento: item.vencimento || item.data_vencimento || "—",
-          observacao: item.observacao || item.descricao || "Sem observações cadastradas.",
+          parcelas: extractParcelasEVencimento(item),
+          observacao: extractObservacao(item),
         }));
         setNotasList(mappedData);
       }
@@ -187,24 +215,20 @@ function NotasFiscaisPage() {
     fetchNotas();
   }, []);
 
-  // Cadastrar nova Nota
   const handleSalvarNota = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
 
-    const formattedNf = numeroNf.toUpperCase().startsWith("NF")
-      ? numeroNf.toUpperCase()
-      : `NF ${numeroNf}`;
-
     try {
       const { error } = await supabase.from("notas_fiscais").insert([
         {
-          numero_nf: formattedNf,
+          numero_nf: numeroNf,
           fornecedor: fornecedor,
           equipamento: equipamento || null,
           emissao: emissao || null,
           valor_total: parseFloat(valorTotal) || 0,
           vencimento: vencimento || null,
+          observacao: observacao || null,
         },
       ]);
 
@@ -218,6 +242,7 @@ function NotasFiscaisPage() {
       setEmissao("");
       setValorTotal("");
       setVencimento("");
+      setObservacao("");
     } catch (err: any) {
       alert("Erro ao salvar nota: " + (err.message || "Verifique a conexão"));
     } finally {
@@ -225,19 +250,18 @@ function NotasFiscaisPage() {
     }
   };
 
-  // Abrir Modal de Detalhes
   const handleAbrirDetalhes = (nota: NotaFiscalItem) => {
     setNotaSelecionada(nota);
     setOpenModalDetalhes(true);
   };
 
-  // Filtros em Tempo Real
   const notasFiltradas = notasList.filter((nota) => {
     const termo = busca.toLowerCase();
     const matchBusca =
       nota.numero_nf.toLowerCase().includes(termo) ||
       nota.fornecedor.toLowerCase().includes(termo) ||
-      nota.equipamento.toLowerCase().includes(termo);
+      nota.equipamento.toLowerCase().includes(termo) ||
+      nota.observacao.toLowerCase().includes(termo);
 
     let matchData = true;
     if (dataInicio && nota.emissao !== "—") {
@@ -250,7 +274,6 @@ function NotasFiscaisPage() {
     return matchBusca && matchData;
   });
 
-  // Cálculos dinâmicos dos Cards
   const totalAcumulado = notasFiltradas.reduce(
     (acc, item) => acc + item.valor_total,
     0
@@ -271,7 +294,6 @@ function NotasFiscaisPage() {
           </p>
         </div>
 
-        {/* Modal de Nova Nota Fiscal */}
         <Dialog open={openModalCadastro} onOpenChange={setOpenModalCadastro}>
           <DialogTrigger asChild>
             <Button
@@ -304,7 +326,7 @@ function NotasFiscaisPage() {
                   <Label htmlFor="fornecedor">Fornecedor</Label>
                   <Input
                     id="fornecedor"
-                    placeholder="Ex: APAIL DIESEL"
+                    placeholder="Ex: ENGEPEÇAS"
                     value={fornecedor}
                     onChange={(e) => setFornecedor(e.target.value)}
                     required
@@ -317,7 +339,7 @@ function NotasFiscaisPage() {
                   <Label htmlFor="equipamento">Equipamento</Label>
                   <Input
                     id="equipamento"
-                    placeholder="Ex: CB 03"
+                    placeholder="Ex: CAT 320 / CAMINHÃO 01"
                     value={equipamento}
                     onChange={(e) => setEquipamento(e.target.value)}
                   />
@@ -356,6 +378,17 @@ function NotasFiscaisPage() {
                     onChange={(e) => setVencimento(e.target.value)}
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="observacao">Observações</Label>
+                <Textarea
+                  id="observacao"
+                  placeholder="Descrição das peças, serviços ou detalhes da compra..."
+                  value={observacao}
+                  onChange={(e) => setObservacao(e.target.value)}
+                  className="resize-none h-20"
+                />
               </div>
 
               <div className="pt-3 flex justify-end gap-2">
@@ -456,7 +489,7 @@ function NotasFiscaisPage() {
           <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
           <input
             type="text"
-            placeholder="Buscar por NF, fornecedor, equipamento ou descrição..."
+            placeholder="Buscar por NF, fornecedor, equipamento ou observação..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             className="w-full pl-9 pr-3 py-2 text-sm bg-transparent rounded-lg border-0 focus:outline-none focus:ring-0 text-slate-700 placeholder:text-slate-400"
@@ -517,37 +550,39 @@ function NotasFiscaisPage() {
                 <th className="py-3 px-4">Emissão</th>
                 <th className="py-3 px-4">Valor Total</th>
                 <th className="py-3 px-4">Parcelas / Vencimentos</th>
+                <th className="py-3 px-4">Observações</th>
                 <th className="py-3 px-4 text-center">Ação</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-500">
+                  <td colSpan={8} className="py-8 text-center text-slate-500">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-slate-600" />
                     Carregando notas fiscais...
                   </td>
                 </tr>
               ) : notasFiltradas.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-500">
+                  <td colSpan={8} className="py-8 text-center text-slate-500">
                     Nenhuma nota fiscal encontrada.
                   </td>
                 </tr>
               ) : (
                 notasFiltradas.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/50">
+                    {/* Número NF SEM o ícone de Cifrão ($) */}
                     <td className="py-3 px-4 font-semibold whitespace-nowrap">
                       <span className="inline-flex items-center gap-1.5">
-                        <span className="border border-slate-700 rounded px-1 py-0.5 text-[10px] font-mono">
-                          $
+                        <span className="border border-slate-300 bg-slate-100 rounded px-1 py-0.5 text-[10px] font-mono text-slate-600">
+                          #
                         </span>
                         {item.numero_nf}
                       </span>
                     </td>
                     <td className="py-3 px-4 font-semibold whitespace-nowrap">
                       <span className="inline-flex items-center gap-1.5">
-                        <span className="border border-slate-700 rounded px-1 py-0.5 text-[10px]">
+                        <span className="border border-slate-300 bg-slate-100 rounded px-1 py-0.5 text-[10px]">
                           🏢
                         </span>
                         {item.fornecedor}
@@ -579,6 +614,9 @@ function NotasFiscaisPage() {
                         "—"
                       )}
                     </td>
+                    <td className="py-3 px-4 max-w-[200px] truncate text-slate-600">
+                      {item.observacao}
+                    </td>
                     <td className="py-3 px-4 text-center whitespace-nowrap">
                       <button
                         onClick={() => handleAbrirDetalhes(item)}
@@ -595,13 +633,13 @@ function NotasFiscaisPage() {
         </div>
       </div>
 
-      {/* Modal de Detalhes da Nota Fiscal */}
+      {/* Modal de Detalhes */}
       <Dialog open={openModalDetalhes} onOpenChange={setOpenModalDetalhes}>
         <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-emerald-600" />
-              Detalhes da {notaSelecionada?.numero_nf}
+              <FileText className="w-5 h-5 text-slate-700" />
+              Detalhes da Nota #{notaSelecionada?.numero_nf}
             </DialogTitle>
           </DialogHeader>
 
@@ -650,11 +688,21 @@ function NotasFiscaisPage() {
 
               <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                 <span className="text-xs text-slate-400 block font-medium">
-                  Vencimento / Parcelamento
+                  Parcelas / Vencimentos
                 </span>
                 <span className="font-semibold text-slate-800 mt-0.5 block">
                   {notaSelecionada.parcelas}
                 </span>
+              </div>
+
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <span className="text-xs text-slate-400 flex items-center gap-1 font-medium">
+                  <FileText className="w-3.5 h-3.5 text-slate-500" />
+                  Observações
+                </span>
+                <p className="text-sm text-slate-800 mt-1 whitespace-pre-wrap leading-relaxed">
+                  {notaSelecionada.observacao}
+                </p>
               </div>
 
               <div className="flex justify-end pt-2">
