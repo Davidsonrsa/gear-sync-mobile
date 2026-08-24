@@ -71,32 +71,32 @@ function NotasFiscaisPage() {
     }).format(val || 0);
   };
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr || dateStr === "—") return "—";
+  const formatDate = (dateStr: any) => {
+    if (!dateStr || dateStr === "—") return "";
     try {
-      const cleanDate = dateStr.split("T")[0];
+      const cleanDate = String(dateStr).split("T")[0];
       const [year, month, day] = cleanDate.split("-");
       if (year && month && day) return `${day}/${month}/${year}`;
-      return dateStr;
+      return String(dateStr);
     } catch {
-      return dateStr;
+      return String(dateStr);
     }
   };
 
-  // Funções de Extração de Dados
+  // Funções de Extração de Dados Robustas
   const extractNumeroNF = (item: any): string => {
     const raw =
-      item.numero_nf ||
-      item.numero_nota ||
-      item.numero ||
-      item.num_nf ||
-      item.nota_fiscal ||
-      item.nota ||
-      item.nf ||
-      item.num_documento ||
+      item.numero_nf ??
+      item.numero_nota ??
+      item.numero ??
+      item.num_nf ??
+      item.nota_fiscal ??
+      item.nota ??
+      item.nf ??
+      item.num_documento ??
       item.documento;
 
-    if (!raw) return "—";
+    if (raw === null || raw === undefined || raw === "") return "—";
     return String(raw).trim();
   };
 
@@ -125,6 +125,7 @@ function NotasFiscaisPage() {
       item.equipamentos ||
       item.cod_equipamento ||
       item.nome_equipamento ||
+      item.descricao_equipamento ||
       item.veiculo ||
       item.frota ||
       item.tag ||
@@ -144,27 +145,50 @@ function NotasFiscaisPage() {
     );
   };
 
+  // Leitura das colunas VENC.01, VENC.02, VENC.03, VENC.04, VENC.05
   const extractParcelasEVencimento = (item: any): string => {
-    const rawVenc =
+    const vencimentosList: string[] = [];
+
+    const possibleVencs = [
+      item["venc_01"] || item["venc.01"] || item["venc01"] || item["vencimento_1"] || item["venc1"] || item["data_vencimento_1"],
+      item["venc_02"] || item["venc.02"] || item["venc02"] || item["vencimento_2"] || item["venc2"] || item["data_vencimento_2"],
+      item["venc_03"] || item["venc.03"] || item["venc03"] || item["vencimento_3"] || item["venc3"] || item["data_vencimento_3"],
+      item["venc_04"] || item["venc.04"] || item["venc04"] || item["vencimento_4"] || item["venc4"] || item["data_vencimento_4"],
+      item["venc_05"] || item["venc.05"] || item["venc05"] || item["vencimento_5"] || item["venc5"] || item["data_vencimento_5"],
+    ];
+
+    possibleVencs.forEach((venc, index) => {
+      if (venc) {
+        const formatted = formatDate(venc);
+        if (formatted) {
+          vencimentosList.push(`${index + 1}ª: ${formatted}`);
+        }
+      }
+    });
+
+    if (vencimentosList.length > 0) {
+      return vencimentosList.join(" | ");
+    }
+
+    // Fallbacks para campos genéricos de vencimento/parcelas
+    const singleVenc =
       item.vencimento ||
       item.data_vencimento ||
       item.dt_vencimento ||
-      item.vencimentos ||
-      item.vencimento_1 ||
-      item.primeiro_vencimento ||
-      item.vencimento_parcela;
+      item.vencimentos;
 
     const rawParcelas = item.parcelas || item.parcela || item.qtd_parcelas;
 
-    if (rawVenc && rawParcelas) {
-      return `${rawParcelas}x (${formatDate(rawVenc)})`;
+    if (singleVenc && rawParcelas) {
+      return `${rawParcelas}x (${formatDate(singleVenc)})`;
     }
-    if (rawVenc) {
-      return `Venc: ${formatDate(rawVenc)}`;
+    if (singleVenc) {
+      return `Venc: ${formatDate(singleVenc)}`;
     }
     if (rawParcelas) {
       return `${rawParcelas} Parcela(s)`;
     }
+
     return "—";
   };
 
@@ -227,7 +251,7 @@ function NotasFiscaisPage() {
           equipamento: equipamento || null,
           emissao: emissao || null,
           valor_total: parseFloat(valorTotal) || 0,
-          vencimento: vencimento || null,
+          venc_01: vencimento || null,
           observacao: observacao || null,
         },
       ]);
@@ -571,7 +595,6 @@ function NotasFiscaisPage() {
               ) : (
                 notasFiltradas.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/50">
-                    {/* Número NF SEM o ícone de Cifrão ($) */}
                     <td className="py-3 px-4 font-semibold whitespace-nowrap">
                       <span className="inline-flex items-center gap-1.5">
                         <span className="border border-slate-300 bg-slate-100 rounded px-1 py-0.5 text-[10px] font-mono text-slate-600">
