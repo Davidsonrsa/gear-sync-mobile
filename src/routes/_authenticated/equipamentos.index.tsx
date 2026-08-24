@@ -1,4 +1,3 @@
-
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
@@ -70,9 +69,6 @@ function calcularDiasVencimento(dataVencimentoStr: string): number | null {
 // ----------------------------------------------------
 // COMPONENTE: TACOGRAFO (Lendo da VIEW)
 // ----------------------------------------------------
-// ----------------------------------------------------
-// COMPONENTE: TACOGRAFO (Lendo da VIEW)
-// ----------------------------------------------------
 function BotaoTacografo() {
   const [open, setOpen] = useState(false);
   const [filtro, setFiltro] = useState("");
@@ -92,7 +88,18 @@ function BotaoTacografo() {
     },
   });
 
-  // Contagem para o badge de alerta no botão principal
+  // Apenas VENCIDOS para o badge do botão principal
+  const tacografosVencidos = useMemo(() => {
+    if (!tacografos) return [];
+    return tacografos.filter((item: any) => {
+      const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento;
+      if (!dataVal) return false;
+      const dias = calcularDiasVencimento(dataVal);
+      return dias !== null && dias < 0;
+    });
+  }, [tacografos]);
+
+  // Alertados (vencidos + a vencer em 30d) para aviso no modal
   const tacografosComAlerta = useMemo(() => {
     if (!tacografos) return [];
     return tacografos.filter((item: any) => {
@@ -103,7 +110,6 @@ function BotaoTacografo() {
     });
   }, [tacografos]);
 
-  // Processa TODOS os registros para exibir na lista do Modal
   const todosComStatus = useMemo(() => {
     if (!tacografos) return [];
     return tacografos
@@ -129,7 +135,6 @@ function BotaoTacografo() {
       });
   }, [tacografos]);
 
-  // Filtra por busca sobre TODOS os equipamentos
   const listaFiltrada = useMemo(() => {
     const f = filtro.toLowerCase().trim();
     if (!f) return todosComStatus;
@@ -142,15 +147,12 @@ function BotaoTacografo() {
 
   return (
     <>
-      <Button variant="outline" size="sm" className="h-9 relative bg-white" onClick={() => setOpen(true)}>
-        <Calendar className="w-4 h-4 mr-1.5 text-slate-500" />
+      <Button variant="outline" size="sm" className="h-9 relative bg-white gap-1.5" onClick={() => setOpen(true)}>
+        <Calendar className="w-4 h-4 text-slate-500" />
         <span>Tacógrafo</span>
-        {tacografosComAlerta.length > 0 && (
-          <Badge
-            variant="destructive"
-            className="ml-1.5 px-1.5 py-0 text-[10px] h-4 rounded-full font-bold bg-amber-500 hover:bg-amber-600 text-white"
-          >
-            {tacografosComAlerta.length}
+        {tacografosVencidos.length > 0 && (
+          <Badge className="bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none">
+            {tacografosVencidos.length}
           </Badge>
         )}
       </Button>
@@ -274,6 +276,17 @@ function BotaoSeguro() {
     },
   });
 
+  // Apenas VENCIDOS para o badge do botão principal
+  const segurosVencidos = useMemo(() => {
+    if (!seguros) return [];
+    return seguros.filter((item: any) => {
+      const dataVal = item.vencimento || item.data_vencimento || item.vencimento_seguro;
+      if (!dataVal) return false;
+      const dias = calcularDiasVencimento(dataVal);
+      return dias !== null && dias < 0;
+    });
+  }, [seguros]);
+
   const segurosComAlerta = useMemo(() => {
     if (!seguros) return [];
     return seguros.filter((item: any) => {
@@ -321,15 +334,12 @@ function BotaoSeguro() {
 
   return (
     <>
-      <Button variant="outline" size="sm" className="h-9 relative bg-white" onClick={() => setOpen(true)}>
-        <ShieldCheck className="w-4 h-4 mr-1.5 text-slate-500" />
+      <Button variant="outline" size="sm" className="h-9 relative bg-white gap-1.5" onClick={() => setOpen(true)}>
+        <ShieldCheck className="w-4 h-4 text-slate-500" />
         <span>Seguro</span>
-        {segurosComAlerta.length > 0 && (
-          <Badge
-            variant="destructive"
-            className="ml-1.5 px-1.5 py-0 text-[10px] h-4 rounded-full font-bold bg-red-500 hover:bg-red-600 text-white"
-          >
-            {segurosComAlerta.length}
+        {segurosVencidos.length > 0 && (
+          <Badge className="bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none">
+            {segurosVencidos.length}
           </Badge>
         )}
       </Button>
@@ -457,6 +467,19 @@ function EquipamentosList() {
     },
   });
 
+  // Contagem de Equipamentos Vencidos (Revisão estourada)
+  const totalEquipamentosVencidos = useMemo(() => {
+    if (!data) return 0;
+    return data.filter((e) => {
+      const hrRodado =
+        e.horimetro_atual != null && e.h_revisao != null
+          ? Math.max(0, Number(e.horimetro_atual) - Number(e.h_revisao))
+          : 0;
+      const limite = Number(e.limite_revisao ?? 500);
+      return hrRodado > limite;
+    }).length;
+  }, [data]);
+
   const [covers, setCovers] = useState<Record<string, string>>({});
   useEffect(() => {
     if (!data) return;
@@ -537,9 +560,14 @@ function EquipamentosList() {
             size="sm"
             variant={onlyOverdue ? "destructive" : "outline"}
             onClick={() => setOnlyOverdue((v) => !v)}
-            className="h-9 text-xs border-slate-200"
+            className="h-9 text-xs border-slate-200 gap-1.5"
           >
-            {onlyOverdue ? "Apenas Vencidos" : "Vencidos"}
+            <span>{onlyOverdue ? "Apenas Vencidos" : "Vencidos"}</span>
+            {totalEquipamentosVencidos > 0 && (
+              <Badge className="bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none">
+                {totalEquipamentosVencidos}
+              </Badge>
+            )}
           </Button>
 
           <Notificacoes />
@@ -562,125 +590,124 @@ function EquipamentosList() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filtered.map((e) => {
+          const hrRodado =
+            e.horimetro_atual != null && e.h_revisao != null
+              ? Math.max(0, Number(e.horimetro_atual) - Number(e.h_revisao))
+              : 0;
+          const limite = Number(e.limite_revisao ?? 500);
+          const overdue = hrRodado > limite;
+          const pct = Math.min(100, Math.round((hrRodado / limite) * 100));
+          const coverUrl = e.cover_storage_path ? covers[e.cover_storage_path] : null;
 
-{filtered.map((e) => {
-  const hrRodado =
-    e.horimetro_atual != null && e.h_revisao != null
-      ? Math.max(0, Number(e.horimetro_atual) - Number(e.h_revisao))
-      : 0;
-  const limite = Number(e.limite_revisao ?? 500);
-  const overdue = hrRodado > limite;
-  const pct = Math.min(100, Math.round((hrRodado / limite) * 100));
-  const coverUrl = e.cover_storage_path ? covers[e.cover_storage_path] : null;
-
-  return (
-    <Link key={e.id} to="/equipamentos/$id" params={{ id: e.id }} className="group block">
-      <Card
-        className={`p-3.5 rounded-2xl transition-all border-2 relative ${
-          overdue
-            ? "border-red-500 bg-red-50 animate-pulse"
-            : "border-slate-200 bg-white hover:border-slate-300"
-        }`}
-        style={overdue ? { backgroundColor: "#fef2f2", borderColor: "#ef4444" } : undefined}
-      >
-        <div className="flex gap-3 items-start">
-          {/* Foto / Avatar */}
-          {coverUrl ? (
-            <img
-              src={coverUrl}
-              alt={e.numero}
-              className="w-14 h-14 rounded-xl object-cover border border-slate-200 shrink-0"
-            />
-          ) : (
-            <div className="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 text-slate-400">
-              <Gauge className="w-6 h-6" />
-            </div>
-          )}
-
-          {/* Conteúdo Principal */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-1">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className={`font-bold text-sm ${overdue ? "text-red-900" : "text-slate-800"}`}>
-                  {e.numero}
-                </span>
-                {e.cl && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200/70 text-slate-700">
-                    CL {e.cl}
-                  </span>
-                )}
-                {/* Badge Vermelha Arredondada (Revisão Vencida) */}
-                {overdue && (
-                  <span
-                    className="text-[10px] font-bold px-2.5 py-0.5 rounded-full text-white shadow-sm inline-block"
-                    style={{ backgroundColor: "#ef4444", color: "#ffffff" }}
-                  >
-                    Revisão vencida
-                  </span>
-                )}
-              </div>
-              <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
-            </div>
-
-            {e.identificacao && (
-              <p className={`text-xs mt-0.5 truncate ${overdue ? "text-red-800" : "text-slate-500"}`}>
-                {e.identificacao}
-              </p>
-            )}
-
-            <div className={`flex items-center gap-2 mt-1 text-[11px] font-mono ${overdue ? "text-red-700" : "text-slate-500"}`}>
-              {e.placa && <span>{e.placa}</span>}
-              {e.localizacao && <span>• {e.localizacao}</span>}
-            </div>
-          </div>
-        </div>
-
-        {/* Rodapé: Status Operacional + Barra de Horímetro */}
-        <div className="mt-3 space-y-1.5">
-          {/* Status Operacional / Em Manutenção */}
-          {!overdue && (
-            <div className="flex items-center">
-              <span
-                className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
-                  e.status === "Em manutenção" || e.status === "Manutenção"
-                    ? "bg-amber-100 text-amber-800 border-amber-300"
-                    : "bg-emerald-50 text-emerald-700 border-emerald-200"
+          return (
+            <Link key={e.id} to="/equipamentos/$id" params={{ id: e.id }} className="group block">
+              <Card
+                className={`p-3.5 rounded-2xl transition-all border-2 relative ${
+                  overdue
+                    ? "border-red-500 bg-red-50 animate-pulse"
+                    : "border-slate-200 bg-white hover:border-slate-300"
                 }`}
+                style={overdue ? { backgroundColor: "#fef2f2", borderColor: "#ef4444" } : undefined}
               >
-                {e.status || "Operacional"}
-              </span>
-            </div>
-          )}
+                <div className="flex gap-3 items-start">
+                  {/* Foto / Avatar */}
+                  {coverUrl ? (
+                    <img
+                      src={coverUrl}
+                      alt={e.numero}
+                      className="w-14 h-14 rounded-xl object-cover border border-slate-200 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 text-slate-400">
+                      <Gauge className="w-6 h-6" />
+                    </div>
+                  )}
 
-          {/* Barra de Progresso do Horímetro */}
-          <div className="flex items-center gap-2">
-            <div className="flex-1 bg-slate-200 h-2 rounded-full overflow-hidden">
-              <div
-                className="h-full transition-all duration-300"
-                style={{
-                  width: `${pct}%`,
-                  backgroundColor: overdue ? "#ef4444" : "#f59e0b",
-                }}
-              />
-            </div>
-            <span className={`text-xs font-bold font-mono ${overdue ? "text-red-800" : "text-slate-700"}`}>
-              {e.horimetro_atual ?? 0}h
-            </span>
-          </div>
+                  {/* Conteúdo Principal */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`font-bold text-sm ${overdue ? "text-red-900" : "text-slate-800"}`}>
+                          {e.numero}
+                        </span>
+                        {e.cl && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200/70 text-slate-700">
+                            CL {e.cl}
+                          </span>
+                        )}
+                        {/* Badge Vermelha Arredondada (Revisão Vencida) */}
+                        {overdue && (
+                          <span
+                            className="text-[10px] font-bold px-2.5 py-0.5 rounded-full text-white shadow-sm inline-block"
+                            style={{ backgroundColor: "#ef4444", color: "#ffffff" }}
+                          >
+                            Revisão vencida
+                          </span>
+                        )}
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+                    </div>
 
-          <div className="flex justify-between items-center text-[10px]">
-            <span className={overdue ? "text-red-700 font-semibold" : "text-slate-400"}>
-              Hr rodado: {hrRodado}h
-            </span>
-            <span className={overdue ? "text-red-700 font-semibold" : "text-slate-400"}>
-              limite: {limite}h
-            </span>
-          </div>
-        </div>
-      </Card>
-    </Link>
-  );
-})}
+                    {e.identificacao && (
+                      <p className={`text-xs mt-0.5 truncate ${overdue ? "text-red-800" : "text-slate-500"}`}>
+                        {e.identificacao}
+                      </p>
+                    )}
+
+                    <div className={`flex items-center gap-2 mt-1 text-[11px] font-mono ${overdue ? "text-red-700" : "text-slate-500"}`}>
+                      {e.placa && <span>{e.placa}</span>}
+                      {e.localizacao && <span>• {e.localizacao}</span>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rodapé: Status Operacional + Barra de Horímetro */}
+                <div className="mt-3 space-y-1.5">
+                  {/* Status Operacional / Em Manutenção */}
+                  {!overdue && (
+                    <div className="flex items-center">
+                      <span
+                        className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+                          e.status === "Em manutenção" || e.status === "Manutenção"
+                            ? "bg-amber-100 text-amber-800 border-amber-300"
+                            : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        }`}
+                      >
+                        {e.status || "Operacional"}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Barra de Progresso do Horímetro */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-slate-200 h-2 rounded-full overflow-hidden">
+                      <div
+                        className="h-full transition-all duration-300"
+                        style={{
+                          width: `${pct}%`,
+                          backgroundColor: overdue ? "#ef4444" : "#f59e0b",
+                        }}
+                      />
+                    </div>
+                    <span className={`text-xs font-bold font-mono ${overdue ? "text-red-800" : "text-slate-700"}`}>
+                      {e.horimetro_atual ?? 0}h
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className={overdue ? "text-red-700 font-semibold" : "text-slate-400"}>
+                      Hr rodado: {hrRodado}h
+                    </span>
+                    <span className={overdue ? "text-red-700 font-semibold" : "text-slate-400"}>
+                      limite: {limite}h
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            </Link>
+          );
+        })}
       </div>
 
       {isAdmin && (
