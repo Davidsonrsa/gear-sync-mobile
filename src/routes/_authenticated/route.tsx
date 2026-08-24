@@ -26,7 +26,6 @@ function AuthenticatedLayout() {
   const navigate = useNavigate();
   const loc = useLocation();
 
-  // 1. Correção com Optional Chaining (?.): previne erro de JS se notasFiscais for undefined
   const canAccessNotasFiscais = isAdmin || Boolean(notasFiscais?.autorizado);
   
   const isCustosRoute = loc.pathname.startsWith("/custos");
@@ -38,7 +37,6 @@ function AuthenticatedLayout() {
     navigate({ to: "/auth", replace: true });
   }
 
-  // 2. Cálculo dinâmico de colunas para o menu mobile
   const mobileColsCount =
     1 + // Equipamentos
     (canAccessNotasFiscais ? 1 : 0) + // Notas Fiscais
@@ -97,7 +95,7 @@ function AuthenticatedLayout() {
             )}
 
             <Link
-              to="/custos"
+              to="/custos/"
               className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 isCustosRoute
                   ? "bg-primary-foreground/15"
@@ -105,7 +103,7 @@ function AuthenticatedLayout() {
               }`}
             >
               <DollarSign className="w-4 h-4" />
-              Custos
+              Controle de Custos
             </Link>
 
             {isAdmin && (
@@ -138,7 +136,7 @@ function AuthenticatedLayout() {
         <Outlet />
       </main>
 
-      {/* Mobile nav com grid adaptável */}
+      {/* Mobile nav */}
       <nav
         className="fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.06)] md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
@@ -171,17 +169,15 @@ function AuthenticatedLayout() {
             </Link>
           )}
 
-         <Link
-  to="/custos/"
-  className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-    isCustosRoute
-      ? "bg-primary-foreground/15"
-      : "hover:bg-primary-foreground/10"
-  }`}
->
-  <DollarSign className="w-4 h-4" />
-  Controle de Custos
-</Link>
+          <Link
+            to="/custos/"
+            className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+              isCustosRoute ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            <DollarSign className="w-5 h-5" />
+            Controle de Custos
+          </Link>
 
           {isAdmin && (
             <Link
