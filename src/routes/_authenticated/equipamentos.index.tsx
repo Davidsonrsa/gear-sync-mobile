@@ -5,12 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, ChevronRight, Plus, Gauge, ShieldCheck, Trash2, Edit2, AlertTriangle, Calendar } from "lucide-react";
+import { Search, ChevronRight, Plus, Gauge, ShieldCheck, AlertTriangle, Calendar } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Notificacoes } from "@/components/Notificacoes";
-import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -46,13 +44,6 @@ type Equip = {
   cover_storage_path: string | null;
 };
 
-type Seguro = {
-  id: string;
-  veiculo_equipamento: string;
-  seguradora: string;
-  data_vencimento: string;
-};
-
 function calcularDiasVencimento(dataVencimentoStr: string): number | null {
   if (!dataVencimentoStr) return null;
   const hoje = new Date();
@@ -67,7 +58,7 @@ function calcularDiasVencimento(dataVencimentoStr: string): number | null {
 }
 
 // ----------------------------------------------------
-// COMPONENTE: TACOGRAFO (Lendo da VIEW)
+// COMPONENTE: TACOGRAFO
 // ----------------------------------------------------
 function BotaoTacografo() {
   const [open, setOpen] = useState(false);
@@ -88,7 +79,6 @@ function BotaoTacografo() {
     },
   });
 
-  // Apenas VENCIDOS para o badge do botão principal
   const tacografosVencidos = useMemo(() => {
     if (!tacografos) return [];
     return tacografos.filter((item: any) => {
@@ -99,7 +89,6 @@ function BotaoTacografo() {
     });
   }, [tacografos]);
 
-  // Alertados (vencidos + a vencer em 30d) para aviso no modal
   const tacografosComAlerta = useMemo(() => {
     if (!tacografos) return [];
     return tacografos.filter((item: any) => {
@@ -150,11 +139,14 @@ function BotaoTacografo() {
       <Button variant="outline" size="sm" className="h-9 relative bg-white gap-1.5" onClick={() => setOpen(true)}>
         <Calendar className="w-4 h-4 text-slate-500" />
         <span>Tacógrafo</span>
-        {tacografosVencidos.length > 0 && (
-          <Badge className="bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none">
+        {tacografosVencidos.length > 0 ? (
+          <span
+            className="font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none"
+            style={{ backgroundColor: "#dc2626", color: "#ffffff" }}
+          >
             {tacografosVencidos.length}
-          </Badge>
-        )}
+          </span>
+        ) : null}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -276,7 +268,6 @@ function BotaoSeguro() {
     },
   });
 
-  // Apenas VENCIDOS para o badge do botão principal
   const segurosVencidos = useMemo(() => {
     if (!seguros) return [];
     return seguros.filter((item: any) => {
@@ -337,11 +328,14 @@ function BotaoSeguro() {
       <Button variant="outline" size="sm" className="h-9 relative bg-white gap-1.5" onClick={() => setOpen(true)}>
         <ShieldCheck className="w-4 h-4 text-slate-500" />
         <span>Seguro</span>
-        {segurosVencidos.length > 0 && (
-          <Badge className="bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none">
+        {segurosVencidos.length > 0 ? (
+          <span
+            className="font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none"
+            style={{ backgroundColor: "#dc2626", color: "#ffffff" }}
+          >
             {segurosVencidos.length}
-          </Badge>
-        )}
+          </span>
+        ) : null}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -467,7 +461,6 @@ function EquipamentosList() {
     },
   });
 
-  // Contagem de Equipamentos Vencidos (Revisão estourada)
   const totalEquipamentosVencidos = useMemo(() => {
     if (!data) return 0;
     return data.filter((e) => {
@@ -563,11 +556,14 @@ function EquipamentosList() {
             className="h-9 text-xs border-slate-200 gap-1.5"
           >
             <span>{onlyOverdue ? "Apenas Vencidos" : "Vencidos"}</span>
-            {totalEquipamentosVencidos > 0 && (
-              <Badge className="bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none">
+            {totalEquipamentosVencidos > 0 ? (
+              <span
+                className="font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none"
+                style={{ backgroundColor: "#dc2626", color: "#ffffff" }}
+              >
                 {totalEquipamentosVencidos}
-              </Badge>
-            )}
+              </span>
+            ) : null}
           </Button>
 
           <Notificacoes />
@@ -611,7 +607,6 @@ function EquipamentosList() {
                 style={overdue ? { backgroundColor: "#fef2f2", borderColor: "#ef4444" } : undefined}
               >
                 <div className="flex gap-3 items-start">
-                  {/* Foto / Avatar */}
                   {coverUrl ? (
                     <img
                       src={coverUrl}
@@ -624,7 +619,6 @@ function EquipamentosList() {
                     </div>
                   )}
 
-                  {/* Conteúdo Principal */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
@@ -636,7 +630,6 @@ function EquipamentosList() {
                             CL {e.cl}
                           </span>
                         )}
-                        {/* Badge Vermelha Arredondada (Revisão Vencida) */}
                         {overdue && (
                           <span
                             className="text-[10px] font-bold px-2.5 py-0.5 rounded-full text-white shadow-sm inline-block"
@@ -662,9 +655,7 @@ function EquipamentosList() {
                   </div>
                 </div>
 
-                {/* Rodapé: Status Operacional + Barra de Horímetro */}
                 <div className="mt-3 space-y-1.5">
-                  {/* Status Operacional / Em Manutenção */}
                   {!overdue && (
                     <div className="flex items-center">
                       <span
@@ -679,7 +670,6 @@ function EquipamentosList() {
                     </div>
                   )}
 
-                  {/* Barra de Progresso do Horímetro */}
                   <div className="flex items-center gap-2">
                     <div className="flex-1 bg-slate-200 h-2 rounded-full overflow-hidden">
                       <div
