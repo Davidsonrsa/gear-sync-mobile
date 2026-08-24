@@ -89,40 +89,46 @@ function BotaoTacografo() {
     },
   });
 
-  // 1. Filtra apenas registros com data válida
-  const tacografosComData = useMemo(() => {
+  // 1. Filtra apenas registros que estão VENCIDOS ou A VENCER em até 30 dias
+  const tacografosComAlerta = useMemo(() => {
     if (!tacografos) return [];
-    return tacografos.filter((item: any) => {
-      const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento;
-      return Boolean(dataVal);
-    });
+    
+    return tacografos
+      .map((item: any) => {
+        const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento;
+        if (!dataVal) return null;
+
+        const diasRestantes = calcularDiasVencimento(dataVal);
+        if (diasRestantes === null || diasRestantes > 30) return null; // Ignora os que estão em dia (>30 dias)
+
+        return {
+          ...item,
+          dataVal,
+          diasRestantes,
+          isVencido: diasRestantes < 0,
+          isVencendoEmBreve: diasRestantes >= 0 && diasRestantes <= 30,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => (a?.diasRestantes ?? 0) - (b?.diasRestantes ?? 0)); // Coloca os mais críticos/vencidos no topo
   }, [tacografos]);
 
-  // 2. Identifica registros com 30 dias ou menos para vencer (ou já vencidos)
-  const tacografosComAlerta = useMemo(() => {
-    return tacografosComData.filter((item: any) => {
-      const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento;
-      const dias = calcularDiasVencimento(dataVal);
-      return dias !== null && dias <= 30;
-    });
-  }, [tacografosComData]);
-
-  // 3. Aplica o filtro de busca de texto
+  // 2. Aplica o filtro de busca de texto apenas sobre a lista de alertas
   const listaFiltrada = useMemo(() => {
     const f = filtro.toLowerCase().trim();
-    if (!f) return tacografosComData;
-    return tacografosComData.filter((item: any) =>
+    if (!f) return tacografosComAlerta;
+    return tacografosComAlerta.filter((item: any) =>
       Object.values(item).some((val) =>
         String(val ?? "").toLowerCase().includes(f)
       )
     );
-  }, [tacografosComData, filtro]);
+  }, [tacografosComAlerta, filtro]);
 
   return (
     <>
-      <Button variant="outline" size="sm" className="h-9 relative" onClick={() => setOpen(true)}>
-        <Calendar className="w-4 h-4 mr-1.5" />
-        Tacógrafo
+      <Button variant="outline" size="sm" className="h-9 relative bg-white" onClick={() => setOpen(true)}>
+        <Calendar className="w-4 h-4 mr-1.5 text-slate-500" />
+        <span>Tacógrafo</span>
         {tacografosComAlerta.length > 0 && (
           <Badge
             variant="destructive"
@@ -145,7 +151,7 @@ function BotaoTacografo() {
           </DialogHeader>
 
           <div className="p-4 max-h-[70vh] overflow-y-auto space-y-3 bg-white">
-            {/* Mensagem de Alerta para vencimentos em 30 dias */}
+            {/* Mensagem de Alerta */}
             {tacografosComAlerta.length > 0 && (
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-amber-900 text-xs">
                 <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
@@ -173,62 +179,52 @@ function BotaoTacografo() {
             ) : listaFiltrada.length === 0 ? (
               <p className="text-xs text-slate-500 text-center py-4">
                 {filtro
-                  ? "Nenhum registro encontrado."
-                  : "Nenhum equipamento com data de tacógrafo cadastrada."}
+                  ? "Nenhum alerta encontrado com esse filtro."
+                  : "Nenhum equipamento vencido ou a vencer nos próximos 30 dias."}
               </p>
             ) : (
               <div className="space-y-2">
-                {listaFiltrada.map((item: any, idx: number) => {
-                  const dataVal =
-                    item.data_vencimento || item.vencimento_tacografo || item.vencimento;
-                  const diasRestantes = calcularDiasVencimento(dataVal);
-                  const isVencido = diasRestantes !== null && diasRestantes < 0;
-                  const isVencendoEmBreve =
-                    diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 30;
-
-                  return (
-                    <div
-                      key={item.id || idx}
-                      className={`p-3 rounded-lg border text-xs flex justify-between items-center shadow-sm ${
-                        isVencido
-                          ? "bg-red-50 border-red-200"
-                          : isVencendoEmBreve
-                          ? "bg-amber-50 border-amber-200"
-                          : "bg-slate-50 border-slate-200"
-                      }`}
-                    >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-bold text-slate-900">
-                            {item.numero ||
-                              item.veiculo_equipamento ||
-                              item.equipamento ||
-                              "Equipamento"}
-                          </p>
-                          {isVencido && (
-                            <Badge className="bg-red-600 text-white text-[10px] px-1.5 py-0">
-                              Vencido
-                            </Badge>
-                          )}
-                          {isVencendoEmBreve && (
-                            <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0">
-                              Vence em {diasRestantes === 0 ? "Hoje" : `${diasRestantes}d`}
-                            </Badge>
-                          )}
-                        </div>
-                        {item.placa && <p className="text-slate-500 font-mono mt-0.5">{item.placa}</p>}
-                      </div>
-                      <div className="text-right">
-                        <p className="text-slate-500 font-medium">Vencimento:</p>
+                {listaFiltrada.map((item: any, idx: number) => (
+                  <div
+                    key={item.id || idx}
+                    className={`p-3 rounded-lg border text-xs flex justify-between items-center shadow-sm ${
+                      item.isVencido
+                        ? "bg-red-50 border-red-200"
+                        : "bg-amber-50 border-amber-200"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
                         <p className="font-bold text-slate-900">
-                          {dataVal
-                            ? new Date(dataVal + "T00:00:00").toLocaleDateString("pt-BR")
-                            : "-"}
+                          {item.numero ||
+                            item.veiculo_equipamento ||
+                            item.equipamento ||
+                            "Equipamento"}
                         </p>
+                        {item.isVencido && (
+                          <Badge className="bg-red-600 text-white text-[10px] px-1.5 py-0 font-bold">
+                            Vencido
+                          </Badge>
+                        )}
+                        {item.isVencendoEmBreve && (
+                          <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0 font-bold">
+                            Vence em {item.diasRestantes === 0 ? "Hoje" : `${item.diasRestantes}d`}
+                          </Badge>
+                        )}
                       </div>
+                      {item.placa && <p className="text-slate-500 font-mono mt-0.5">{item.placa}</p>}
                     </div>
-                  );
-                })}
+
+                    <div className="text-right">
+                      <p className="text-slate-500 font-medium text-[10px]">Vencimento:</p>
+                      <p className="font-bold font-mono text-slate-900">
+                        {item.dataVal
+                          ? new Date(item.dataVal + "T00:00:00").toLocaleDateString("pt-BR")
+                          : "-"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -243,137 +239,68 @@ function BotaoTacografo() {
 // ----------------------------------------------------
 function BotaoSeguro() {
   const [open, setOpen] = useState(false);
-  const [aba, setAba] = useState<"lista" | "novo">("lista");
-  const [loading, setLoading] = useState(false);
-  const [seguros, setSeguros] = useState<Seguro[]>([]);
   const [filtro, setFiltro] = useState("");
 
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [veiculo, setVeiculo] = useState("");
-  const [seguradora, setSeguradora] = useState("");
-  const [dataVencimento, setDataVencimento] = useState("");
+  const { data: seguros, isLoading } = useQuery({
+    queryKey: ["seguros-vencimentos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("seguros")
+        .select("*");
 
-  const carregarSeguros = async () => {
-    const { data, error } = await supabase
-      .from("seguros")
-      .select("*")
-      .order("data_vencimento", { ascending: true });
+      if (error) {
+        console.error("Erro ao carregar seguros:", error);
+        return [];
+      }
+      return data ?? [];
+    },
+  });
 
-    if (!error && data) {
-      setSeguros(data as Seguro[]);
-    }
-  };
-
-  useEffect(() => {
-    carregarSeguros();
-  }, []);
-
-  useEffect(() => {
-    if (open) {
-      carregarSeguros();
-      setAba("lista");
-    }
-  }, [open]);
-
+  // 1. Identifica e filtra seguros VENCIDOS ou A VENCER nos próximos 30 dias
   const segurosComAlerta = useMemo(() => {
-    return seguros.filter((s) => {
-      const dias = calcularDiasVencimento(s.data_vencimento);
-      return dias !== null && dias <= 30;
-    });
+    if (!seguros) return [];
+
+    return seguros
+      .map((item: any) => {
+        const dataVal = item.vencimento || item.data_vencimento || item.vencimento_seguro;
+        if (!dataVal) return null;
+
+        const diasRestantes = calcularDiasVencimento(dataVal);
+        if (diasRestantes === null || diasRestantes > 30) return null; // Ignora os em dia (> 30 dias)
+
+        return {
+          ...item,
+          dataVal,
+          diasRestantes,
+          isVencido: diasRestantes < 0,
+          isVencendoEmBreve: diasRestantes >= 0 && diasRestantes <= 30,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => (a?.diasRestantes ?? 0) - (b?.diasRestantes ?? 0));
   }, [seguros]);
 
-  const resetForm = () => {
-    setEditingId(null);
-    setVeiculo("");
-    setSeguradora("");
-    setDataVencimento("");
-  };
-
-  const handleSalvar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    if (editingId) {
-      const { error } = await supabase
-        .from("seguros")
-        .update({
-          veiculo_equipamento: veiculo,
-          seguradora: seguradora,
-          data_vencimento: dataVencimento,
-        })
-        .eq("id", editingId);
-
-      setLoading(false);
-
-      if (error) {
-        toast.error("Erro ao atualizar seguro: " + error.message);
-      } else {
-        toast.success("Seguro atualizado!");
-        resetForm();
-        setAba("lista");
-        carregarSeguros();
-      }
-    } else {
-      const { error } = await supabase.from("seguros").insert([
-        {
-          veiculo_equipamento: veiculo,
-          seguradora: seguradora,
-          data_vencimento: dataVencimento,
-        },
-      ]);
-
-      setLoading(false);
-
-      if (error) {
-        toast.error("Erro ao cadastrar seguro: " + error.message);
-      } else {
-        toast.success("Seguro cadastrado!");
-        resetForm();
-        setAba("lista");
-        carregarSeguros();
-      }
-    }
-  };
-
-  const handleIniciarEdicao = (seguro: Seguro) => {
-    setEditingId(seguro.id);
-    setVeiculo(seguro.veiculo_equipamento);
-    setSeguradora(seguro.seguradora);
-    setDataVencimento(seguro.data_vencimento);
-    setAba("novo");
-  };
-
-  const handleExcluir = async (id: string) => {
-    if (!confirm("Deseja realmente excluir este seguro?")) return;
-
-    const { error } = await supabase.from("seguros").delete().eq("id", id);
-    if (error) {
-      toast.error("Erro ao remover seguro.");
-    } else {
-      toast.success("Seguro removido!");
-      carregarSeguros();
-    }
-  };
-
-  const segurosFiltrados = useMemo(() => {
+  // 2. Filtra a busca de texto dentro do modal
+  const listaFiltrada = useMemo(() => {
     const f = filtro.toLowerCase().trim();
-    if (!f) return seguros;
-    return seguros.filter(
-      (s) =>
-        s.veiculo_equipamento.toLowerCase().includes(f) ||
-        s.seguradora.toLowerCase().includes(f)
+    if (!f) return segurosComAlerta;
+    return segurosComAlerta.filter((item: any) =>
+      Object.values(item).some((val) =>
+        String(val ?? "").toLowerCase().includes(f)
+      )
     );
-  }, [seguros, filtro]);
+  }, [segurosComAlerta, filtro]);
 
   return (
     <>
-      <Button variant="outline" size="sm" className="h-9 relative" onClick={() => setOpen(true)}>
-        <ShieldCheck className="w-4 h-4 mr-1.5" />
-        Seguro
+      {/* BOTÃO DA BARRA COM O NÚMERO DE ALERTAS */}
+      <Button variant="outline" size="sm" className="h-9 relative bg-white" onClick={() => setOpen(true)}>
+        <ShieldCheck className="w-4 h-4 mr-1.5 text-slate-500" />
+        <span>Seguro</span>
         {segurosComAlerta.length > 0 && (
           <Badge
             variant="destructive"
-            className="ml-1.5 px-1.5 py-0 text-[10px] h-4 rounded-full font-bold bg-red-600 text-white"
+            className="ml-1.5 px-1.5 py-0 text-[10px] h-4 rounded-full font-bold bg-red-500 hover:bg-red-600 text-white"
           >
             {segurosComAlerta.length}
           </Badge>
@@ -386,199 +313,86 @@ function BotaoSeguro() {
           className="sm:max-w-md text-slate-900 border border-slate-300 shadow-2xl p-0 overflow-hidden"
         >
           <DialogHeader className="p-4 pb-3 border-b border-slate-200 bg-slate-50">
-            <DialogTitle className="text-slate-900 font-bold text-base flex items-center justify-between pr-6">
-              <span>Gerenciar Seguros</span>
+            <DialogTitle className="text-slate-900 font-bold text-base">
+              Gerenciar Seguros
             </DialogTitle>
-
-            <div className="flex gap-2 mt-3">
-              <Button
-                type="button"
-                size="sm"
-                variant={aba === "lista" ? "default" : "outline"}
-                className="flex-1 text-xs h-8"
-                onClick={() => {
-                  resetForm();
-                  setAba("lista");
-                }}
-              >
-                Seguros Cadastrados ({seguros.length})
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant={aba === "novo" ? "default" : "outline"}
-                className="flex-1 text-xs h-8"
-                onClick={() => {
-                  resetForm();
-                  setAba("novo");
-                }}
-              >
-                {editingId ? "Editar Seguro" : "+ Cadastrar Novo"}
-              </Button>
-            </div>
           </DialogHeader>
 
-          <div className="p-4 max-h-[70vh] overflow-y-auto bg-white">
-            {aba === "lista" && (
-              <div className="space-y-3">
-                {segurosComAlerta.length > 0 && (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-amber-900 text-xs">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold">Atenção aos Vencimentos!</p>
-                      <p className="text-[11px] text-amber-800">
-                        Existe(m) <strong>{segurosComAlerta.length}</strong> seguro(s) vencido(s) ou que vence(m) nos próximos 30 dias.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                  <Input
-                    placeholder="Filtrar equipamento ou seguradora..."
-                    value={filtro}
-                    onChange={(e) => setFiltro(e.target.value)}
-                    className="pl-8 h-8 text-xs bg-white border-slate-300 text-slate-900"
-                  />
-                </div>
-
-                {segurosFiltrados.length === 0 ? (
-                  <p className="text-xs text-slate-500 py-6 text-center">
-                    {filtro ? "Nenhum seguro encontrado." : "Nenhum seguro cadastrado ainda."}
+          <div className="p-4 max-h-[70vh] overflow-y-auto space-y-3 bg-white">
+            {/* Alerta de Contagem */}
+            {segurosComAlerta.length > 0 && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-amber-900 text-xs">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold">Atenção aos Vencimentos!</p>
+                  <p className="text-[11px] text-amber-800">
+                    Existe(m) <strong>{segurosComAlerta.length}</strong> seguro(s) vencido(s) ou que vence(m) nos próximos 30 dias.
                   </p>
-                ) : (
-                  <div className="space-y-2">
-                    {segurosFiltrados.map((item) => {
-                      const diasRestantes = calcularDiasVencimento(item.data_vencimento);
-                      const isVencido = diasRestantes !== null && diasRestantes < 0;
-                      const isVencendoEmBreve =
-                        diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 30;
-
-                      return (
-                        <div
-                          key={item.id}
-                          className={`p-3 rounded-lg border text-xs flex justify-between items-center shadow-sm ${
-                            isVencido
-                              ? "bg-red-50 border-red-200"
-                              : isVencendoEmBreve
-                              ? "bg-amber-50 border-amber-200"
-                              : "bg-slate-50 border-slate-200"
-                          }`}
-                        >
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <p className="font-bold text-slate-900 text-sm">
-                                {item.veiculo_equipamento}
-                              </p>
-
-                              {isVencido && (
-                                <Badge className="bg-red-600 text-white text-[10px] px-1.5 py-0">
-                                  Vencido
-                                </Badge>
-                              )}
-                              {isVencendoEmBreve && (
-                                <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0">
-                                  Vence em {diasRestantes === 0 ? "Hoje" : `${diasRestantes}d`}
-                                </Badge>
-                              )}
-                            </div>
-
-                            <p className="text-slate-600 font-medium">{item.seguradora}</p>
-                            <p className="text-[11px] font-mono text-slate-700 font-medium">
-                              Vencimento:{" "}
-                              <span className="font-bold">
-                                {item.data_vencimento
-                                  ? new Date(item.data_vencimento + "T00:00:00").toLocaleDateString(
-                                      "pt-BR"
-                                    )
-                                  : "-"}
-                              </span>
-                            </p>
-                          </div>
-
-                          <div className="flex items-center gap-1">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-slate-600 hover:text-slate-900 hover:bg-slate-200"
-                              title="Editar"
-                              onClick={() => handleIniciarEdicao(item)}
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-red-600 hover:bg-red-50"
-                              title="Excluir"
-                              onClick={() => handleExcluir(item.id)}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                </div>
               </div>
             )}
 
-            {aba === "novo" && (
-              <form onSubmit={handleSalvar} className="space-y-3">
-                <div>
-                  <Label className="text-xs font-semibold text-slate-700">Veículo / Equipamento</Label>
-                  <Input
-                    required
-                    placeholder="Ex: CB-01 ou Escavadeira"
-                    value={veiculo}
-                    onChange={(e) => setVeiculo(e.target.value)}
-                    className="bg-white border-slate-300 text-slate-900"
-                  />
-                </div>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <Input
+                placeholder="Filtrar equipamento ou seguradora..."
+                value={filtro}
+                onChange={(e) => setFiltro(e.target.value)}
+                className="pl-8 h-8 text-xs bg-white border-slate-300 text-slate-900"
+              />
+            </div>
 
-                <div>
-                  <Label className="text-xs font-semibold text-slate-700">Seguradora</Label>
-                  <Input
-                    required
-                    placeholder="Ex: Porto Seguro"
-                    value={seguradora}
-                    onChange={(e) => setSeguradora(e.target.value)}
-                    className="bg-white border-slate-300 text-slate-900"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-xs font-semibold text-slate-700">Data de Vencimento</Label>
-                  <Input
-                    type="date"
-                    required
-                    value={dataVencimento}
-                    onChange={(e) => setDataVencimento(e.target.value)}
-                    className="bg-white border-slate-300 text-slate-900"
-                  />
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-1/2"
-                    onClick={() => {
-                      resetForm();
-                      setAba("lista");
-                    }}
+            {isLoading ? (
+              <p className="text-xs text-slate-500 text-center py-4">Carregando dados...</p>
+            ) : listaFiltrada.length === 0 ? (
+              <p className="text-xs text-slate-500 text-center py-4">
+                {filtro
+                  ? "Nenhum seguro encontrado para essa busca."
+                  : "Nenhum seguro vencido ou a vencer nos próximos 30 dias."}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {listaFiltrada.map((item: any, idx: number) => (
+                  <div
+                    key={item.id || idx}
+                    className={`p-3 rounded-lg border text-xs flex justify-between items-center shadow-sm ${
+                      item.isVencido
+                        ? "bg-red-50 border-red-200"
+                        : "bg-amber-50 border-amber-200"
+                    }`}
                   >
-                    Voltar / Cancelar
-                  </Button>
-                  <Button type="submit" className="w-1/2 bg-blue-600 hover:bg-blue-700 text-white" disabled={loading}>
-                    {loading ? "Salvando..." : editingId ? "Atualizar" : "Salvar Seguro"}
-                  </Button>
-                </div>
-              </form>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-slate-900">
+                          {item.equipamento || item.numero || item.veiculo_equipamento || "Equipamento"}
+                        </p>
+                        {item.isVencido && (
+                          <Badge className="bg-red-600 text-white text-[10px] px-1.5 py-0 font-bold">
+                            Vencido
+                          </Badge>
+                        )}
+                        {item.isVencendoEmBreve && (
+                          <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0 font-bold">
+                            Vence em {item.diasRestantes === 0 ? "Hoje" : `${item.diasRestantes}d`}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-slate-500 font-medium mt-0.5">
+                        {item.seguradora || item.empresa || "Seguradora não informada"}
+                      </p>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-slate-500 font-medium text-[10px]">Vencimento:</p>
+                      <p className="font-bold font-mono text-slate-900">
+                        {item.dataVal
+                          ? new Date(item.dataVal + "T00:00:00").toLocaleDateString("pt-BR")
+                          : "-"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </DialogContent>
