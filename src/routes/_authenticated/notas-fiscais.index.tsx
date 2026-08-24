@@ -52,6 +52,16 @@ type NotaFiscal = {
   venc03: string | null;
   venc04: string | null;
   venc05: string | null;
+  venc_01?: string | null;
+  venc_02?: string | null;
+  venc_03?: string | null;
+  venc_04?: string | null;
+  venc_05?: string | null;
+  vencimento01?: string | null;
+  vencimento02?: string | null;
+  vencimento03?: string | null;
+  vencimento04?: string | null;
+  vencimento05?: string | null;
 };
 
 function formatDate(value: string | null) {
@@ -250,9 +260,7 @@ function NotasFiscaisList() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("notas_fiscais")
-        .select(
-          "id, identificacao, data, nf, fornecedor, descricao_produto, observacao, equipamento_id, valor, venc01, venc02, venc03, venc04, venc05"
-        )
+        .select("*")
         .order("data", { ascending: false });
 
       if (error) throw error;
@@ -479,89 +487,98 @@ function NotasFiscaisList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((nota) => {
-                  const vencimentos = [
-                    nota.venc01,
-                    nota.venc02,
-                    nota.venc03,
-                    nota.venc04,
-                    nota.venc05,
-                  ].filter(Boolean);
+                {filtered.map((nota) => (
+                  <TableRow key={nota.id} className="hover:bg-slate-50/60 transition-colors border-b border-slate-100">
+                    <TableCell className="py-2.5">
+                      <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                        <Receipt className="w-3.5 h-3.5 text-slate-400" />
+                        NF {nota.nf}
+                      </div>
+                      {nota.descricao_produto && (
+                        <p className="text-[11px] text-slate-500 truncate max-w-[180px] mt-0.5" title={nota.descricao_produto}>
+                          {nota.descricao_produto}
+                        </p>
+                      )}
+                    </TableCell>
 
-                  return (
-                    <TableRow key={nota.id} className="hover:bg-slate-50/60 transition-colors border-b border-slate-100">
-                      <TableCell className="py-2.5">
-                        <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                          <Receipt className="w-3.5 h-3.5 text-slate-400" />
-                          NF {nota.nf}
-                        </div>
-                        {nota.descricao_produto && (
-                          <p className="text-[11px] text-slate-500 truncate max-w-[180px] mt-0.5" title={nota.descricao_produto}>
-                            {nota.descricao_produto}
-                          </p>
-                        )}
-                      </TableCell>
+                    <TableCell className="py-2.5">
+                      <div className="text-xs font-medium text-slate-800 flex items-center gap-1">
+                        <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span className="truncate max-w-[150px]">{nota.fornecedor || "—"}</span>
+                      </div>
+                    </TableCell>
 
-                      <TableCell className="py-2.5">
-                        <div className="text-xs font-medium text-slate-800 flex items-center gap-1">
-                          <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span className="truncate max-w-[150px]">{nota.fornecedor || "—"}</span>
-                        </div>
-                      </TableCell>
+                    <TableCell className="py-2.5">
+                      {nota.identificacao ? (
+                        <Badge variant="outline" className="bg-slate-50 border-slate-200 text-[10px] font-semibold text-slate-700">
+                          <HardDrive className="w-2.5 h-2.5 mr-1 text-slate-400" />
+                          {nota.identificacao}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-slate-400">—</span>
+                      )}
+                    </TableCell>
 
-                      <TableCell className="py-2.5">
-                        {nota.identificacao ? (
-                          <Badge variant="outline" className="bg-slate-50 border-slate-200 text-[10px] font-semibold text-slate-700">
-                            <HardDrive className="w-2.5 h-2.5 mr-1 text-slate-400" />
-                            {nota.identificacao}
-                          </Badge>
-                        ) : (
-                          <span className="text-xs text-slate-400">—</span>
-                        )}
-                      </TableCell>
+                    <TableCell className="py-2.5 text-xs text-slate-600 font-mono">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-slate-400" />
+                        {formatDate(nota.data)}
+                      </div>
+                    </TableCell>
 
-                      <TableCell className="py-2.5 text-xs text-slate-600 font-mono">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-slate-400" />
-                          {formatDate(nota.data)}
-                        </div>
-                      </TableCell>
+                    <TableCell className="py-2.5">
+                      <span className="font-bold text-xs text-slate-900 font-mono">
+                        {formatCurrency(nota.valor)}
+                      </span>
+                    </TableCell>
 
-                      <TableCell className="py-2.5">
-                        <span className="font-bold text-xs text-slate-900 font-mono">
-                          {formatCurrency(nota.valor)}
-                        </span>
-                      </TableCell>
+                    <TableCell className="py-2.5">
+                      {(() => {
+                        const v1 = nota.venc01 || nota.venc_01 || nota.vencimento01;
+                        const v2 = nota.venc02 || nota.venc_02 || nota.vencimento02;
+                        const v3 = nota.venc03 || nota.venc_03 || nota.vencimento03;
+                        const v4 = nota.venc04 || nota.venc_04 || nota.vencimento04;
+                        const v5 = nota.venc05 || nota.venc_05 || nota.vencimento05;
 
-                      <TableCell className="py-2.5">
-                        {vencimentos.length > 0 ? (
-                          <div className="flex items-center gap-1 flex-wrap">
-                            {vencimentos.map((venc, idx) => (
+                        const vencimentos = [
+                          { label: "1ª", data: v1 },
+                          { label: "2ª", data: v2 },
+                          { label: "3ª", data: v3 },
+                          { label: "4ª", data: v4 },
+                          { label: "5ª", data: v5 },
+                        ].filter((item) => Boolean(item.data));
+
+                        if (vencimentos.length === 0) {
+                          return <span className="text-xs text-slate-400">—</span>;
+                        }
+
+                        return (
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {vencimentos.map((item, idx) => (
                               <span
                                 key={idx}
-                                className="inline-block text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 rounded font-mono"
-                                title={`Parcela ${idx + 1}`}
+                                className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 rounded font-mono"
+                                title={`Parcela ${item.label}`}
                               >
-                                {formatDate(venc)}
+                                <span className="text-[9px] text-slate-400 font-sans">{item.label}:</span>
+                                {formatDate(item.data)}
                               </span>
                             ))}
                           </div>
-                        ) : (
-                          <span className="text-xs text-slate-400">—</span>
-                        )}
-                      </TableCell>
+                        );
+                      })()}
+                    </TableCell>
 
-                      <TableCell className="py-2.5 text-right">
-                        <Link to="/notas-fiscais/$id" params={{ id: nota.id }}>
-                          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs hover:bg-slate-200/60 text-slate-700">
-                            <Eye className="w-3.5 h-3.5 mr-1 text-slate-500" />
-                            Detalhes
-                          </Button>
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                    <TableCell className="py-2.5 text-right">
+                      <Link to="/notas-fiscais/$id" params={{ id: nota.id }}>
+                        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs hover:bg-slate-200/60 text-slate-700">
+                          <Eye className="w-3.5 h-3.5 mr-1 text-slate-500" />
+                          Detalhes
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </div>
