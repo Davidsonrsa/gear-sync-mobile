@@ -7,11 +7,31 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, FileText, Plus, SlidersHorizontal } from "lucide-react";
+import {
+  Search,
+  FileText,
+  Plus,
+  SlidersHorizontal,
+  DollarSign,
+  Receipt,
+  TrendingUp,
+  Eye,
+  Calendar,
+  Building2,
+  HardDrive,
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ImportExcelDialog } from "@/components/ImportExcelDialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/notas-fiscais/")({
   component: NotasFiscaisList,
@@ -36,16 +56,13 @@ type NotaFiscal = {
 
 function formatDate(value: string | null) {
   if (!value) return "—";
-
   const [year, month, day] = value.split("-");
   if (!year || !month || !day) return value;
-
   return `${day}/${month}/${year}`;
 }
 
 function formatCurrency(value: number | null) {
-  if (value == null) return "—";
-
+  if (value == null) return "R$ 0,00";
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
@@ -118,12 +135,10 @@ function NewNotaFiscalDialog({
   if (!open) return null;
 
   return (
-    <Card className="mt-4 border-primary/20 p-4 shadow-sm sm:p-6">
+    <Card className="mt-4 border-slate-200 p-4 shadow-md sm:p-6 bg-white">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold">Nova Nota Fiscal</h2>
-        <p className="text-sm text-muted-foreground">
-          Preencha os dados principais da nota fiscal.
-        </p>
+        <h2 className="text-lg font-bold text-slate-900">Nova Nota Fiscal</h2>
+        <p className="text-xs text-slate-500">Preencha os dados principais da nota fiscal.</p>
       </div>
       <form
         className="grid gap-4"
@@ -132,75 +147,84 @@ function NewNotaFiscalDialog({
           createMutation.mutate();
         }}
       >
-        <div className="grid gap-2 sm:grid-cols-2">
-          <div className="grid gap-2">
-            <Label htmlFor="nota-nf">Número da NF *</Label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-1.5">
+            <Label htmlFor="nota-nf" className="text-xs font-semibold">Número da NF *</Label>
             <Input
               id="nota-nf"
               required
               value={form.nf}
               onChange={(event) => setForm({ ...form, nf: event.target.value })}
+              className="h-9 text-xs"
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="nota-data">Data de Emissão</Label>
+          <div className="grid gap-1.5">
+            <Label htmlFor="nota-data" className="text-xs font-semibold">Data de Emissão</Label>
             <Input
               id="nota-data"
               type="date"
               value={form.data}
               onChange={(event) => setForm({ ...form, data: event.target.value })}
+              className="h-9 text-xs"
             />
           </div>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <div className="grid gap-2">
-            <Label htmlFor="nota-fornecedor">Fornecedor</Label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-1.5">
+            <Label htmlFor="nota-fornecedor" className="text-xs font-semibold">Fornecedor</Label>
             <Input
               id="nota-fornecedor"
               value={form.fornecedor}
               onChange={(event) => setForm({ ...form, fornecedor: event.target.value })}
+              className="h-9 text-xs"
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="nota-identificacao">Identificação</Label>
+          <div className="grid gap-1.5">
+            <Label htmlFor="nota-identificacao" className="text-xs font-semibold">Identificação (Equipamento)</Label>
             <Input
               id="nota-identificacao"
               value={form.identificacao}
               onChange={(event) => setForm({ ...form, identificacao: event.target.value })}
+              className="h-9 text-xs"
             />
           </div>
         </div>
-        <div className="grid gap-2">
-          <Label htmlFor="nota-descricao-produto">Descrição dos Produtos</Label>
+        <div className="grid gap-1.5">
+          <Label htmlFor="nota-descricao-produto" className="text-xs font-semibold">Descrição dos Produtos</Label>
           <Textarea
             id="nota-descricao-produto"
+            rows={2}
             value={form.descricao_produto}
             onChange={(event) => setForm({ ...form, descricao_produto: event.target.value })}
+            className="text-xs"
           />
         </div>
-        <div className="grid gap-2">
-          <Label htmlFor="nota-valor">Valor</Label>
+        <div className="grid gap-1.5">
+          <Label htmlFor="nota-valor" className="text-xs font-semibold">Valor (R$)</Label>
           <Input
             id="nota-valor"
             inputMode="decimal"
             placeholder="0,00"
             value={form.valor}
             onChange={(event) => setForm({ ...form, valor: event.target.value })}
+            className="h-9 text-xs"
           />
         </div>
-        <div className="grid gap-2">
-          <Label htmlFor="nota-observacao">Observação</Label>
+        <div className="grid gap-1.5">
+          <Label htmlFor="nota-observacao" className="text-xs font-semibold">Observação</Label>
           <Textarea
             id="nota-observacao"
+            rows={2}
             value={form.observacao}
             onChange={(event) => setForm({ ...form, observacao: event.target.value })}
+            className="text-xs"
           />
         </div>
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end pt-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={createMutation.isPending}>
+          <Button type="submit" size="sm" disabled={createMutation.isPending}>
             {createMutation.isPending ? "Salvando..." : "Cadastrar nota"}
           </Button>
         </div>
@@ -227,19 +251,17 @@ function NotasFiscaisList() {
       const { data, error } = await supabase
         .from("notas_fiscais")
         .select(
-          "id, identificacao, data, nf, fornecedor, descricao_produto, observacao, equipamento_id, valor, venc01, venc02, venc03, venc04, venc05",
+          "id, identificacao, data, nf, fornecedor, descricao_produto, observacao, equipamento_id, valor, venc01, venc02, venc03, venc04, venc05"
         )
         .order("data", { ascending: false });
 
       if (error) throw error;
-
       return (data ?? []) as NotaFiscal[];
     },
   });
 
   const filtered = useMemo(() => {
     const search = q.trim().toLowerCase();
-
     if (!data) return [];
 
     return data.filter(
@@ -249,14 +271,19 @@ function NotasFiscaisList() {
             .filter(Boolean)
             .some((value) => String(value).toLowerCase().includes(search))) &&
         (!appliedDateRange.from || (nota.data && nota.data >= appliedDateRange.from)) &&
-        (!appliedDateRange.to || (nota.data && nota.data <= appliedDateRange.to)),
+        (!appliedDateRange.to || (nota.data && nota.data <= appliedDateRange.to))
     );
   }, [data, q, appliedDateRange]);
 
   const totalValue = useMemo(
     () => filtered.reduce((total, nota) => total + (Number(nota.valor) || 0), 0),
-    [filtered],
+    [filtered]
   );
+
+  const averageValue = useMemo(() => {
+    if (filtered.length === 0) return 0;
+    return totalValue / filtered.length;
+  }, [filtered, totalValue]);
 
   function applyDateFilter() {
     setAppliedDateRange({ from: dateFrom, to: dateTo });
@@ -271,11 +298,11 @@ function NotasFiscaisList() {
 
   if (!canAccess) {
     return (
-      <div className="px-3 py-6 md:px-6 max-w-md md:max-w-7xl mx-auto w-full">
-        <Card className="p-8 text-center">
-          <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
-          <p className="font-medium">Acesso Negado</p>
-          <p className="text-sm text-muted-foreground mt-2">
+      <div className="px-3 py-6 md:px-6 max-w-7xl mx-auto w-full">
+        <Card className="p-8 text-center bg-white border-slate-200">
+          <FileText className="w-10 h-10 text-slate-400 mx-auto mb-2" />
+          <p className="font-bold text-slate-800">Acesso Negado</p>
+          <p className="text-xs text-slate-500 mt-1">
             Você não possui permissão para acessar o módulo de Notas Fiscais.
           </p>
         </Card>
@@ -284,202 +311,276 @@ function NotasFiscaisList() {
   }
 
   return (
-    <div className="px-3 py-3 md:px-6 md:py-6 max-w-md md:max-w-7xl mx-auto w-full">
-      <div className="sticky top-[60px] md:top-[76px] z-20 -mx-3 px-3 md:-mx-6 md:px-6 py-2 bg-background/95 backdrop-blur space-y-3 md:grid md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end md:gap-3">
-        <div className="relative min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar NF, fornecedor, identificação ou descrição..."
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            className="pl-9 h-11"
-          />
-        </div>
-
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="grid gap-1">
-            <Label htmlFor="notas-data-de" className="text-xs">
-              Data de Emissão: De
-            </Label>
-            <Input
-              id="notas-data-de"
-              type="date"
-              value={dateFrom}
-              onChange={(event) => setDateFrom(event.target.value)}
-              className="h-9 w-full md:w-36"
-            />
-          </div>
-          <div className="grid gap-1">
-            <Label htmlFor="notas-data-ate" className="text-xs">
-              Até
-            </Label>
-            <Input
-              id="notas-data-ate"
-              type="date"
-              value={dateTo}
-              onChange={(event) => setDateTo(event.target.value)}
-              className="h-9 w-full md:w-36"
-            />
-          </div>
-          <Button type="button" className="h-9" onClick={applyDateFilter}>
-            <SlidersHorizontal className="mr-2 h-4 w-4" />
-            Filtrar
-          </Button>
-          <Button type="button" variant="outline" className="h-9" onClick={clearFilters}>
-            Limpar filtros
-          </Button>
-        </div>
-
-        <div className="flex gap-2 flex-wrap md:flex-nowrap">
-          <ImportExcelDialog open={importOpen} onOpenChange={setImportOpen} />
-          <Button
-            type="button"
-            className="h-9 md:shrink-0"
-            disabled={!canManage}
-            onClick={() => setCreateOpen(true)}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nova Nota Fiscal
-          </Button>
+    <div className="px-3 py-4 md:px-6 md:py-6 max-w-7xl mx-auto w-full space-y-4">
+      {/* CABEÇALHO DA PÁGINA */}
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
+            Controle de Notas Fiscais
+          </h1>
+          <p className="text-xs text-slate-500">
+            Consulte, gerencie e acompanhe os vencimentos fiscais registrados.
+          </p>
         </div>
       </div>
+
+      {/* CARDS DE RESUMO (KPIs) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Card className="p-3.5 bg-white border-slate-200 flex items-center gap-3 shadow-sm">
+          <div className="p-2.5 bg-slate-100 rounded-lg text-slate-700">
+            <DollarSign className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              Valor Total Acumulado
+            </p>
+            <p className="text-lg font-bold text-slate-900">
+              {formatCurrency(totalValue)}
+            </p>
+          </div>
+        </Card>
+
+        <Card className="p-3.5 bg-white border-slate-200 flex items-center gap-3 shadow-sm">
+          <div className="p-2.5 bg-blue-50 rounded-lg text-blue-600">
+            <Receipt className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              Notas Exibidas
+            </p>
+            <p className="text-lg font-bold text-slate-900">
+              {filtered.length} <span className="text-xs font-normal text-slate-500">registro(s)</span>
+            </p>
+          </div>
+        </Card>
+
+        <Card className="p-3.5 bg-white border-slate-200 flex items-center gap-3 shadow-sm">
+          <div className="p-2.5 bg-emerald-50 rounded-lg text-emerald-600">
+            <TrendingUp className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              Média por Nota
+            </p>
+            <p className="text-lg font-bold text-slate-900">
+              {formatCurrency(averageValue)}
+            </p>
+          </div>
+        </Card>
+      </div>
+
+      {/* BARRA DE FILTROS E AÇÕES */}
+      <Card className="p-3 bg-white border-slate-200 shadow-sm space-y-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          {/* Busca por texto */}
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="Buscar por NF, fornecedor, equipamento ou descrição..."
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="pl-8 h-9 text-xs bg-slate-50 border-slate-200"
+            />
+          </div>
+
+          {/* Filtros por Data */}
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-slate-500 whitespace-nowrap">Emissão:</span>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-9 text-xs w-32 bg-slate-50 border-slate-200"
+              />
+              <span className="text-xs text-slate-400">até</span>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-9 text-xs w-32 bg-slate-50 border-slate-200"
+              />
+            </div>
+
+            <Button type="button" size="sm" className="h-9 text-xs px-3" onClick={applyDateFilter}>
+              <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5" />
+              Filtrar
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-9 text-xs text-slate-500 hover:bg-slate-100"
+              onClick={clearFilters}
+            >
+              Limpar
+            </Button>
+          </div>
+
+          {/* Botões do lado direito */}
+          <div className="flex items-center gap-2 border-t lg:border-t-0 pt-2 lg:pt-0 border-slate-100">
+            <ImportExcelDialog open={importOpen} onOpenChange={setImportOpen} />
+            <Button
+              type="button"
+              size="sm"
+              className="h-9 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white"
+              disabled={!canManage}
+              onClick={() => setCreateOpen(true)}
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" />
+              Nova Nota
+            </Button>
+          </div>
+        </div>
+      </Card>
 
       <NewNotaFiscalDialog open={createOpen} onOpenChange={setCreateOpen} />
 
-      <div className="mt-4 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold">Controle de Notas Fiscais</h2>
-          <p className="text-sm text-muted-foreground">
-            Consulte e gerencie as notas fiscais autorizadas.
-          </p>
-        </div>
-
-        {!isLoading && (
-          <Badge variant="secondary">
-            {filtered.length} {filtered.length === 1 ? "nota" : "notas"} | Total:{" "}
-            {formatCurrency(totalValue)}
-          </Badge>
-        )}
-      </div>
-
+      {/* ESTADOS DE CARREGAMENTO / ERRO / VAZIO */}
       {isLoading && (
-        <Card className="p-8 text-center mt-4">
-          <p className="text-sm text-muted-foreground">Carregando notas fiscais...</p>
+        <Card className="p-8 text-center bg-white border-slate-200">
+          <p className="text-xs text-slate-500">Carregando notas fiscais...</p>
         </Card>
       )}
 
       {error && (
-        <Card className="p-8 text-center mt-4 border-destructive">
-          <p className="text-sm text-destructive">Não foi possível carregar as notas fiscais.</p>
-          <p className="text-xs text-muted-foreground mt-2">
+        <Card className="p-8 text-center bg-white border-red-200">
+          <p className="text-xs font-bold text-red-600">Não foi possível carregar as notas fiscais.</p>
+          <p className="text-[11px] text-slate-400 mt-1">
             {error instanceof Error ? error.message : "Erro desconhecido"}
           </p>
         </Card>
       )}
 
       {!isLoading && !error && filtered.length === 0 && (
-        <Card className="p-8 text-center mt-4">
-          <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
-
-          <p className="font-medium">Nenhuma nota fiscal encontrada.</p>
-
-          <p className="text-sm text-muted-foreground mt-1">
-            {q
-              ? "Tente alterar os termos da busca."
-              : "Ainda não existem notas fiscais cadastradas."}
+        <Card className="p-8 text-center bg-white border-slate-200">
+          <FileText className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+          <p className="font-bold text-slate-700 text-sm">Nenhuma nota fiscal encontrada</p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {q ? "Tente ajustar os termos da sua pesquisa ou datas." : "Nenhum registro encontrado no banco de dados."}
           </p>
         </Card>
       )}
 
+      {/* TABELA CORPORATIVA DE NOTAS FISCAIS */}
       {!isLoading && !error && filtered.length > 0 && (
-        <div className="mt-4 space-y-2">
-          {filtered.map((nota) => (
-            <Card key={nota.id} className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-primary">NF {nota.nf}</span>
+        <Card className="bg-white border-slate-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-slate-50/80 border-b border-slate-200">
+                <TableRow>
+                  <TableHead className="text-xs font-bold text-slate-700 py-3">Número NF</TableHead>
+                  <TableHead className="text-xs font-bold text-slate-700 py-3">Fornecedor</TableHead>
+                  <TableHead className="text-xs font-bold text-slate-700 py-3">Equipamento</TableHead>
+                  <TableHead className="text-xs font-bold text-slate-700 py-3">Emissão</TableHead>
+                  <TableHead className="text-xs font-bold text-slate-700 py-3">Valor Total</TableHead>
+                  <TableHead className="text-xs font-bold text-slate-700 py-3">Parcelas / Vencimentos</TableHead>
+                  <TableHead className="text-xs font-bold text-slate-700 py-3 text-right">Ação</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((nota) => {
+                  const vencimentos = [
+                    nota.venc01,
+                    nota.venc02,
+                    nota.venc03,
+                    nota.venc04,
+                    nota.venc05,
+                  ].filter(Boolean);
 
-                    {nota.fornecedor && <Badge variant="secondary">{nota.fornecedor}</Badge>}
-                  </div>
-
-                  {nota.identificacao && (
-                    <p className="text-sm mt-1 truncate">Equipamento: {nota.identificacao}</p>
-                  )}
-
-                  {nota.descricao_produto && (
-                    <p className="text-sm mt-1 truncate">Descrição: {nota.descricao_produto}</p>
-                  )}
-
-                  <div className="mt-3 text-xs text-muted-foreground">
-                    {/* DATA E VALOR */}
-                    <div className="grid grid-cols-2 gap-2 mb-3">
-                      <div>
-                        <span className="block">Data de Emissão</span>
-                        <strong className="text-foreground">{formatDate(nota.data)}</strong>
-                      </div>
-
-                      <div>
-                        <span className="block">Valor</span>
-                        <strong className="text-foreground">{formatCurrency(nota.valor)}</strong>
-                      </div>
-                    </div>
-
-                    {/* VENCIMENTOS */}
-                    <div className="border-t pt-3">
-                      <span className="block mb-2 font-medium text-foreground">Vencimentos</span>
-
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                        <div>
-                          <span className="block">Venc. 01</span>
-                          <strong className="text-foreground">{formatDate(nota.venc01)}</strong>
+                  return (
+                    <TableRow key={nota.id} className="hover:bg-slate-50/60 transition-colors border-b border-slate-100">
+                      <TableCell className="py-2.5">
+                        <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                          <Receipt className="w-3.5 h-3.5 text-slate-400" />
+                          NF {nota.nf}
                         </div>
+                        {nota.descricao_produto && (
+                          <p className="text-[11px] text-slate-500 truncate max-w-[180px] mt-0.5" title={nota.descricao_produto}>
+                            {nota.descricao_produto}
+                          </p>
+                        )}
+                      </TableCell>
 
-                        <div>
-                          <span className="block">Venc. 02</span>
-                          <strong className="text-foreground">{formatDate(nota.venc02)}</strong>
+                      <TableCell className="py-2.5">
+                        <div className="text-xs font-medium text-slate-800 flex items-center gap-1">
+                          <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
+                          <span className="truncate max-w-[150px]">{nota.fornecedor || "—"}</span>
                         </div>
+                      </TableCell>
 
-                        <div>
-                          <span className="block">Venc. 03</span>
-                          <strong className="text-foreground">{formatDate(nota.venc03)}</strong>
+                      <TableCell className="py-2.5">
+                        {nota.identificacao ? (
+                          <Badge variant="outline" className="bg-slate-50 border-slate-200 text-[10px] font-semibold text-slate-700">
+                            <HardDrive className="w-2.5 h-2.5 mr-1 text-slate-400" />
+                            {nota.identificacao}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
+                      </TableCell>
+
+                      <TableCell className="py-2.5 text-xs text-slate-600 font-mono">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-slate-400" />
+                          {formatDate(nota.data)}
                         </div>
+                      </TableCell>
 
-                        <div>
-                          <span className="block">Venc. 04</span>
-                          <strong className="text-foreground">{formatDate(nota.venc04)}</strong>
-                        </div>
+                      <TableCell className="py-2.5">
+                        <span className="font-bold text-xs text-slate-900 font-mono">
+                          {formatCurrency(nota.valor)}
+                        </span>
+                      </TableCell>
 
-                        <div>
-                          <span className="block">Venc. 05</span>
-                          <strong className="text-foreground">{formatDate(nota.venc05)}</strong>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                      <TableCell className="py-2.5">
+                        {vencimentos.length > 0 ? (
+                          <div className="flex items-center gap-1 flex-wrap">
+                            {vencimentos.map((venc, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-block text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 rounded font-mono"
+                                title={`Parcela ${idx + 1}`}
+                              >
+                                {formatDate(venc)}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
+                      </TableCell>
 
-                  <Link to="/notas-fiscais/$id" params={{ id: nota.id }} className="shrink-0">
-                    <Button variant="outline" size="sm">
-                      Visualizar
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+                      <TableCell className="py-2.5 text-right">
+                        <Link to="/notas-fiscais/$id" params={{ id: nota.id }}>
+                          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs hover:bg-slate-200/60 text-slate-700">
+                            <Eye className="w-3.5 h-3.5 mr-1 text-slate-500" />
+                            Detalhes
+                          </Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
       )}
 
-      {isAdmin && (
-        <p className="text-xs text-muted-foreground mt-4">
-          Administrador: Todas as notas fiscais e gerenciamento estão habilitados.
-        </p>
-      )}
-      {!isAdmin && notasFiscais.autorizado && !canManage && (
-        <p className="text-xs text-muted-foreground mt-4">
-          Você tem permissão apenas para visualizar notas fiscais.
-        </p>
-      )}
+      {/* RODAPÉ DE PERMISSÕES */}
+      <div className="pt-1">
+        {isAdmin && (
+          <p className="text-[11px] text-slate-400">
+            Sua conta possui acesso administrativo completo para criação, edição e exclusão.
+          </p>
+        )}
+        {!isAdmin && notasFiscais.autorizado && !canManage && (
+          <p className="text-[11px] text-slate-400">
+            Você está no modo de apenas leitura.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
