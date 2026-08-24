@@ -716,100 +716,102 @@ function EquipamentosList() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map((e) => {
-          const hrRodado =
-            e.horimetro_atual != null && e.h_revisao != null
-              ? Math.max(0, Number(e.horimetro_atual) - Number(e.h_revisao))
-              : null;
-          const overdue = hrRodado != null && hrRodado > Number(e.limite_revisao ?? 500);
-          const coverUrl = e.cover_storage_path ? covers[e.cover_storage_path] : null;
+       {filtered.map((e) => {
+  const hrRodado =
+    e.horimetro_atual != null && e.h_revisao != null
+      ? Math.max(0, Number(e.horimetro_atual) - Number(e.h_revisao))
+      : 0;
+  const limite = Number(e.limite_revisao ?? 500);
+  const overdue = hrRodado > limite;
+  const pct = Math.min(100, Math.round((hrRodado / limite) * 100));
+  const coverUrl = e.cover_storage_path ? covers[e.cover_storage_path] : null;
 
-          return (
-            <Link key={e.id} to="/equipamentos/$id" params={{ id: e.id }} className="group block">
-              <Card className={`p-4 transition-all duration-200 hover:shadow-md border ${
-                overdue 
-                  ? "border-red-300 bg-red-50/30 hover:border-red-400" 
-                  : "border-slate-200 bg-white hover:border-slate-300"
-              }`}>
-                <div className="flex gap-3 items-start">
-                  {/* Imagem / Avatar do Equipamento */}
-                  {coverUrl ? (
-                    <img
-                      src={coverUrl}
-                      alt={e.numero}
-                      className="w-16 h-16 rounded-lg object-cover border border-slate-200 bg-slate-100 shrink-0"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 text-slate-400">
-                      <Gauge className="w-6 h-6" />
-                    </div>
-                  )}
+  return (
+    <Link key={e.id} to="/equipamentos/$id" params={{ id: e.id }} className="group block">
+      <Card
+        className={`p-3.5 rounded-2xl transition-all border-2 relative ${
+          overdue
+            ? "animate-blink-overdue border-red-500 bg-red-50/60"
+            : "border-slate-200 bg-white"
+        }`}
+      >
+        <div className="flex gap-3 items-start">
+          {/* Foto / Ícone */}
+          {coverUrl ? (
+            <img
+              src={coverUrl}
+              alt={e.numero}
+              className="w-14 h-14 rounded-xl object-cover border border-slate-200 shrink-0"
+            />
+          ) : (
+            <div className="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 text-slate-400">
+              <Gauge className="w-6 h-6" />
+            </div>
+          )}
 
-                  {/* Conteúdo Principal */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-slate-900 group-hover:text-blue-600 transition-colors">
-                          {e.numero}
-                        </span>
-                        {e.cl && (
-                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
-                            CL {e.cl}
-                          </span>
-                        )}
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-                    </div>
+          {/* Informações Principais */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className={`font-bold text-sm ${overdue ? "text-red-900" : "text-slate-800"}`}>
+                  {e.numero}
+                </span>
+                {e.cl && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200/60 text-slate-600">
+                    CL {e.cl}
+                  </span>
+                )}
+                {overdue && (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-500 text-white shadow-sm">
+                    Revisão vencida
+                  </span>
+                )}
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+            </div>
 
-                    {e.identificacao && (
-                      <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
-                        {e.identificacao}
-                      </p>
-                    )}
+            {e.identificacao && (
+              <p className={`text-xs mt-0.5 truncate ${overdue ? "text-red-700/80" : "text-slate-500"}`}>
+                {e.identificacao}
+              </p>
+            )}
 
-                    {/* Detalhes de Placa e Localização */}
-                    <div className="flex items-center gap-2 mt-2 text-[11px] text-slate-500 font-mono">
-                      {e.placa && <span className="bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">{e.placa}</span>}
-                      {e.localizacao && <span className="truncate">{e.localizacao}</span>}
-                    </div>
-                  </div>
-                </div>
+            <div className={`flex items-center gap-2 mt-1 text-[11px] font-mono ${overdue ? "text-red-700/70" : "text-slate-500"}`}>
+              {e.placa && <span>{e.placa}</span>}
+              {e.localizacao && <span>• {e.localizacao}</span>}
+            </div>
+          </div>
+        </div>
 
-                {/* Status e Métrica do Horímetro */}
-                <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <div>
-                    {overdue ? (
-                      <Badge variant="destructive" className="text-[10px] font-semibold bg-red-600">
-                        Revisão vencida
-                      </Badge>
-                    ) : e.status ? (
-                      <Badge className="text-[10px] font-medium bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">
-                        {e.status}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-[10px] text-slate-500 font-normal">
-                        Operacional
-                      </Badge>
-                    )}
-                  </div>
+        {/* Barra de Progresso do Horímetro */}
+        <div className="mt-3 space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 bg-slate-200/70 h-2 rounded-full overflow-hidden">
+              <div
+                className={`h-full transition-all duration-300 ${
+                  overdue ? "bg-red-500" : "bg-amber-500"
+                }`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <span className={`text-xs font-bold font-mono ${overdue ? "text-red-800" : "text-slate-700"}`}>
+              {e.horimetro_atual ?? 0}h
+            </span>
+          </div>
 
-                  <div className="text-right">
-                    <span className="text-slate-400 text-[10px] block">Horímetro</span>
-                    <span className={`font-bold font-mono ${overdue ? "text-red-600" : "text-slate-700"}`}>
-                      {e.horimetro_atual ?? 0}h
-                    </span>
-                    {hrRodado != null && (
-                      <span className="text-[10px] text-slate-400 ml-1">
-                        ({hrRodado}h rodados)
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            </Link>
-          );
-        })}
+          <div className="flex justify-between items-center text-[10px]">
+            <span className={overdue ? "text-red-600/90 font-medium" : "text-slate-400"}>
+              Hr rodado: {hrRodado}h
+            </span>
+            <span className={overdue ? "text-red-600/90 font-medium" : "text-slate-400"}>
+              limite: {limite}h
+            </span>
+          </div>
+        </div>
+      </Card>
+    </Link>
+  );
+})}
       </div>
 
       {isAdmin && (
