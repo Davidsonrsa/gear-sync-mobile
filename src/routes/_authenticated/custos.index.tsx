@@ -1,7 +1,19 @@
-// 1. Adicione o ícone DollarSign no import do lucide-react no topo
-import { LogOut, Settings, List, FileText, DollarSign } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
 
-// ... código mantido ...
+// Adicione a barra "/" no final de custos/
+export const Route = createFileRoute("/_authenticated/custos/")({
+  component: CustosPage,
+});
+
+function CustosPage() {
+  return (
+    <div className="p-6">
+      <h1 className="text-xl font-bold">Controle de Custos</h1>
+    </div>
+  );
+}
+
+export default CustosPage;
 
 function AuthenticatedLayout() {
   const { isAdmin, fullName, notasFiscais } = useAuth();
