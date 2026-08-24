@@ -22,7 +22,6 @@ import {
   Calendar,
   Building2,
   Truck,
-  DollarSign,
   FileText,
 } from "lucide-react";
 
@@ -83,7 +82,6 @@ function NotasFiscaisPage() {
     }
   };
 
-  // Funções de Extração de Dados Robustas
   const extractNumeroNF = (item: any): string => {
     const raw =
       item.numero_nf ??
@@ -115,10 +113,24 @@ function NotasFiscaisPage() {
 
   const extractEquipamento = (item: any): string => {
     if (typeof item.equipamentos === "object" && item.equipamentos !== null) {
-      return item.equipamentos.nome || item.equipamentos.tag || item.equipamentos.codigo || "—";
+      return (
+        item.equipamentos.nome ||
+        item.equipamentos.descricao ||
+        item.equipamentos.tag ||
+        item.equipamentos.codigo ||
+        item.equipamentos.placa ||
+        "—"
+      );
     }
     if (typeof item.equipamento === "object" && item.equipamento !== null) {
-      return item.equipamento.nome || item.equipamento.tag || item.equipamento.codigo || "—";
+      return (
+        item.equipamento.nome ||
+        item.equipamento.descricao ||
+        item.equipamento.tag ||
+        item.equipamento.codigo ||
+        item.equipamento.placa ||
+        "—"
+      );
     }
     return (
       item.equipamento ||
@@ -130,6 +142,7 @@ function NotasFiscaisPage() {
       item.frota ||
       item.tag ||
       item.maquina ||
+      item.placa ||
       "—"
     );
   };
@@ -145,7 +158,6 @@ function NotasFiscaisPage() {
     );
   };
 
-  // Leitura das colunas VENC.01, VENC.02, VENC.03, VENC.04, VENC.05
   const extractParcelasEVencimento = (item: any): string => {
     const vencimentosList: string[] = [];
 
@@ -170,7 +182,6 @@ function NotasFiscaisPage() {
       return vencimentosList.join(" | ");
     }
 
-    // Fallbacks para campos genéricos de vencimento/parcelas
     const singleVenc =
       item.vencimento ||
       item.data_vencimento ||
@@ -208,13 +219,21 @@ function NotasFiscaisPage() {
     try {
       const { data, error } = await supabase
         .from("notas_fiscais")
-        .select("*")
+        .select("*, equipamentos(*), fornecedores(*)")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      let finalData = data;
 
-      if (data && data.length > 0) {
-        const mappedData: NotaFiscalItem[] = data.map((item: any) => ({
+      if (error) {
+        const { data: fallbackData } = await supabase
+          .from("notas_fiscais")
+          .select("*")
+          .order("created_at", { ascending: false });
+        finalData = fallbackData;
+      }
+
+      if (finalData && finalData.length > 0) {
+        const mappedData: NotaFiscalItem[] = finalData.map((item: any) => ({
           id: item.id?.toString() || Math.random().toString(),
           numero_nf: extractNumeroNF(item),
           fornecedor: extractFornecedor(item),
@@ -229,7 +248,7 @@ function NotasFiscaisPage() {
         setNotasList(mappedData);
       }
     } catch (err) {
-      console.error("Erro ao carregar notas do Supabase:", err);
+      console.error("Erro ao carregar notas:", err);
     } finally {
       setLoading(false);
     }
@@ -306,7 +325,7 @@ function NotasFiscaisPage() {
     notasFiltradas.length > 0 ? totalAcumulado / notasFiltradas.length : 0;
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-5">
+    <div className="p-4 md:p-6 w-full max-w-[1400px] mx-auto space-y-5">
       {/* Cabeçalho */}
       <div className="flex flex-row items-center justify-between">
         <div>
@@ -562,20 +581,20 @@ function NotasFiscaisPage() {
         </button>
       </div>
 
-      {/* Tabela de Notas */}
+      {/* Tabela de Notas com responsividade ajustada */}
       <div className="bg-white rounded-2xl border border-slate-900/80 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left">
-            <thead className="border-b border-slate-900/80 text-slate-800 font-bold bg-white">
+          <table className="w-full text-xs text-left min-w-[900px]">
+            <thead className="border-b border-slate-900/80 text-slate-800 font-bold bg-slate-50/50">
               <tr>
-                <th className="py-3 px-4">Número NF</th>
-                <th className="py-3 px-4">Fornecedor</th>
-                <th className="py-3 px-4">Equipamento</th>
-                <th className="py-3 px-4">Emissão</th>
-                <th className="py-3 px-4">Valor Total</th>
-                <th className="py-3 px-4">Parcelas / Vencimentos</th>
-                <th className="py-3 px-4">Observações</th>
-                <th className="py-3 px-4 text-center">Ação</th>
+                <th className="py-3 px-3 w-[120px]">Número NF</th>
+                <th className="py-3 px-3 min-w-[180px]">Fornecedor</th>
+                <th className="py-3 px-3 min-w-[130px]">Equipamento</th>
+                <th className="py-3 px-3 w-[100px]">Emissão</th>
+                <th className="py-3 px-3 w-[110px]">Valor Total</th>
+                <th className="py-3 px-3 min-w-[160px]">Parcelas / Vencimentos</th>
+                <th className="py-3 px-3 min-w-[200px]">Observações</th>
+                <th className="py-3 px-3 w-[80px] text-center">Ação</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-slate-800">
@@ -595,7 +614,7 @@ function NotasFiscaisPage() {
               ) : (
                 notasFiltradas.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/50">
-                    <td className="py-3 px-4 font-semibold whitespace-nowrap">
+                    <td className="py-3 px-3 font-semibold whitespace-nowrap">
                       <span className="inline-flex items-center gap-1.5">
                         <span className="border border-slate-300 bg-slate-100 rounded px-1 py-0.5 text-[10px] font-mono text-slate-600">
                           #
@@ -603,7 +622,7 @@ function NotasFiscaisPage() {
                         {item.numero_nf}
                       </span>
                     </td>
-                    <td className="py-3 px-4 font-semibold whitespace-nowrap">
+                    <td className="py-3 px-3 font-semibold whitespace-nowrap">
                       <span className="inline-flex items-center gap-1.5">
                         <span className="border border-slate-300 bg-slate-100 rounded px-1 py-0.5 text-[10px]">
                           🏢
@@ -611,7 +630,7 @@ function NotasFiscaisPage() {
                         {item.fornecedor}
                       </span>
                     </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
+                    <td className="py-3 px-3 whitespace-nowrap">
                       {item.equipamento !== "—" ? (
                         <span className="inline-flex items-center gap-1 border border-slate-700 rounded-full px-2 py-0.5 text-[11px] font-medium">
                           🚗 {item.equipamento}
@@ -620,15 +639,15 @@ function NotasFiscaisPage() {
                         "—"
                       )}
                     </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
+                    <td className="py-3 px-3 whitespace-nowrap">
                       <span className="inline-flex items-center gap-1">
                         📅 {formatDate(item.emissao)}
                       </span>
                     </td>
-                    <td className="py-3 px-4 font-bold whitespace-nowrap">
+                    <td className="py-3 px-3 font-bold whitespace-nowrap">
                       {formatBRL(item.valor_total)}
                     </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
+                    <td className="py-3 px-3 whitespace-nowrap">
                       {item.parcelas !== "—" ? (
                         <span className="border border-slate-700 rounded px-2 py-0.5 text-[11px]">
                           {item.parcelas}
@@ -637,10 +656,10 @@ function NotasFiscaisPage() {
                         "—"
                       )}
                     </td>
-                    <td className="py-3 px-4 max-w-[200px] truncate text-slate-600">
+                    <td className="py-3 px-3 max-w-[250px] truncate text-slate-600">
                       {item.observacao}
                     </td>
-                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                    <td className="py-3 px-3 text-center whitespace-nowrap">
                       <button
                         onClick={() => handleAbrirDetalhes(item)}
                         className="inline-flex items-center gap-1 text-slate-800 font-medium hover:underline text-xs"
