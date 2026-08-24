@@ -735,17 +735,10 @@ function EquipamentosList() {
             ? "border-red-500 bg-red-50 animate-pulse"
             : "border-slate-200 bg-white hover:border-slate-300"
         }`}
-        style={
-          overdue
-            ? {
-                backgroundColor: "#fef2f2",
-                borderColor: "#ef4444",
-              }
-            : undefined
-        }
+        style={overdue ? { backgroundColor: "#fef2f2", borderColor: "#ef4444" } : undefined}
       >
         <div className="flex gap-3 items-start">
-          {/* Foto / Ícone */}
+          {/* Foto / Avatar */}
           {coverUrl ? (
             <img
               src={coverUrl}
@@ -758,7 +751,7 @@ function EquipamentosList() {
             </div>
           )}
 
-          {/* Informações Principais */}
+          {/* Conteúdo Principal */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-1">
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -770,9 +763,10 @@ function EquipamentosList() {
                     CL {e.cl}
                   </span>
                 )}
+                {/* Badge Vermelha Arredondada (Revisão Vencida) */}
                 {overdue && (
                   <span
-                    className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow-sm"
+                    className="text-[10px] font-bold px-2.5 py-0.5 rounded-full text-white shadow-sm inline-block"
                     style={{ backgroundColor: "#ef4444", color: "#ffffff" }}
                   >
                     Revisão vencida
@@ -795,8 +789,24 @@ function EquipamentosList() {
           </div>
         </div>
 
-        {/* Barra de Progresso e Horímetro */}
-        <div className="mt-3 space-y-1">
+        {/* Rodapé: Status Operacional + Barra de Horímetro */}
+        <div className="mt-3 space-y-1.5">
+          {/* Status Operacional / Em Manutenção */}
+          {!overdue && (
+            <div className="flex items-center">
+              <span
+                className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+                  e.status === "Em manutenção" || e.status === "Manutenção"
+                    ? "bg-amber-100 text-amber-800 border-amber-300"
+                    : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                }`}
+              >
+                {e.status || "Operacional"}
+              </span>
+            </div>
+          )}
+
+          {/* Barra de Progresso do Horímetro */}
           <div className="flex items-center gap-2">
             <div className="flex-1 bg-slate-200 h-2 rounded-full overflow-hidden">
               <div
