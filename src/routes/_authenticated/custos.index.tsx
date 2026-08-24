@@ -1,177 +1,149 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PlusCircle, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/custos/")({
   component: CustosPage,
 });
 
 function CustosPage() {
+  const [description, setDescription] = useState("");
+  const [value, setValue] = useState("");
+  const [category, setCategory] = useState("Manutenção");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const { error } = await supabase.from("custos").insert([
+        {
+          descricao: description,
+          valor: parseFloat(value),
+          categoria: category,
+          data: date,
+        },
+      ]);
+
+      if (error) throw error;
+
+      setMessage({ type: "success", text: "Custo cadastrado com sucesso!" });
+      setDescription("");
+      setValue("");
+    } catch (err: any) {
+      setMessage({ type: "error", text: err.message || "Erro ao cadastrar custo." });
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold">Controle de Custos</h1>
+    <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight">Controle de Custos</h1>
+      </div>
+
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <PlusCircle className="w-5 h-5 text-primary" />
+            Novo Lançamento de Custo
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {message && (
+              <div
+                className={`p-3 rounded-md text-sm ${
+                  message.type === "success"
+                    ? "bg-green-100 text-green-800 border border-green-200"
+                    : "bg-red-100 text-red-800 border border-red-200"
+                }`}
+              >
+                {message.text}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="descricao">Descrição do Custo</Label>
+                <Input
+                  id="descricao"
+                  type="text"
+                  placeholder="Ex: Troca de óleo da retroescavadeira"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="valor">Valor (R$)</Label>
+                <Input
+                  id="valor"
+                  type="number"
+                  step="0.01"
+                  placeholder="0,00"
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="categoria">Categoria</Label>
+                <select
+                  id="categoria"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                >
+                  <option value="Manutenção">Manutenção</option>
+                  <option value="Combustível">Combustível</option>
+                  <option value="Peças">Peças</option>
+                  <option value="Serviços">Serviços</option>
+                  <option value="Outros">Outros</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="data">Data do Lançamento</Label>
+                <Input
+                  id="data"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <Button type="submit" disabled={loading} className="w-full md:w-auto">
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  "Salvar Custo"
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
 export default CustosPage;
-
-function AuthenticatedLayout() {
-  const { isAdmin, fullName, notasFiscais } = useAuth();
-  const navigate = useNavigate();
-  const loc = useLocation();
-
-  const canAccessNotasFiscais = isAdmin || notasFiscais.autorizado;
-  const isCustosRoute = loc.pathname.startsWith("/custos");
-  const isAdminRoute = loc.pathname.startsWith("/admin");
-
-  async function handleSignOut() {
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
-  }
-
-  return (
-    <div className="min-h-[100dvh] flex flex-col bg-background pb-20 md:pb-8">
-      <header className="sticky top-0 z-30 bg-primary text-primary-foreground shadow-md">
-        <div
-          className="px-4 py-3 flex items-center gap-3 md:max-w-7xl md:mx-auto md:w-full md:px-6"
-          style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
-        >
-          <div className="w-9 h-9 md:w-11 md:h-11 rounded-lg bg-white p-0.5 shrink-0 flex items-center justify-center overflow-hidden">
-            <img
-              src="/logo SPX MAFRA JHM.png"
-              alt="SPH JHM Mafra"
-              className="w-full h-full object-contain"
-            />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-sm md:text-lg font-bold leading-tight truncate">
-              GIF - Gestão Integrada de Frotas
-            </h1>
-            <p className="text-[11px] md:text-xs opacity-80 truncate">
-              {fullName || "—"} · {isAdmin ? "Admin" : "Colaborador"}
-            </p>
-          </div>
-
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1 shrink-0">
-            <Link
-              to="/equipamentos"
-              className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                !isAdminRoute && !loc.pathname.startsWith("/notas-fiscais") && !isCustosRoute
-                  ? "bg-primary-foreground/15"
-                  : "hover:bg-primary-foreground/10"
-              }`}
-            >
-              <List className="w-4 h-4" />
-              Equipamentos
-            </Link>
-
-            {canAccessNotasFiscais && (
-              <Link
-                to="/notas-fiscais"
-                className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                  loc.pathname.startsWith("/notas-fiscais")
-                    ? "bg-primary-foreground/15"
-                    : "hover:bg-primary-foreground/10"
-                }`}
-              >
-                <FileText className="w-4 h-4" />
-                Notas Fiscais
-              </Link>
-            )}
-
-            {/* NOVO ITEM DESKTOP: Custos */}
-            <Link
-              to="/custos"
-              className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                isCustosRoute
-                  ? "bg-primary-foreground/15"
-                  : "hover:bg-primary-foreground/10"
-              }`}
-            >
-              <DollarSign className="w-4 h-4" />
-              Custos
-            </Link>
-
-            {isAdmin && (
-              <Link
-                to="/admin"
-                className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                  isAdminRoute ? "bg-primary-foreground/15" : "hover:bg-primary-foreground/10"
-                }`}
-              >
-                <Settings className="w-4 h-4" />
-                Admin
-              </Link>
-            )}
-          </nav>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleSignOut}
-            className="text-primary-foreground hover:bg-primary-foreground/10 shrink-0"
-          >
-            <LogOut className="w-5 h-5" />
-          </Button>
-        </div>
-      </header>
-
-      <main className="flex-1">
-        <Outlet />
-      </main>
-
-      {/* Mobile nav (Ajustado grid para comportar mais 1 item) */}
-      <nav
-        className="fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.06)] md:hidden"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-      >
-        <div className="grid max-w-md mx-auto grid-cols-4">
-          <Link
-            to="/equipamentos"
-            className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-              !isAdminRoute && !loc.pathname.startsWith("/notas-fiscais") && !isCustosRoute
-                ? "text-primary"
-                : "text-muted-foreground"
-            }`}
-          >
-            <List className="w-5 h-5" />
-            Equipamentos
-          </Link>
-          {canAccessNotasFiscais && (
-            <Link
-              to="/notas-fiscais"
-              className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-                loc.pathname.startsWith("/notas-fiscais") ? "text-primary" : "text-muted-foreground"
-              }`}
-            >
-              <FileText className="w-5 h-5" />
-              Notas Fiscais
-            </Link>
-          )}
-          {/* NOVO ITEM MOBILE: Custos */}
-          <Link
-            to="/custos"
-            className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-              isCustosRoute ? "text-primary" : "text-muted-foreground"
-            }`}
-          >
-            <DollarSign className="w-5 h-5" />
-            Custos
-          </Link>
-
-          {isAdmin && (
-            <Link
-              to="/admin"
-              className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-                isAdminRoute ? "text-primary" : "text-muted-foreground"
-              }`}
-            >
-              <Settings className="w-5 h-5" />
-              Admin
-            </Link>
-          )}
-        </div>
-      </nav>
-    </div>
-  );
-}
