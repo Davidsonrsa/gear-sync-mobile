@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { LogOut, Settings, List, FileText, DollarSign } from "lucide-react";
+import { LogOut, Settings, List, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -95,14 +95,13 @@ function AuthenticatedLayout() {
             )}
 
             <Link
-              to="/custos/"
+              to="/custos"
               className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 isCustosRoute
                   ? "bg-primary-foreground/15"
                   : "hover:bg-primary-foreground/10"
               }`}
             >
-              <DollarSign className="w-4 h-4" />
               Controle de Custos
             </Link>
 
@@ -170,12 +169,11 @@ function AuthenticatedLayout() {
           )}
 
           <Link
-            to="/custos/"
+            to="/custos"
             className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
               isCustosRoute ? "text-primary" : "text-muted-foreground"
             }`}
           >
-            <DollarSign className="w-5 h-5" />
             Controle de Custos
           </Link>
 
