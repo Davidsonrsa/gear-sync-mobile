@@ -114,6 +114,7 @@ function NotasFiscaisPage() {
   const extractEquipamento = (item: any): string => {
     if (typeof item.equipamentos === "object" && item.equipamentos !== null) {
       return (
+        item.equipamentos.identificacao ||
         item.equipamentos.nome ||
         item.equipamentos.descricao ||
         item.equipamentos.tag ||
@@ -124,6 +125,7 @@ function NotasFiscaisPage() {
     }
     if (typeof item.equipamento === "object" && item.equipamento !== null) {
       return (
+        item.equipamento.identificacao ||
         item.equipamento.nome ||
         item.equipamento.descricao ||
         item.equipamento.tag ||
@@ -133,6 +135,9 @@ function NotasFiscaisPage() {
       );
     }
     return (
+      item.identificacao ||
+      item.identificacao_equipamento ||
+      item.cod_identificacao ||
       item.equipamento ||
       item.equipamentos ||
       item.cod_equipamento ||
@@ -194,7 +199,7 @@ function NotasFiscaisPage() {
       return `${rawParcelas}x (${formatDate(singleVenc)})`;
     }
     if (singleVenc) {
-      return `Venc: ${formatDate(singleVenc)}`;
+      return `1ª: ${formatDate(singleVenc)}`;
     }
     if (rawParcelas) {
       return `${rawParcelas} Parcela(s)`;
@@ -267,6 +272,7 @@ function NotasFiscaisPage() {
         {
           numero_nf: numeroNf,
           fornecedor: fornecedor,
+          identificacao: equipamento || null,
           equipamento: equipamento || null,
           emissao: emissao || null,
           valor_total: parseFloat(valorTotal) || 0,
@@ -325,14 +331,14 @@ function NotasFiscaisPage() {
     notasFiltradas.length > 0 ? totalAcumulado / notasFiltradas.length : 0;
 
   return (
-    <div className="p-4 md:p-6 w-full max-w-[1400px] mx-auto space-y-5">
+    <div className="p-2 md:p-4 w-full max-w-full space-y-3">
       {/* Cabeçalho */}
       <div className="flex flex-row items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900">
             Controle de Notas Fiscais
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500">
             Consulte, gerencie e acompanhe os vencimentos fiscais registrados.
           </p>
         </div>
@@ -341,9 +347,9 @@ function NotasFiscaisPage() {
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              className="rounded-full border-slate-300 text-slate-800 font-medium hover:bg-slate-50 px-4 py-2 flex items-center gap-2 shadow-sm"
+              className="rounded-full border-slate-300 text-slate-800 font-medium hover:bg-slate-50 px-3 py-1.5 text-xs flex items-center gap-1.5 shadow-xs"
             >
-              <PlusCircle className="w-4 h-4 text-slate-700" />
+              <PlusCircle className="w-3.5 h-3.5 text-slate-700" />
               Nova Nota Fiscal
             </Button>
           </DialogTrigger>
@@ -379,7 +385,7 @@ function NotasFiscaisPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label htmlFor="equipamento">Equipamento</Label>
+                  <Label htmlFor="equipamento">Equipamento / Identificação</Label>
                   <Input
                     id="equipamento"
                     placeholder="Ex: CAT 320 / CAMINHÃO 01"
@@ -455,25 +461,25 @@ function NotasFiscaisPage() {
       </div>
 
       {/* Cards KPI */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-900/80 p-4 flex items-center gap-4 shadow-xs">
-          <div className="text-xl font-serif font-bold text-slate-800 pl-2">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="bg-white rounded-xl border border-slate-300 p-3 flex items-center gap-3 shadow-xs">
+          <div className="text-lg font-serif font-bold text-slate-800 pl-1">
             $
           </div>
           <div>
-            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
               VALOR TOTAL ACUMULADO
             </p>
-            <p className="text-2xl font-bold text-slate-900 mt-0.5">
+            <p className="text-xl font-bold text-slate-900">
               {formatBRL(totalAcumulado)}
             </p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-900/80 p-4 flex items-center gap-4 shadow-xs">
-          <div className="p-1 pl-2 text-slate-800">
+        <div className="bg-white rounded-xl border border-slate-300 p-3 flex items-center gap-3 shadow-xs">
+          <div className="p-1 text-slate-800">
             <svg
-              className="w-6 h-6"
+              className="w-5 h-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -487,10 +493,10 @@ function NotasFiscaisPage() {
             </svg>
           </div>
           <div>
-            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
               NOTAS EXIBIDAS
             </p>
-            <p className="text-2xl font-bold text-slate-900 mt-0.5">
+            <p className="text-xl font-bold text-slate-900">
               {notasFiltradas.length}{" "}
               <span className="text-xs font-normal text-slate-500">
                 registro(s)
@@ -499,10 +505,10 @@ function NotasFiscaisPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-900/80 p-4 flex items-center gap-4 shadow-xs">
-          <div className="p-1 pl-2 text-slate-800">
+        <div className="bg-white rounded-xl border border-slate-300 p-3 flex items-center gap-3 shadow-xs">
+          <div className="p-1 text-slate-800">
             <svg
-              className="w-6 h-6"
+              className="w-5 h-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -516,10 +522,10 @@ function NotasFiscaisPage() {
             </svg>
           </div>
           <div>
-            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
               MÉDIA POR NOTA
             </p>
-            <p className="text-2xl font-bold text-slate-900 mt-0.5">
+            <p className="text-xl font-bold text-slate-900">
               {formatBRL(mediaPorNota)}
             </p>
           </div>
@@ -527,40 +533,40 @@ function NotasFiscaisPage() {
       </div>
 
       {/* Caixa de Busca e Filtros */}
-      <div className="bg-white rounded-2xl border border-slate-900/80 p-3 flex flex-wrap items-center gap-3 shadow-xs">
-        <div className="relative flex-1 min-w-[280px]">
-          <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+      <div className="bg-white rounded-xl border border-slate-300 p-2 flex flex-wrap items-center gap-2 shadow-xs">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
           <input
             type="text"
-            placeholder="Buscar por NF, fornecedor, equipamento ou observação..."
+            placeholder="Buscar por NF, fornecedor, equipamento..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-sm bg-transparent rounded-lg border-0 focus:outline-none focus:ring-0 text-slate-700 placeholder:text-slate-400"
+            className="w-full pl-8 pr-2 py-1 text-xs bg-transparent rounded-lg border-0 focus:outline-none text-slate-700 placeholder:text-slate-400"
           />
         </div>
 
-        <div className="flex items-center gap-2 text-sm text-slate-600">
+        <div className="flex items-center gap-1.5 text-xs text-slate-600">
           <span>Emissão:</span>
           <input
             type="date"
             value={dataInicio}
             onChange={(e) => setDataInicio(e.target.value)}
-            className="px-2 py-1 text-xs border border-slate-800 rounded-lg focus:outline-none"
+            className="px-1.5 py-0.5 text-xs border border-slate-300 rounded focus:outline-none"
           />
           <span>até</span>
           <input
             type="date"
             value={dataFim}
             onChange={(e) => setDataFim(e.target.value)}
-            className="px-2 py-1 text-xs border border-slate-800 rounded-lg focus:outline-none"
+            className="px-1.5 py-0.5 text-xs border border-slate-300 rounded focus:outline-none"
           />
         </div>
 
         <button
           onClick={() => fetchNotas()}
-          className="px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-medium text-slate-800 flex items-center gap-1.5 hover:bg-slate-50"
+          className="px-2.5 py-1 rounded border border-slate-300 text-xs font-medium text-slate-800 flex items-center gap-1 hover:bg-slate-50"
         >
-          <Filter className="w-3.5 h-3.5" />
+          <Filter className="w-3 h-3" />
           Filtrar
         </button>
 
@@ -570,109 +576,79 @@ function NotasFiscaisPage() {
             setDataInicio("");
             setDataFim("");
           }}
-          className="px-2 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900"
+          className="px-2 py-1 text-xs font-medium text-slate-600 hover:text-slate-900"
         >
           Limpar
         </button>
 
-        <button className="px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-medium text-slate-800 flex items-center gap-1.5 hover:bg-slate-50 ml-auto">
-          <FileSpreadsheet className="w-3.5 h-3.5" />
-          Importar Excel
+        <button className="px-2.5 py-1 rounded border border-slate-300 text-xs font-medium text-slate-800 flex items-center gap-1 hover:bg-slate-50 ml-auto">
+          <FileSpreadsheet className="w-3 h-3" />
+          Excel
         </button>
       </div>
 
-      {/* Tabela de Notas com responsividade ajustada */}
-      <div className="bg-white rounded-2xl border border-slate-900/80 overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left min-w-[900px]">
-            <thead className="border-b border-slate-900/80 text-slate-800 font-bold bg-slate-50/50">
+      {/* Tabela de Notas Otimizada (sem barra de rolagem horizontal) */}
+      <div className="bg-white rounded-xl border border-slate-300 overflow-hidden shadow-xs w-full">
+        <table className="w-full text-xs text-left table-fixed">
+          <thead className="border-b border-slate-300 text-slate-800 font-bold bg-slate-50">
+            <tr>
+              <th className="py-2 px-1.5 w-[10%]">Número NF</th>
+              <th className="py-2 px-1.5 w-[22%]">Fornecedor</th>
+              <th className="py-2 px-1.5 w-[18%]">Equipamento</th>
+              <th className="py-2 px-1.5 w-[11%]">Emissão</th>
+              <th className="py-2 px-1.5 w-[12%]">Valor Total</th>
+              <th className="py-2 px-1.5 w-[17%]">Parcelas / Venc.</th>
+              <th className="py-2 px-1.5 w-[10%] text-center">Ação</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200 text-slate-800">
+            {loading ? (
               <tr>
-                <th className="py-3 px-3 w-[120px]">Número NF</th>
-                <th className="py-3 px-3 min-w-[180px]">Fornecedor</th>
-                <th className="py-3 px-3 min-w-[130px]">Equipamento</th>
-                <th className="py-3 px-3 w-[100px]">Emissão</th>
-                <th className="py-3 px-3 w-[110px]">Valor Total</th>
-                <th className="py-3 px-3 min-w-[160px]">Parcelas / Vencimentos</th>
-                <th className="py-3 px-3 min-w-[200px]">Observações</th>
-                <th className="py-3 px-3 w-[80px] text-center">Ação</th>
+                <td colSpan={7} className="py-6 text-center text-slate-500">
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto mb-1 text-slate-600" />
+                  Carregando dados...
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 text-slate-800">
-              {loading ? (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-500">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-slate-600" />
-                    Carregando notas fiscais...
+            ) : notasFiltradas.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-6 text-center text-slate-500">
+                  Nenhuma nota fiscal encontrada.
+                </td>
+              </tr>
+            ) : (
+              notasFiltradas.map((item) => (
+                <tr key={item.id} className="hover:bg-slate-50/80">
+                  <td className="py-2 px-1.5 font-semibold truncate" title={item.numero_nf}>
+                    #{item.numero_nf}
+                  </td>
+                  <td className="py-2 px-1.5 font-semibold truncate" title={item.fornecedor}>
+                    🏢 {item.fornecedor}
+                  </td>
+                  <td className="py-2 px-1.5 truncate" title={item.equipamento}>
+                    {item.equipamento !== "—" ? `🚗 ${item.equipamento}` : "—"}
+                  </td>
+                  <td className="py-2 px-1.5 truncate">
+                    {formatDate(item.emissao)}
+                  </td>
+                  <td className="py-2 px-1.5 font-bold truncate">
+                    {formatBRL(item.valor_total)}
+                  </td>
+                  <td className="py-2 px-1.5 truncate" title={item.parcelas}>
+                    {item.parcelas}
+                  </td>
+                  <td className="py-2 px-1.5 text-center">
+                    <button
+                      onClick={() => handleAbrirDetalhes(item)}
+                      className="inline-flex items-center gap-1 text-slate-800 font-medium hover:underline text-xs"
+                    >
+                      <Eye className="w-3 h-3" /> Ver
+                    </button>
                   </td>
                 </tr>
-              ) : notasFiltradas.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-500">
-                    Nenhuma nota fiscal encontrada.
-                  </td>
-                </tr>
-              ) : (
-                notasFiltradas.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/50">
-                    <td className="py-3 px-3 font-semibold whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className="border border-slate-300 bg-slate-100 rounded px-1 py-0.5 text-[10px] font-mono text-slate-600">
-                          #
-                        </span>
-                        {item.numero_nf}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 font-semibold whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className="border border-slate-300 bg-slate-100 rounded px-1 py-0.5 text-[10px]">
-                          🏢
-                        </span>
-                        {item.fornecedor}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 whitespace-nowrap">
-                      {item.equipamento !== "—" ? (
-                        <span className="inline-flex items-center gap-1 border border-slate-700 rounded-full px-2 py-0.5 text-[11px] font-medium">
-                          🚗 {item.equipamento}
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="py-3 px-3 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1">
-                        📅 {formatDate(item.emissao)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 font-bold whitespace-nowrap">
-                      {formatBRL(item.valor_total)}
-                    </td>
-                    <td className="py-3 px-3 whitespace-nowrap">
-                      {item.parcelas !== "—" ? (
-                        <span className="border border-slate-700 rounded px-2 py-0.5 text-[11px]">
-                          {item.parcelas}
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="py-3 px-3 max-w-[250px] truncate text-slate-600">
-                      {item.observacao}
-                    </td>
-                    <td className="py-3 px-3 text-center whitespace-nowrap">
-                      <button
-                        onClick={() => handleAbrirDetalhes(item)}
-                        className="inline-flex items-center gap-1 text-slate-800 font-medium hover:underline text-xs"
-                      >
-                        <Eye className="w-3.5 h-3.5" /> Detalhes
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
       {/* Modal de Detalhes */}
@@ -686,7 +662,7 @@ function NotasFiscaisPage() {
           </DialogHeader>
 
           {notaSelecionada && (
-            <div className="space-y-4 pt-2 text-sm text-slate-700">
+            <div className="space-y-3 pt-2 text-sm text-slate-700">
               <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
                 <div>
                   <span className="text-xs text-slate-400 block font-medium">
@@ -699,7 +675,7 @@ function NotasFiscaisPage() {
                 </div>
                 <div>
                   <span className="text-xs text-slate-400 block font-medium">
-                    Equipamento
+                    Equipamento / Identificação
                   </span>
                   <span className="font-semibold text-slate-800 flex items-center gap-1 mt-0.5">
                     <Truck className="w-3.5 h-3.5 text-slate-500" />
