@@ -81,6 +81,74 @@ function NotasFiscaisPage() {
     }
   };
 
+  // Funções de Extração com Múltiplas Variações de Nomes de Coluna
+  const extractNumeroNF = (item: any): string => {
+    const raw =
+      item.numero_nf ||
+      item.numero_nota ||
+      item.numero ||
+      item.num_nf ||
+      item.nota_fiscal ||
+      item.nota ||
+      item.num_documento ||
+      item.documento;
+
+    if (!raw || raw === "—") return "NF 000";
+    const str = String(raw).trim();
+    return str.toUpperCase().startsWith("NF") ? str : `NF ${str}`;
+  };
+
+  const extractFornecedor = (item: any): string => {
+    return (
+      item.fornecedor ||
+      item.razao_social ||
+      item.nome_fornecedor ||
+      item.empresa ||
+      "—"
+    );
+  };
+
+  const extractEquipamento = (item: any): string => {
+    return (
+      item.equipamento ||
+      item.cod_equipamento ||
+      item.nome_equipamento ||
+      item.veiculo ||
+      item.frota ||
+      item.equipamento_id ||
+      "—"
+    );
+  };
+
+  const extractEmissao = (item: any): string => {
+    return (
+      item.emissao ||
+      item.data_emissao ||
+      item.data_nota ||
+      item.dt_emissao ||
+      item.created_at ||
+      "—"
+    );
+  };
+
+  const extractVencimento = (item: any): string => {
+    const rawVenc =
+      item.vencimento ||
+      item.data_vencimento ||
+      item.dt_vencimento ||
+      item.vencimento_1 ||
+      item.primeiro_vencimento ||
+      item.vencimento_parcela;
+
+    if (rawVenc) {
+      return `1ª: ${formatDate(rawVenc)}`;
+    }
+    if (item.parcelas && item.parcelas !== "—") {
+      return item.parcelas;
+    }
+    return "—";
+  };
+
   // Buscar notas do Supabase
   const fetchNotas = async () => {
     setLoading(true);
@@ -92,19 +160,19 @@ function NotasFiscaisPage() {
 
       if (error) throw error;
 
-      if (data) {
+      if (data && data.length > 0) {
         const mappedData: NotaFiscalItem[] = data.map((item: any) => ({
           id: item.id?.toString() || Math.random().toString(),
-          numero_nf: item.numero_nf || item.numero || item.num_nf || "—",
-          fornecedor: item.fornecedor || item.razao_social || "—",
-          equipamento: item.equipamento || item.cod_equipamento || "—",
-          emissao: item.emissao || item.data_emissao || item.created_at || "—",
-          valor_total: Number(item.valor_total || item.valor || 0),
-          parcelas: item.vencimento
-            ? `1ª: ${formatDate(item.vencimento)}`
-            : item.parcelas || "—",
-          vencimento: item.vencimento || "—",
-          observacao: item.observacao || "Sem observações cadastradas.",
+          numero_nf: extractNumeroNF(item),
+          fornecedor: extractFornecedor(item),
+          equipamento: extractEquipamento(item),
+          emissao: extractEmissao(item),
+          valor_total: Number(
+            item.valor_total || item.valor || item.valor_nota || item.val_total || 0
+          ),
+          parcelas: extractVencimento(item),
+          vencimento: item.vencimento || item.data_vencimento || "—",
+          observacao: item.observacao || item.descricao || "Sem observações cadastradas.",
         }));
         setNotasList(mappedData);
       }
@@ -163,7 +231,7 @@ function NotasFiscaisPage() {
     setOpenModalDetalhes(true);
   };
 
-  // Filtros aplicados em tempo real
+  // Filtros em Tempo Real
   const notasFiltradas = notasList.filter((nota) => {
     const termo = busca.toLowerCase();
     const matchBusca =
