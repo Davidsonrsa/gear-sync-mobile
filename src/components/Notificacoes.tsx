@@ -210,17 +210,13 @@ export function Notificacoes() {
   );
 
   return (
-    <div className="relative">
-    
-       
-
+    <>
       {/* Monta o overlay direto no <body> via portal, escapando de
           qualquer contexto de empilhamento (transform/filter/overflow)
-        <Button    criado por ancestrais como o header/toolbar. */}
+          criado por ancestrais como o header/toolbar. */}
       {typeof document !== "undefined" &&
         painel &&
         createPortal(painel, document.body)}
-    </div>
+    </>
   );
 }
-
