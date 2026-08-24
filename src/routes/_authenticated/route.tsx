@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { LogOut, Settings, List, FileText } from "lucide-react";
+import { LogOut, Settings, List, FileText, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -26,14 +26,24 @@ function AuthenticatedLayout() {
   const navigate = useNavigate();
   const loc = useLocation();
 
-  const canAccessNotasFiscais = isAdmin || notasFiscais.autorizado;
+  // 1. Correção com Optional Chaining (?.): previne erro de JS se notasFiscais for undefined
+  const canAccessNotasFiscais = isAdmin || Boolean(notasFiscais?.autorizado);
+  
+  const isCustosRoute = loc.pathname.startsWith("/custos");
+  const isAdminRoute = loc.pathname.startsWith("/admin");
+  const isNotasRoute = loc.pathname.startsWith("/notas-fiscais");
 
   async function handleSignOut() {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
 
-  const isAdminRoute = loc.pathname.startsWith("/admin");
+  // 2. Cálculo dinâmico de colunas para o menu mobile
+  const mobileColsCount =
+    1 + // Equipamentos
+    (canAccessNotasFiscais ? 1 : 0) + // Notas Fiscais
+    1 + // Custos
+    (isAdmin ? 1 : 0); // Admin
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background pb-20 md:pb-8">
@@ -63,7 +73,7 @@ function AuthenticatedLayout() {
             <Link
               to="/equipamentos"
               className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                !isAdminRoute && !loc.pathname.startsWith("/notas-fiscais")
+                !isAdminRoute && !isNotasRoute && !isCustosRoute
                   ? "bg-primary-foreground/15"
                   : "hover:bg-primary-foreground/10"
               }`}
@@ -71,11 +81,12 @@ function AuthenticatedLayout() {
               <List className="w-4 h-4" />
               Equipamentos
             </Link>
+
             {canAccessNotasFiscais && (
               <Link
                 to="/notas-fiscais"
                 className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                  loc.pathname.startsWith("/notas-fiscais")
+                  isNotasRoute
                     ? "bg-primary-foreground/15"
                     : "hover:bg-primary-foreground/10"
                 }`}
@@ -84,11 +95,26 @@ function AuthenticatedLayout() {
                 Notas Fiscais
               </Link>
             )}
+
+            <Link
+              to="/custos"
+              className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                isCustosRoute
+                  ? "bg-primary-foreground/15"
+                  : "hover:bg-primary-foreground/10"
+              }`}
+            >
+              <DollarSign className="w-4 h-4" />
+              Custos
+            </Link>
+
             {isAdmin && (
               <Link
                 to="/admin"
                 className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                  isAdminRoute ? "bg-primary-foreground/15" : "hover:bg-primary-foreground/10"
+                  isAdminRoute
+                    ? "bg-primary-foreground/15"
+                    : "hover:bg-primary-foreground/10"
                 }`}
               >
                 <Settings className="w-4 h-4" />
@@ -112,19 +138,19 @@ function AuthenticatedLayout() {
         <Outlet />
       </main>
 
+      {/* Mobile nav com grid adaptável */}
       <nav
         className="fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border shadow-[0_-2px_8px_rgba(0,0,0,0.06)] md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div
-          className={`grid max-w-md mx-auto ${
-            canAccessNotasFiscais ? "grid-cols-3" : "grid-cols-2"
-          }`}
+          className="grid max-w-md mx-auto"
+          style={{ gridTemplateColumns: `repeat(${mobileColsCount}, minmax(0, 1fr))` }}
         >
           <Link
             to="/equipamentos"
             className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-              !isAdminRoute && !loc.pathname.startsWith("/notas-fiscais")
+              !isAdminRoute && !isNotasRoute && !isCustosRoute
                 ? "text-primary"
                 : "text-muted-foreground"
             }`}
@@ -132,17 +158,29 @@ function AuthenticatedLayout() {
             <List className="w-5 h-5" />
             Equipamentos
           </Link>
+
           {canAccessNotasFiscais && (
             <Link
               to="/notas-fiscais"
               className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-                loc.pathname.startsWith("/notas-fiscais") ? "text-primary" : "text-muted-foreground"
+                isNotasRoute ? "text-primary" : "text-muted-foreground"
               }`}
             >
               <FileText className="w-5 h-5" />
               Notas Fiscais
             </Link>
           )}
+
+          <Link
+            to="/custos"
+            className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+              isCustosRoute ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            <DollarSign className="w-5 h-5" />
+            Custos
+          </Link>
+
           {isAdmin && (
             <Link
               to="/admin"
