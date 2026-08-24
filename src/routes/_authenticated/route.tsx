@@ -171,15 +171,17 @@ function AuthenticatedLayout() {
             </Link>
           )}
 
-          <Link
-            to="/custos"
-            className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-              isCustosRoute ? "text-primary" : "text-muted-foreground"
-            }`}
-          >
-            <DollarSign className="w-5 h-5" />
-            Custos
-          </Link>
+         <Link
+  to="/custos/"
+  className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+    isCustosRoute
+      ? "bg-primary-foreground/15"
+      : "hover:bg-primary-foreground/10"
+  }`}
+>
+  <DollarSign className="w-4 h-4" />
+  Controle de Custos
+</Link>
 
           {isAdmin && (
             <Link
