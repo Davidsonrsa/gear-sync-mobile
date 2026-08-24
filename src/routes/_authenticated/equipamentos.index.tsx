@@ -70,6 +70,9 @@ function calcularDiasVencimento(dataVencimentoStr: string): number | null {
 // ----------------------------------------------------
 // COMPONENTE: TACOGRAFO (Lendo da VIEW)
 // ----------------------------------------------------
+// ----------------------------------------------------
+// COMPONENTE: TACOGRAFO (Lendo da VIEW)
+// ----------------------------------------------------
 function BotaoTacografo() {
   const [open, setOpen] = useState(false);
   const [filtro, setFiltro] = useState("");
@@ -89,40 +92,53 @@ function BotaoTacografo() {
     },
   });
 
-  // 1. Filtra apenas registros que estão VENCIDOS ou A VENCER em até 30 dias
+  // Contagem para o badge de alerta no botão principal
   const tacografosComAlerta = useMemo(() => {
     if (!tacografos) return [];
-    
+    return tacografos.filter((item: any) => {
+      const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento;
+      if (!dataVal) return false;
+      const dias = calcularDiasVencimento(dataVal);
+      return dias !== null && dias <= 30;
+    });
+  }, [tacografos]);
+
+  // Processa TODOS os registros para exibir na lista do Modal
+  const todosComStatus = useMemo(() => {
+    if (!tacografos) return [];
     return tacografos
       .map((item: any) => {
         const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento;
-        if (!dataVal) return null;
-
-        const diasRestantes = calcularDiasVencimento(dataVal);
-        if (diasRestantes === null || diasRestantes > 30) return null; // Ignora os que estão em dia (>30 dias)
+        const diasRestantes = dataVal ? calcularDiasVencimento(dataVal) : null;
+        
+        const isVencido = diasRestantes !== null && diasRestantes < 0;
+        const isVencendoEmBreve = diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 30;
 
         return {
           ...item,
           dataVal,
           diasRestantes,
-          isVencido: diasRestantes < 0,
-          isVencendoEmBreve: diasRestantes >= 0 && diasRestantes <= 30,
+          isVencido,
+          isVencendoEmBreve,
         };
       })
-      .filter(Boolean)
-      .sort((a, b) => (a?.diasRestantes ?? 0) - (b?.diasRestantes ?? 0)); // Coloca os mais críticos/vencidos no topo
+      .sort((a, b) => {
+        const pA = a.isVencido ? 0 : a.isVencendoEmBreve ? 1 : 2;
+        const pB = b.isVencido ? 0 : b.isVencendoEmBreve ? 1 : 2;
+        return pA - pB;
+      });
   }, [tacografos]);
 
-  // 2. Aplica o filtro de busca de texto apenas sobre a lista de alertas
+  // Filtra por busca sobre TODOS os equipamentos
   const listaFiltrada = useMemo(() => {
     const f = filtro.toLowerCase().trim();
-    if (!f) return tacografosComAlerta;
-    return tacografosComAlerta.filter((item: any) =>
+    if (!f) return todosComStatus;
+    return todosComStatus.filter((item: any) =>
       Object.values(item).some((val) =>
         String(val ?? "").toLowerCase().includes(f)
       )
     );
-  }, [tacografosComAlerta, filtro]);
+  }, [todosComStatus, filtro]);
 
   return (
     <>
@@ -151,7 +167,6 @@ function BotaoTacografo() {
           </DialogHeader>
 
           <div className="p-4 max-h-[70vh] overflow-y-auto space-y-3 bg-white">
-            {/* Mensagem de Alerta */}
             {tacografosComAlerta.length > 0 && (
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-amber-900 text-xs">
                 <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
@@ -178,53 +193,56 @@ function BotaoTacografo() {
               <p className="text-xs text-slate-500 text-center py-4">Carregando dados...</p>
             ) : listaFiltrada.length === 0 ? (
               <p className="text-xs text-slate-500 text-center py-4">
-                {filtro
-                  ? "Nenhum alerta encontrado com esse filtro."
-                  : "Nenhum equipamento vencido ou a vencer nos próximos 30 dias."}
+                Nenhum equipamento encontrado.
               </p>
             ) : (
               <div className="space-y-2">
-                {listaFiltrada.map((item: any, idx: number) => (
-                  <div
-                    key={item.id || idx}
-                    className={`p-3 rounded-lg border text-xs flex justify-between items-center shadow-sm ${
-                      item.isVencido
-                        ? "bg-red-50 border-red-200"
-                        : "bg-amber-50 border-amber-200"
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold text-slate-900">
-                          {item.numero ||
-                            item.veiculo_equipamento ||
-                            item.equipamento ||
-                            "Equipamento"}
-                        </p>
-                        {item.isVencido && (
-                          <Badge className="bg-red-600 text-white text-[10px] px-1.5 py-0 font-bold">
-                            Vencido
-                          </Badge>
-                        )}
-                        {item.isVencendoEmBreve && (
-                          <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0 font-bold">
-                            Vence em {item.diasRestantes === 0 ? "Hoje" : `${item.diasRestantes}d`}
-                          </Badge>
-                        )}
-                      </div>
-                      {item.placa && <p className="text-slate-500 font-mono mt-0.5">{item.placa}</p>}
-                    </div>
+                {listaFiltrada.map((item: any, idx: number) => {
+                  let bgCard = "bg-slate-50 border-slate-200";
+                  let badgeStyle = { backgroundColor: "#e2e8f0", color: "#334155" };
+                  let badgeText = "Em dia";
 
-                    <div className="text-right">
-                      <p className="text-slate-500 font-medium text-[10px]">Vencimento:</p>
-                      <p className="font-bold font-mono text-slate-900">
-                        {item.dataVal
-                          ? new Date(item.dataVal + "T00:00:00").toLocaleDateString("pt-BR")
-                          : "-"}
-                      </p>
+                  if (item.isVencido) {
+                    bgCard = "bg-red-50 border-red-200";
+                    badgeStyle = { backgroundColor: "#dc2626", color: "#ffffff" };
+                    badgeText = "Vencido";
+                  } else if (item.isVencendoEmBreve) {
+                    bgCard = "bg-amber-50 border-amber-200";
+                    badgeStyle = { backgroundColor: "#f59e0b", color: "#ffffff" };
+                    badgeText = item.diasRestantes === 0 ? "Hoje" : `Vence em ${item.diasRestantes}d`;
+                  }
+
+                  return (
+                    <div
+                      key={item.id || idx}
+                      className={`p-3 rounded-lg border text-xs flex justify-between items-center shadow-sm ${bgCard}`}
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-slate-900">
+                            {item.numero || item.veiculo_equipamento || item.equipamento || "Equipamento"}
+                          </p>
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm inline-block"
+                            style={badgeStyle}
+                          >
+                            {badgeText}
+                          </span>
+                        </div>
+                        {item.placa && <p className="text-slate-500 font-mono mt-0.5">{item.placa}</p>}
+                      </div>
+
+                      <div className="text-right">
+                        <p className="text-slate-500 font-medium text-[10px]">Vencimento:</p>
+                        <p className="font-bold font-mono text-slate-900">
+                          {item.dataVal
+                            ? new Date(item.dataVal + "T00:00:00").toLocaleDateString("pt-BR")
+                            : "-"}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -256,44 +274,53 @@ function BotaoSeguro() {
     },
   });
 
-  // 1. Identifica e filtra seguros VENCIDOS ou A VENCER nos próximos 30 dias
   const segurosComAlerta = useMemo(() => {
     if (!seguros) return [];
+    return seguros.filter((item: any) => {
+      const dataVal = item.vencimento || item.data_vencimento || item.vencimento_seguro;
+      if (!dataVal) return false;
+      const dias = calcularDiasVencimento(dataVal);
+      return dias !== null && dias <= 30;
+    });
+  }, [seguros]);
 
+  const todosComStatus = useMemo(() => {
+    if (!seguros) return [];
     return seguros
       .map((item: any) => {
         const dataVal = item.vencimento || item.data_vencimento || item.vencimento_seguro;
-        if (!dataVal) return null;
-
-        const diasRestantes = calcularDiasVencimento(dataVal);
-        if (diasRestantes === null || diasRestantes > 30) return null; // Ignora os em dia (> 30 dias)
+        const diasRestantes = dataVal ? calcularDiasVencimento(dataVal) : null;
+        
+        const isVencido = diasRestantes !== null && diasRestantes < 0;
+        const isVencendoEmBreve = diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 30;
 
         return {
           ...item,
           dataVal,
           diasRestantes,
-          isVencido: diasRestantes < 0,
-          isVencendoEmBreve: diasRestantes >= 0 && diasRestantes <= 30,
+          isVencido,
+          isVencendoEmBreve,
         };
       })
-      .filter(Boolean)
-      .sort((a, b) => (a?.diasRestantes ?? 0) - (b?.diasRestantes ?? 0));
+      .sort((a, b) => {
+        const pA = a.isVencido ? 0 : a.isVencendoEmBreve ? 1 : 2;
+        const pB = b.isVencido ? 0 : b.isVencendoEmBreve ? 1 : 2;
+        return pA - pB;
+      });
   }, [seguros]);
 
-  // 2. Filtra a busca de texto dentro do modal
   const listaFiltrada = useMemo(() => {
     const f = filtro.toLowerCase().trim();
-    if (!f) return segurosComAlerta;
-    return segurosComAlerta.filter((item: any) =>
+    if (!f) return todosComStatus;
+    return todosComStatus.filter((item: any) =>
       Object.values(item).some((val) =>
         String(val ?? "").toLowerCase().includes(f)
       )
     );
-  }, [segurosComAlerta, filtro]);
+  }, [todosComStatus, filtro]);
 
   return (
     <>
-      {/* BOTÃO DA BARRA COM O NÚMERO DE ALERTAS */}
       <Button variant="outline" size="sm" className="h-9 relative bg-white" onClick={() => setOpen(true)}>
         <ShieldCheck className="w-4 h-4 mr-1.5 text-slate-500" />
         <span>Seguro</span>
@@ -319,7 +346,6 @@ function BotaoSeguro() {
           </DialogHeader>
 
           <div className="p-4 max-h-[70vh] overflow-y-auto space-y-3 bg-white">
-            {/* Alerta de Contagem */}
             {segurosComAlerta.length > 0 && (
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-amber-900 text-xs">
                 <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
@@ -346,52 +372,58 @@ function BotaoSeguro() {
               <p className="text-xs text-slate-500 text-center py-4">Carregando dados...</p>
             ) : listaFiltrada.length === 0 ? (
               <p className="text-xs text-slate-500 text-center py-4">
-                {filtro
-                  ? "Nenhum seguro encontrado para essa busca."
-                  : "Nenhum seguro vencido ou a vencer nos próximos 30 dias."}
+                Nenhum seguro encontrado.
               </p>
             ) : (
               <div className="space-y-2">
-                {listaFiltrada.map((item: any, idx: number) => (
-                  <div
-                    key={item.id || idx}
-                    className={`p-3 rounded-lg border text-xs flex justify-between items-center shadow-sm ${
-                      item.isVencido
-                        ? "bg-red-50 border-red-200"
-                        : "bg-amber-50 border-amber-200"
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold text-slate-900">
-                          {item.equipamento || item.numero || item.veiculo_equipamento || "Equipamento"}
-                        </p>
-                        {item.isVencido && (
-                          <Badge className="bg-red-600 text-white text-[10px] px-1.5 py-0 font-bold">
-                            Vencido
-                          </Badge>
-                        )}
-                        {item.isVencendoEmBreve && (
-                          <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0 font-bold">
-                            Vence em {item.diasRestantes === 0 ? "Hoje" : `${item.diasRestantes}d`}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-slate-500 font-medium mt-0.5">
-                        {item.seguradora || item.empresa || "Seguradora não informada"}
-                      </p>
-                    </div>
+                {listaFiltrada.map((item: any, idx: number) => {
+                  let bgCard = "bg-slate-50 border-slate-200";
+                  let badgeStyle = { backgroundColor: "#e2e8f0", color: "#334155" };
+                  let badgeText = "Em dia";
 
-                    <div className="text-right">
-                      <p className="text-slate-500 font-medium text-[10px]">Vencimento:</p>
-                      <p className="font-bold font-mono text-slate-900">
-                        {item.dataVal
-                          ? new Date(item.dataVal + "T00:00:00").toLocaleDateString("pt-BR")
-                          : "-"}
-                      </p>
+                  if (item.isVencido) {
+                    bgCard = "bg-red-50 border-red-200";
+                    badgeStyle = { backgroundColor: "#dc2626", color: "#ffffff" };
+                    badgeText = "Vencido";
+                  } else if (item.isVencendoEmBreve) {
+                    bgCard = "bg-amber-50 border-amber-200";
+                    badgeStyle = { backgroundColor: "#f59e0b", color: "#ffffff" };
+                    badgeText = item.diasRestantes === 0 ? "Hoje" : `Vence em ${item.diasRestantes}d`;
+                  }
+
+                  return (
+                    <div
+                      key={item.id || idx}
+                      className={`p-3 rounded-lg border text-xs flex justify-between items-center shadow-sm ${bgCard}`}
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-slate-900">
+                            {item.equipamento || item.numero || item.veiculo_equipamento || "Equipamento"}
+                          </p>
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm inline-block"
+                            style={badgeStyle}
+                          >
+                            {badgeText}
+                          </span>
+                        </div>
+                        <p className="text-slate-500 font-medium mt-0.5">
+                          {item.seguradora || item.empresa || "Seguradora não informada"}
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="text-slate-500 font-medium text-[10px]">Vencimento:</p>
+                        <p className="font-bold font-mono text-slate-900">
+                          {item.dataVal
+                            ? new Date(item.dataVal + "T00:00:00").toLocaleDateString("pt-BR")
+                            : "-"}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
