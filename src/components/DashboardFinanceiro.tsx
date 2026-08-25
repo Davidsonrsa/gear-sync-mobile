@@ -120,8 +120,7 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
           Filtrar por Contrato:
         </label>
         <select
-          <select
-  id="modal-select-contrato"
+          id="modal-select-contrato"
   className="flex h-9 w-full md:w-80 rounded-md border border-slate-700 bg-slate-950 px-3 py-1 text-sm text-slate-100 shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
   value={contratoSelecionado}
   onChange={(e) => setContratoSelecionado(e.target.value)}
