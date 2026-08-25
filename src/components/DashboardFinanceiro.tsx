@@ -20,7 +20,91 @@ interface DashboardFinanceiroProps {
 const COLORS = ["#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#3B82F6", "#EC4899", "#6366F1"];
 
 export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
-  // ... mantem as regras e calculos ...
+  const [contratoSelecionado, setContratoSelecionado] = useState("TODOS");
+
+  const listaContratos = useMemo(() => {
+    const set = new Set<string>();
+    lancamentos.forEach((l) => {
+      if (l.contrato) set.add(l.contrato);
+    });
+    return Array.from(set).sort();
+  }, [lancamentos]);
+
+  const lancamentosFiltrados = useMemo(() => {
+    if (contratoSelecionado === "TODOS") return lancamentos;
+    return lancamentos.filter((l) => l.contrato === contratoSelecionado);
+  }, [lancamentos, contratoSelecionado]);
+
+  function formatBRL(valor: number) {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(valor);
+  }
+
+  function classificarCategoria(tipo: string, descricao: string) {
+    const t = (tipo ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const d = (descricao ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    if (t === "receita" || d.includes("receita") || d.includes("faturamento")) return "receita";
+    if (t.includes("mao") || t.includes("obra") || d.includes("mao de obra") || d.includes("salario")) return "maoDeObra";
+    if (t.includes("manutencao") || d.includes("manutencao") || d.includes("peca") || d.includes("servico")) return "manutencao";
+    if (t.includes("encargo") || d.includes("encargo") || d.includes("inss") || d.includes("fgts")) return "encargos";
+    if (t.includes("transporte") || d.includes("transporte") || d.includes("frete") || d.includes("combustivel")) return "transporte";
+    if (t.includes("imposto") || d.includes("imposto") || d.includes("taxa") || d.includes("deducao")) return "impostos";
+    return "outros";
+  }
+
+  const resumos = useMemo(() => {
+    const totais = {
+      receita: 0,
+      maoDeObra: 0,
+      manutencao: 0,
+      encargos: 0,
+      transporte: 0,
+      impostos: 0,
+      outros: 0,
+    };
+
+    lancamentosFiltrados.forEach((l) => {
+      const cat = classificarCategoria(l.tipo, l.descricao);
+      const valor = Number(l.valor) || 0;
+      if (cat === "receita") {
+        totais.receita += valor;
+      } else {
+        totais[cat] += valor;
+      }
+    });
+
+    const despesasTotais = totais.maoDeObra + totais.manutencao + totais.encargos + totais.transporte + totais.impostos + totais.outros;
+    const resultadoFinal = totais.receita - despesasTotais;
+    const margemLucro = totais.receita > 0 ? (resultadoFinal / totais.receita) * 100 : 0;
+
+    return {
+      receita: totais.receita,
+      despesasTotais,
+      resultadoFinal,
+      margemLucro,
+      maoDeObra: totais.maoDeObra,
+      manutencao: totais.manutencao,
+      encargos: totais.encargos,
+      transporte: totais.transporte,
+      impostos: totais.impostos,
+      outros: totais.outros,
+    };
+  }, [lancamentosFiltrados]);
+
+  const pieData = useMemo(() => {
+    const items = [
+      { name: "Mão de Obra", value: resumos.maoDeObra },
+      { name: "Manutenção", value: resumos.manutencao },
+      { name: "Encargos", value: resumos.encargos },
+      { name: "Transporte", value: resumos.transporte },
+      { name: "Impostos", value: resumos.impostos },
+      { name: "Outros", value: resumos.outros },
+    ].filter((item) => item.value > 0);
+    return items;
+  }, [resumos]);
 
   return (
     <div className="space-y-6 text-slate-100">
