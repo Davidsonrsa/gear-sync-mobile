@@ -22,7 +22,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-export const Route = createFileRoute("/_authenticated/notas-fiscais/$id")({
+// 1. Rota ajustada para corresponder ao caminho notas-fiscais.$id.index.tsx
+export const Route = createFileRoute("/_authenticated/notas-fiscais/$id/")({
   component: NotaFiscalDetail,
 });
 
@@ -47,13 +48,6 @@ type NotaFiscal = {
   valor_total?: number;
 };
 
-function formatDate(value: string | null) {
-  if (!value) return "—";
-  const [year, month, day] = value.split("-");
-  if (!year || !month || !day) return value;
-  return `${day}/${month}/${year}`;
-}
-
 function dateToInput(value: string | null | undefined) {
   return value ?? "";
 }
@@ -68,7 +62,7 @@ function NotaFiscalDetail() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
-  const canManage = isAdmin || notasFiscais.gerenciar;
+  const canManage = isAdmin || notasFiscais?.gerenciar;
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<NotaFiscal | null>(null);
@@ -91,16 +85,44 @@ function NotaFiscalDetail() {
     },
   });
 
-  // Atualiza os dados do formulário quando a consulta finalizar
   useEffect(() => {
     if (nota) {
       setFormData(nota);
     }
   }, [nota]);
 
+  // 2. Mutações atualizadas com sincronização dupla dos campos
   const updateMutation = useMutation({
     mutationFn: async (updates: Partial<NotaFiscal>) => {
-      const { error } = await supabase.from("notas_fiscais").update(updates).eq("id", id);
+      const numNf = updates.nf || updates.numero_nf || null;
+      const equip = updates.identificacao || updates.equipamento || null;
+      const dtEmissao = updates.data || updates.emissao || null;
+      const desc = updates.descricao_produto || updates.observacao || null;
+      const val = updates.valor ?? updates.valor_total ?? null;
+
+      const payload = {
+        nf: numNf,
+        numero_nf: numNf,
+        fornecedor: updates.fornecedor || null,
+        identificacao: equip,
+        equipamento: equip,
+        data: dtEmissao,
+        emissao: dtEmissao,
+        descricao_produto: desc,
+        observacao: desc,
+        valor: val,
+        valor_total: val,
+        venc01: updates.venc01 || null,
+        venc02: updates.venc02 || null,
+        venc03: updates.venc03 || null,
+        venc04: updates.venc04 || null,
+        venc05: updates.venc05 || null,
+      };
+
+      const { error } = await supabase
+        .from("notas_fiscais")
+        .update(payload)
+        .eq("id", id);
 
       if (error) throw error;
     },
@@ -111,13 +133,18 @@ function NotaFiscalDetail() {
       setIsEditing(false);
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Erro ao atualizar");
+      toast.error(
+        error instanceof Error ? error.message : "Erro ao atualizar"
+      );
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("notas_fiscais").delete().eq("id", id);
+      const { error } = await supabase
+        .from("notas_fiscais")
+        .delete()
+        .eq("id", id);
 
       if (error) throw error;
     },
@@ -135,7 +162,9 @@ function NotaFiscalDetail() {
     return (
       <div className="px-3 py-6 md:px-6 max-w-md md:max-w-7xl mx-auto w-full">
         <Card className="p-8 text-center">
-          <p className="text-sm text-muted-foreground">Carregando nota fiscal...</p>
+          <p className="text-sm text-muted-foreground">
+            Carregando nota fiscal...
+          </p>
         </Card>
       </div>
     );
@@ -145,7 +174,9 @@ function NotaFiscalDetail() {
     return (
       <div className="px-3 py-6 md:px-6 max-w-md md:max-w-7xl mx-auto w-full">
         <Card className="p-8 text-center border-destructive">
-          <p className="text-sm text-destructive">Não foi possível carregar a nota fiscal.</p>
+          <p className="text-sm text-destructive">
+            Não foi possível carregar a nota fiscal.
+          </p>
         </Card>
       </div>
     );
@@ -154,10 +185,16 @@ function NotaFiscalDetail() {
   return (
     <div className="px-3 py-6 md:px-6 max-w-md md:max-w-7xl mx-auto w-full">
       <div className="flex items-center gap-2 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/notas-fiscais" })}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate({ to: "/notas-fiscais" })}
+        >
           <ArrowLeft className="w-4 h-4" />
         </Button>
-        <h1 className="text-2xl font-bold">NF {nota.nf || nota.numero_nf}</h1>
+        <h1 className="text-2xl font-bold">
+          NF {nota.nf || nota.numero_nf}
+        </h1>
       </div>
 
       <Card className="p-6">
@@ -171,7 +208,13 @@ function NotaFiscalDetail() {
                 <Input
                   value={formData.nf || formData.numero_nf || ""}
                   disabled={!isEditing}
-                  onChange={(e) => setFormData({ ...formData, nf: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      nf: e.target.value,
+                      numero_nf: e.target.value,
+                    })
+                  }
                   className="mt-1"
                 />
               </div>
@@ -200,6 +243,7 @@ function NotaFiscalDetail() {
                     setFormData({
                       ...formData,
                       identificacao: e.target.value || null,
+                      equipamento: e.target.value || null,
                     })
                   }
                   className="mt-1"
@@ -216,6 +260,7 @@ function NotaFiscalDetail() {
                     setFormData({
                       ...formData,
                       data: inputToDate(e.target.value),
+                      emissao: inputToDate(e.target.value),
                     })
                   }
                   className="mt-1"
@@ -225,12 +270,15 @@ function NotaFiscalDetail() {
               <div className="md:col-span-2">
                 <Label>Descrição dos Produtos / Observações</Label>
                 <Textarea
-                  value={formData.descricao_produto ?? formData.observacao ?? ""}
+                  value={
+                    formData.descricao_produto ?? formData.observacao ?? ""
+                  }
                   disabled={!isEditing}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
                       descricao_produto: e.target.value || null,
+                      observacao: e.target.value || null,
                     })
                   }
                   className="mt-1"
@@ -245,12 +293,16 @@ function NotaFiscalDetail() {
                   step="0.01"
                   value={formData.valor ?? formData.valor_total ?? ""}
                   disabled={!isEditing}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const parsed = e.target.value
+                      ? parseFloat(e.target.value)
+                      : null;
                     setFormData({
                       ...formData,
-                      valor: e.target.value ? parseFloat(e.target.value) : null,
-                    })
-                  }
+                      valor: parsed,
+                      valor_total: parsed,
+                    });
+                  }}
                   className="mt-1"
                 />
               </div>
@@ -261,7 +313,9 @@ function NotaFiscalDetail() {
           <div>
             <h2 className="text-lg font-semibold mb-4">Vencimentos</h2>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              {(["venc01", "venc02", "venc03", "venc04", "venc05"] as const).map((field) => (
+              {(
+                ["venc01", "venc02", "venc03", "venc04", "venc05"] as const
+              ).map((field) => (
                 <div key={field}>
                   <Label>{field.replace("venc", "Venc. ")}</Label>
                   <Input
@@ -286,7 +340,10 @@ function NotaFiscalDetail() {
             {!isEditing ? (
               <>
                 {canManage && (
-                  <Button onClick={() => setIsEditing(true)} className="gap-2">
+                  <Button
+                    onClick={() => setIsEditing(true)}
+                    className="gap-2"
+                  >
                     <Save className="w-4 h-4" />
                     Editar
                   </Button>
@@ -303,8 +360,9 @@ function NotaFiscalDetail() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Deletar Nota Fiscal?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Tem certeza que deseja deletar a nota fiscal NF {nota.nf || nota.numero_nf}? Esta ação não
-                          pode ser desfeita.
+                          Tem certeza que deseja deletar a nota fiscal NF{" "}
+                          {nota.nf || nota.numero_nf}? Esta ação não pode ser
+                          desfeita.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
