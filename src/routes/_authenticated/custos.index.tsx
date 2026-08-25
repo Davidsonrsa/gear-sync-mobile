@@ -6,6 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   PlusCircle,
   Loader2,
   TrendingUp,
@@ -16,6 +23,8 @@ import {
   Calendar,
   Trash2,
   Briefcase,
+  Pencil,
+  Settings,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/custos/")({
@@ -54,10 +63,14 @@ function CustosPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Form states
-  const [contratoSelecionado, setContratoSelecionado] = useState<string>("Contrato Padrão - Frota");
+  const [contratoSelecionado, setContratoSelecionado] = useState<string>("");
   const [novoContratoNome, setNovoContratoNome] = useState<string>("");
   const [isCriandoContrato, setIsCriandoContrato] = useState<boolean>(false);
-  
+
+  // Gerenciamento de Contratos (Edição)
+  const [contratoEditando, setContratoEditando] = useState<ContratoItem | null>(null);
+  const [novoNomeEditado, setNovoNomeEditado] = useState("");
+
   const [tipo, setTipo] = useState<TipoLancamento>("Despesas de Manutenção");
   const [description, setDescription] = useState("");
   const [value, setValue] = useState("");
@@ -86,13 +99,18 @@ function CustosPage() {
         .select("id, nome_contrato")
         .order("nome_contrato");
 
-      if (!error && data && data.length > 0) {
-        setContratos(data.map((c: any) => ({ id: c.id, nome: c.nome_contrato })));
+      if (!error && data) {
+        const lista = data.map((c: any) => ({ id: c.id, nome: c.nome_contrato }));
+        setContratos(lista);
+        if (lista.length > 0 && !contratoSelecionado) {
+          setContratoSelecionado(lista[0].nome);
+        }
       } else {
-        setContratos([{ id: "default", nome: "Contrato Padrão - Frota" }]);
+        setContratos([]);
       }
     } catch (err) {
-      setContratos([{ id: "default", nome: "Contrato Padrão - Frota" }]);
+      console.error("Erro ao carregar contratos:", err);
+      setContratos([]);
     }
   }
 
@@ -107,7 +125,7 @@ function CustosPage() {
       if (!error && data) {
         const mappedData: ItemFinanceiro[] = data.map((item: any) => ({
           id: item.id?.toString() || Math.random().toString(),
-          contrato: item.contrato || "Contrato Padrão - Frota",
+          contrato: item.contrato || "",
           contrato_id: item.contrato_id,
           tipo: (item.categoria || item.tipo || "Despesas de Manutenção") as TipoLancamento,
           descricao: item.descricao || "",
@@ -120,6 +138,47 @@ function CustosPage() {
       console.error("Erro ao carregar lançamentos:", err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleEditarContrato(id: string) {
+    if (!novoNomeEditado.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from("contratos")
+        .update({ nome_contrato: novoNomeEditado.trim() })
+        .eq("id", id);
+
+      if (!error) {
+        setContratos((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, nome: novoNomeEditado.trim() } : c))
+        );
+        setContratoEditando(null);
+        setNovoNomeEditado("");
+      }
+    } catch (err) {
+      console.error("Erro ao editar contrato:", err);
+    }
+  }
+
+  async function handleDeletarContrato(id: string) {
+    if (!confirm("Deseja realmente excluir este contrato?")) return;
+
+    try {
+      const { error } = await supabase.from("contratos").delete().eq("id", id);
+
+      if (!error) {
+        const atualizada = contratos.filter((c) => c.id !== id);
+        setContratos(atualizada);
+        if (atualizada.length > 0) {
+          setContratoSelecionado(atualizada[0].nome);
+        } else {
+          setContratoSelecionado("");
+        }
+      }
+    } catch (err) {
+      console.error("Erro ao deletar contrato:", err);
     }
   }
 
@@ -147,7 +206,8 @@ function CustosPage() {
           .single();
 
         if (!contractErr && newContract) {
-          setContratos((prev) => [...prev, { id: newContract.id, nome: newContract.nome_contrato }]);
+          const novoObj = { id: newContract.id, nome: newContract.nome_contrato };
+          setContratos((prev) => [...prev, novoObj]);
         }
       } catch (err) {
         console.warn("Não foi possível salvar novo contrato no banco:", err);
@@ -157,12 +217,12 @@ function CustosPage() {
     const itemContratoObj = contratos.find((c) => c.nome === nomeContratoFinal);
 
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("custos")
         .insert([
           {
             contrato: nomeContratoFinal,
-            contrato_id: itemContratoObj?.id !== "default" ? itemContratoObj?.id : null,
+            contrato_id: itemContratoObj?.id || null,
             categoria: tipo,
             descricao: description,
             valor: numValue,
@@ -185,7 +245,7 @@ function CustosPage() {
 
       setLancamentos((prev) => [novoItem, ...prev]);
       setMessage({ type: "success", text: "Lançamento registrado com sucesso!" });
-      
+
       setDescription("");
       setValue("");
       setNovoContratoNome("");
@@ -465,13 +525,94 @@ function CustosPage() {
                   <Label htmlFor="contrato" className="flex items-center gap-1">
                     <Briefcase className="w-3.5 h-3.5 text-muted-foreground" /> Contrato
                   </Label>
-                  <button
-                    type="button"
-                    onClick={() => setIsCriandoContrato(!isCriandoContrato)}
-                    className="text-xs text-primary underline focus:outline-none"
-                  >
-                    {isCriandoContrato ? "Selecionar Existente" : "+ Criar Novo"}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <button
+                          type="button"
+                          className="text-xs text-muted-foreground hover:text-primary flex items-center gap-0.5"
+                          title="Gerenciar Contratos"
+                        >
+                          <Settings className="w-3 h-3" /> Gerenciar
+                        </button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-white sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Gerenciar Contratos</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-3 py-2">
+                          {contratos.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">Nenhum contrato cadastrado.</p>
+                          ) : (
+                            contratos.map((c) => (
+                              <div
+                                key={c.id}
+                                className="flex items-center justify-between p-2 rounded border bg-muted/20"
+                              >
+                                {contratoEditando?.id === c.id ? (
+                                  <div className="flex items-center gap-2 w-full mr-2">
+                                    <Input
+                                      value={novoNomeEditado}
+                                      onChange={(e) => setNovoNomeEditado(e.target.value)}
+                                      className="h-8 text-sm"
+                                    />
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleEditarContrato(c.id)}
+                                      className="h-8 px-2"
+                                    >
+                                      Salvar
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => setContratoEditando(null)}
+                                      className="h-8 px-2"
+                                    >
+                                      Cancelar
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <span className="text-sm font-medium">{c.nome}</span>
+                                    <div className="flex items-center gap-1">
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-7 w-7 text-blue-600"
+                                        onClick={() => {
+                                          setContratoEditando(c);
+                                          setNovoNomeEditado(c.nome);
+                                        }}
+                                      >
+                                        <Pencil className="w-3.5 h-3.5" />
+                                      </Button>
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-7 w-7 text-rose-600"
+                                        onClick={() => handleDeletarContrato(c.id)}
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsCriandoContrato(!isCriandoContrato)}
+                      className="text-xs text-primary underline focus:outline-none"
+                    >
+                      {isCriandoContrato ? "Selecionar" : "+ Criar Novo"}
+                    </button>
+                  </div>
                 </div>
 
                 {isCriandoContrato ? (
