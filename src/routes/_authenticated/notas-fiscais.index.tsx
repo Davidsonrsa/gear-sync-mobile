@@ -247,14 +247,14 @@ function NotasFiscaisPage() {
         .select("*, equipamentos(*), fornecedores(*)")
         .order("created_at", { ascending: false });
 
-      let finalData = data;
+      let finalData: any[] | null = data as any[] | null;
 
       if (error) {
         const { data: fallbackData } = await supabase
           .from("notas_fiscais")
           .select("*")
           .order("created_at", { ascending: false });
-        finalData = fallbackData;
+        finalData = fallbackData as any[] | null;
       }
 
       if (finalData && finalData.length > 0) {
