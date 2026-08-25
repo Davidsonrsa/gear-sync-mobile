@@ -122,7 +122,8 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
+      {/* Adicione a classe bg-gray-100 direta no body */}
+      <body className="min-h-screen bg-gray-100 text-gray-900 antialiased">
         {children}
         <Scripts />
       </body>
