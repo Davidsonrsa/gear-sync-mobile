@@ -27,53 +27,55 @@ interface DashboardFinanceiroProps {
 }
 
 export function DashboardFinanceiro({ lancamentos = [] }: DashboardFinanceiroProps) {
-  const dados = useMemo(() => {
-    let receitaBruta = 0;
-    let impostos = 0;
-    let maoDeObra = 0;
-    let manutencao = 0;
-    let encargos = 0;
-    let transporte = 0;
-    let administrativas = 0;
+  // Dentro de DashboardFinanceiro.tsx
+const dados = useMemo(() => {
+  let receitaBruta = 0;
+  let impostos = 0;
+  let maoDeObra = 0;
+  let manutencao = 0;
+  let encargos = 0;
+  let transporte = 0;
+  let administrativas = 0;
 
-    lancamentos.forEach((item) => {
-      const val = item.valor || 0;
-      switch (item.tipo) {
-        case "Receita":
-          receitaBruta += val;
-          break;
-        case "Impostos":
-          impostos += val;
-          break;
-        case "Mão de Obra":
-          maoDeObra += val;
-          break;
-        case "Despesas de Manutenção":
-          manutencao += val;
-          break;
-        case "Encargos":
-          encargos += val;
-          break;
-        case "Despesas de Transporte":
-          transporte += val;
-          break;
-        case "Despesas Administrativas":
-          administrativas += val;
-          break;
-      }
-    });
+  lancamentos.forEach((item) => {
+    const val = item.valor || 0;
+    
+    // O filtro/soma da Receita deve ser incluído neste switch:
+    switch (item.tipo) {
+      case "Receita":
+        receitaBruta += val; // <- INCLUA AQUI
+        break;
+      case "Impostos":
+        impostos += val;
+        break;
+      case "Mão de Obra":
+        maoDeObra += val;
+        break;
+      case "Despesas de Manutenção":
+        manutencao += val;
+        break;
+      case "Encargos":
+        encargos += val;
+        break;
+      case "Despesas de Transporte":
+        transporte += val;
+        break;
+      case "Despesas Administrativas":
+        administrativas += val;
+        break;
+    }
+  });
 
-    return {
-      receitaBruta,
-      impostos,
-      maoDeObra,
-      manutencao,
-      encargos,
-      transporte,
-      administrativas,
-    };
-  }, [lancamentos]);
-
+  return {
+    receitaBruta,
+    impostos,
+    maoDeObra,
+    manutencao,
+    encargos,
+    transporte,
+    administrativas,
+  };
+}, [lancamentos]);
   // Cálculos consolidados
   const custosTotais =
     dados.maoDeObra +
