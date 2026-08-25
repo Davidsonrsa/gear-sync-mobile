@@ -733,16 +733,19 @@ function NotasFiscaisPage() {
                 >
                   Fechar
                 </Button>
-                <Button
-                  onClick={() => {
-                    setOpenModalDetalhes(false);
-                    navigate({ to: `/_authenticated/notas-fiscais/$id/`, params: { id: notaSelecionada.id } });
-                  }}
-                  className="flex items-center gap-1.5"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                  Editar / Gerenciar
-                </Button>
+               <Button
+  onClick={() => {
+    setOpenModalDetalhes(false);
+    navigate({
+      to: "/_authenticated/notas-fiscais/$id",
+      params: { id: notaSelecionada.id },
+    });
+  }}
+  className="flex items-center gap-1.5"
+>
+  <Pencil className="w-3.5 h-3.5" />
+  Editar / Gerenciar
+</Button>
               </div>
             </div>
           )}
