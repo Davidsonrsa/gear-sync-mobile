@@ -401,7 +401,7 @@ function CustosPage() {
       </div>
 
       {/* Painel de Dashboard Estilo Power BI */}
-      <DashboardFinanceiro />
+<DashboardFinanceiro lancamentos={lancamentosFiltrados} />
 
       {/* Filtros */}
       <Card className="bg-white border shadow-sm">
