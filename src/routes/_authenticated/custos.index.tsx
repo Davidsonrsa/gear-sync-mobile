@@ -63,7 +63,7 @@ function CustosPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Form states
-  const [contratoSelecionado, setContratoSelecionado] = useState<string>("");
+  const [contratoSelecionadoId, setContratoSelecionadoId] = useState<string>("");
   const [novoContratoNome, setNovoContratoNome] = useState<string>("");
   const [isCriandoContrato, setIsCriandoContrato] = useState<boolean>(false);
 
@@ -78,7 +78,7 @@ function CustosPage() {
 
   // Filter states
   const [filtroMes, setFiltroMes] = useState<string>("TODOS");
-  const [filtroContrato, setFiltroContrato] = useState<string>("TODOS");
+  const [filtroContratoId, setFiltroContratoId] = useState<string>("TODOS");
 
   const formatBRL = (val: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -100,10 +100,10 @@ function CustosPage() {
         .order("nome_contrato");
 
       if (!error && data) {
-        const lista = data.map((c: any) => ({ id: c.id, nome: c.nome_contrato }));
+        const lista = data.map((c: any) => ({ id: String(c.id), nome: c.nome_contrato }));
         setContratos(lista);
-        if (lista.length > 0 && !contratoSelecionado) {
-          setContratoSelecionado(lista[0].nome);
+        if (lista.length > 0 && !contratoSelecionadoId) {
+          setContratoSelecionadoId(lista[0].id);
         }
       } else {
         setContratos([]);
@@ -126,7 +126,7 @@ function CustosPage() {
         const mappedData: ItemFinanceiro[] = data.map((item: any) => ({
           id: item.id?.toString() || Math.random().toString(),
           contrato: item.contrato || "",
-          contrato_id: item.contrato_id,
+          contrato_id: item.contrato_id ? String(item.contrato_id) : undefined,
           tipo: (item.categoria || item.tipo || "Despesas de Manutenção") as TipoLancamento,
           descricao: item.descricao || "",
           valor: Number(item.valor) || 0,
@@ -172,9 +172,9 @@ function CustosPage() {
         const atualizada = contratos.filter((c) => c.id !== id);
         setContratos(atualizada);
         if (atualizada.length > 0) {
-          setContratoSelecionado(atualizada[0].nome);
+          setContratoSelecionadoId(atualizada[0].id);
         } else {
-          setContratoSelecionado("");
+          setContratoSelecionadoId("");
         }
       }
     } catch (err) {
@@ -194,7 +194,8 @@ function CustosPage() {
       return;
     }
 
-    let nomeContratoFinal = contratoSelecionado;
+    let idContratoFinal = contratoSelecionadoId;
+    let nomeContratoFinal = contratos.find((c) => c.id === contratoSelecionadoId)?.nome || "";
 
     if (isCriandoContrato && novoContratoNome.trim() !== "") {
       nomeContratoFinal = novoContratoNome.trim();
@@ -206,7 +207,8 @@ function CustosPage() {
           .single();
 
         if (!contractErr && newContract) {
-          const novoObj = { id: newContract.id, nome: newContract.nome_contrato };
+          idContratoFinal = String(newContract.id);
+          const novoObj = { id: idContratoFinal, nome: newContract.nome_contrato };
           setContratos((prev) => [...prev, novoObj]);
         }
       } catch (err) {
@@ -214,15 +216,13 @@ function CustosPage() {
       }
     }
 
-    const itemContratoObj = contratos.find((c) => c.nome === nomeContratoFinal);
-
     try {
       const { data } = await supabase
         .from("custos")
         .insert([
           {
             contrato: nomeContratoFinal,
-            contrato_id: itemContratoObj?.id || null,
+            contrato_id: idContratoFinal || null,
             categoria: tipo,
             descricao: description,
             valor: numValue,
@@ -237,6 +237,7 @@ function CustosPage() {
       const novoItem: ItemFinanceiro = {
         id: idGerado,
         contrato: nomeContratoFinal,
+        contrato_id: idContratoFinal,
         tipo,
         descricao: description,
         valor: numValue,
@@ -250,7 +251,7 @@ function CustosPage() {
       setValue("");
       setNovoContratoNome("");
       setIsCriandoContrato(false);
-      setContratoSelecionado(nomeContratoFinal);
+      setContratoSelecionadoId(idContratoFinal);
     } catch (err: any) {
       setMessage({ type: "error", text: "Erro ao salvar lançamento." });
     } finally {
@@ -267,14 +268,25 @@ function CustosPage() {
     }
   }
 
+  // Lógica de filtragem corrigida
   const lancamentosFiltrados = useMemo(() => {
     return lancamentos.filter((item) => {
       const mesItem = item.data.substring(0, 7);
       const matchMes = filtroMes === "TODOS" || mesItem === filtroMes;
-      const matchContrato = filtroContrato === "TODOS" || item.contrato === filtroContrato;
+
+      let matchContrato = filtroContratoId === "TODOS";
+      if (!matchContrato) {
+        const contratoObj = contratos.find((c) => c.id === filtroContratoId);
+        const nomeFiltro = contratoObj?.nome.trim().toLowerCase();
+        
+        matchContrato =
+          item.contrato_id === filtroContratoId ||
+          (!!nomeFiltro && item.contrato.trim().toLowerCase() === nomeFiltro);
+      }
+
       return matchMes && matchContrato;
     });
-  }, [lancamentos, filtroMes, filtroContrato]);
+  }, [lancamentos, filtroMes, filtroContratoId, contratos]);
 
   const resumos = useMemo(() => {
     let receita = 0;
@@ -372,12 +384,12 @@ function CustosPage() {
             <Label className="text-xs whitespace-nowrap">Contrato:</Label>
             <select
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              value={filtroContrato}
-              onChange={(e) => setFiltroContrato(e.target.value)}
+              value={filtroContratoId}
+              onChange={(e) => setFiltroContratoId(e.target.value)}
             >
               <option value="TODOS">Todos os Contratos</option>
               {contratos.map((c) => (
-                <option key={c.id} value={c.nome}>
+                <option key={c.id} value={c.id}>
                   {c.nome}
                 </option>
               ))}
@@ -627,11 +639,11 @@ function CustosPage() {
                   <select
                     id="contrato"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    value={contratoSelecionado}
-                    onChange={(e) => setContratoSelecionado(e.target.value)}
+                    value={contratoSelecionadoId}
+                    onChange={(e) => setContratoSelecionadoId(e.target.value)}
                   >
                     {contratos.map((c) => (
-                      <option key={c.id} value={c.nome}>
+                      <option key={c.id} value={c.id}>
                         {c.nome}
                       </option>
                     ))}
