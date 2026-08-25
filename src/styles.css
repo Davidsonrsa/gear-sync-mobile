@@ -37,25 +37,25 @@
 :root {
   --radius: 0.75rem;
 
-  /* Fundo cinza neutro (substitui o azul) */
-  --background: oklch(0.96 0 0); 
-  --foreground: oklch(0.18 0.01 0);
+  /* Fundo Cinza Chumbo Escuro (#334155) */
+  --background: oklch(0.35 0.02 250); 
+  --foreground: oklch(0.98 0 0);
 
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.01 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.01 0);
 
-  --primary: oklch(0.36 0.1 250); /* deep industrial blue */
+  --primary: oklch(0.36 0.1 250);
   --primary-foreground: oklch(0.99 0 0);
 
-  --secondary: oklch(0.93 0 0);
-  --secondary-foreground: oklch(0.25 0 0);
+  --secondary: oklch(0.27 0.02 250);
+  --secondary-foreground: oklch(0.97 0 0);
 
-  --muted: oklch(0.93 0 0);
-  --muted-foreground: oklch(0.5 0 0);
+  --muted: oklch(0.27 0.02 250);
+  --muted-foreground: oklch(0.7 0 0);
 
-  --accent: oklch(0.72 0.18 55); /* orange */
+  --accent: oklch(0.72 0.18 55);
   --accent-foreground: oklch(0.15 0 0);
 
   --destructive: oklch(0.58 0.22 25);
@@ -73,17 +73,17 @@
 }
 
 .dark {
-  --background: oklch(0.15 0 0);
+  --background: oklch(0.2 0.02 250);
   --foreground: oklch(0.97 0 0);
-  --card: oklch(0.2 0 0);
+  --card: oklch(0.25 0.02 250);
   --card-foreground: oklch(0.97 0 0);
-  --popover: oklch(0.2 0 0);
+  --popover: oklch(0.25 0.02 250);
   --popover-foreground: oklch(0.97 0 0);
   --primary: oklch(0.7 0.12 240);
   --primary-foreground: oklch(0.15 0 0);
-  --secondary: oklch(0.27 0 0);
+  --secondary: oklch(0.3 0.02 250);
   --secondary-foreground: oklch(0.97 0 0);
-  --muted: oklch(0.27 0 0);
+  --muted: oklch(0.3 0.02 250);
   --muted-foreground: oklch(0.7 0 0);
   --accent: oklch(0.72 0.18 55);
   --accent-foreground: oklch(0.15 0 0);
@@ -107,9 +107,9 @@
     color: var(--color-foreground);
     min-height: 100%;
   }
-  /* Fundo cinza suave sem tom azulado */
+  /* Define o fundo da aplicação diretamente como Cinza Chumbo Escuro (#334155) */
   html {
-    background-color: #f3f4f6;
+    background-color: #334155;
   }
   body {
     background: transparent;
@@ -124,14 +124,14 @@
     overscroll-behavior-y: none;
   }
   .dark html {
-    background-color: #0f172a;
+    background-color: #1e293b;
   }
   input,
   textarea,
   select,
   button {
     font-size: 16px;
-  } /* prevents iOS zoom */
+  }
 }
 
 @keyframes blink-red {
