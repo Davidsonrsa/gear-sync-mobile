@@ -58,7 +58,7 @@ function AuthenticatedLayout() {
             />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm md:text-lg font-bold leading-tight truncate">
+            <h1 className="text-sm md:text-lg font-bold leading-tight truncate text-black">
               GIF - Gestão Integrada de Frotas
             </h1>
             <p className="text-[11px] md:text-xs opacity-80 truncate">

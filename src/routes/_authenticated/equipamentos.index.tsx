@@ -572,7 +572,7 @@ function EquipamentosList() {
 
       {/* Contador de Equipamentos */}
       <div className="flex justify-between items-center px-1">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <p className="text-xs font-semibold text-black uppercase tracking-wider">
           {isLoading ? "Carregando..." : `Frota Cadastrada (${filtered.length})`}
         </p>
       </div>
