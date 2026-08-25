@@ -22,7 +22,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-// 1. Rota ajustada para corresponder ao caminho notas-fiscais.$id.index.tsx
 export const Route = createFileRoute("/_authenticated/notas-fiscais/$id/")({
   component: NotaFiscalDetail,
 });
@@ -33,6 +32,7 @@ type NotaFiscal = {
   data: string | null;
   nf: string;
   fornecedor: string | null;
+  cl: string | null; // <--- CAMPO CL ADICIONADO NA TIPAGEM
   descricao_produto: string | null;
   observacao: string | null;
   equipamento_id: string | null;
@@ -91,7 +91,6 @@ function NotaFiscalDetail() {
     }
   }, [nota]);
 
-  // 2. Mutações atualizadas com sincronização dupla dos campos
   const updateMutation = useMutation({
     mutationFn: async (updates: Partial<NotaFiscal>) => {
       const numNf = updates.nf || updates.numero_nf || null;
@@ -104,6 +103,7 @@ function NotaFiscalDetail() {
         nf: numNf,
         numero_nf: numNf,
         fornecedor: updates.fornecedor || null,
+        cl: updates.cl || null, // <--- CL INTEGRADO AO PAYLOAD DO SUPABASE
         identificacao: equip,
         equipamento: equip,
         data: dtEmissao,
@@ -250,6 +250,23 @@ function NotaFiscalDetail() {
                 />
               </div>
 
+              {/* <--- CAMPO CL DE EDICÃO E EXIBIÇÃO ---> */}
+              <div>
+                <Label>CL (Centro de Lucro / Localidade)</Label>
+                <Input
+                  value={formData.cl ?? ""}
+                  disabled={!isEditing}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      cl: e.target.value || null,
+                    })
+                  }
+                  className="mt-1"
+                  placeholder="Ex: CL-01"
+                />
+              </div>
+
               <div>
                 <Label>Data de Emissão</Label>
                 <Input
@@ -264,25 +281,6 @@ function NotaFiscalDetail() {
                     })
                   }
                   className="mt-1"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <Label>Descrição dos Produtos / Observações</Label>
-                <Textarea
-                  value={
-                    formData.descricao_produto ?? formData.observacao ?? ""
-                  }
-                  disabled={!isEditing}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      descricao_produto: e.target.value || null,
-                      observacao: e.target.value || null,
-                    })
-                  }
-                  className="mt-1"
-                  rows={3}
                 />
               </div>
 
@@ -304,6 +302,25 @@ function NotaFiscalDetail() {
                     });
                   }}
                   className="mt-1"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <Label>Descrição dos Produtos / Observações</Label>
+                <Textarea
+                  value={
+                    formData.descricao_produto ?? formData.observacao ?? ""
+                  }
+                  disabled={!isEditing}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      descricao_produto: e.target.value || null,
+                      observacao: e.target.value || null,
+                    })
+                  }
+                  className="mt-1"
+                  rows={3}
                 />
               </div>
             </div>
@@ -408,3 +425,5 @@ function NotaFiscalDetail() {
     </div>
   );
 }
+
+export default NotaFiscalDetail;
