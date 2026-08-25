@@ -109,6 +109,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", type: "image/png", href: "/icon-512.png" },
       { rel: "apple-touch-icon", href: "/icon-512.png" },
     ],
+    // Adicionado style para esconder a badge do Lovable
+    style: [
+      {
+        children: `
+          [class*="lovable-badge"],
+          [id*="lovable-badge"],
+          div[style*="z-index: 2147483647"] {
+            display: none !important;
+          }
+        `,
+      },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -122,8 +134,7 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      {/* Adicione a classe bg-gray-100 direta no body */}
-      <body className="min-h-screen bg-gray-100 text-gray-900 antialiased">
+      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
         {children}
         <Scripts />
       </body>
@@ -142,12 +153,23 @@ function RootComponent() {
     });
     return () => sub.subscription.unsubscribe();
   }, [router, queryClient]);
+
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Wrapper com fundo cinza claro para toda a aplicação */}
-     <div className="min-h-screen bg-gray-100 text-gray-900 antialiased">
-  <Outlet />
-</div>
+      <div className="min-h-screen bg-slate-50 text-slate-900 antialiased flex flex-col">
+        {/* Header Fixo do Topo com o Nome Visível no Mobile */}
+        <header className="w-full bg-[#0f1f3d] text-white px-4 py-3 flex items-center gap-3 border-b border-slate-800 shrink-0 sticky top-0 z-40">
+          <img src="/icon-512.png" alt="Logo" className="h-7 w-7 rounded shrink-0 object-contain" />
+          <span className="text-sm font-bold text-white tracking-wide truncate">
+            GIF - Gestão Integrada de Frotas
+          </span>
+        </header>
+
+        {/* Conteúdo com scroll e margem no rodapé para não encobrir o menu */}
+        <main className="flex-1 pb-20">
+          <Outlet />
+        </main>
+      </div>
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
   );
