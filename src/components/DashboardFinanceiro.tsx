@@ -1,26 +1,105 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
-import { DollarSign, TrendingUp, Wallet, Percent, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { DollarSign, TrendingUp, Wallet, Percent, ArrowUpCircle, ArrowDownCircle, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface CustosData {
+  receitaBruta: number;
+  impostos: number;
+  maoDeObra: number;
+  manutencao: number;
+  encargos: number;
+  transporte: number;
+  administrativas: number;
+}
 
 export function DashboardFinanceiro() {
-  // Dados extraídos dos seus lançamentos atuais
-  const receitaBruta = 1351400.0;
-  const impostos = 0.0;
-  const custosTotais = 200.0;
-  const resultadoFinal = 1351200.0;
-  const margemLiquida = 99.98; // (1.351.200 / 1.351.400) * 100
+  const [loading, setLoading] = useState(true);
+  const [dados, setDados] = useState<CustosData>({
+    receitaBruta: 0,
+    impostos: 0,
+    maoDeObra: 0,
+    manutencao: 0,
+    encargos: 0,
+    transporte: 0,
+    administrativas: 0,
+  });
 
-  // Gráfico de distribuição dos custos operacionais
+  useEffect(() => {
+    async function carregarDadosFinanceiros() {
+      try {
+        setLoading(true);
+        // Consulta dados da tabela de receitas/custos no Supabase
+        const { data, error } = await supabase
+          .from("custos_contratos")
+          .select("*");
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          // Consolida os valores acumulados
+          const acumulado = data.reduce(
+            (acc, curr) => ({
+              receitaBruta: acc.receitaBruta + (curr.receita_bruta || 0),
+              impostos: acc.impostos + (curr.impostos || 0),
+              maoDeObra: acc.maoDeObra + (curr.mao_de_obra || 0),
+              manutencao: acc.manutencao + (curr.manutencao || 0),
+              encargos: acc.encargos + (curr.encargos || 0),
+              transporte: acc.transporte + (curr.transporte || 0),
+              administrativas: acc.administrativas + (curr.administrativas || 0),
+            }),
+            { receitaBruta: 0, impostos: 0, maoDeObra: 0, manutencao: 0, encargos: 0, transporte: 0, administrativas: 0 }
+          );
+
+          setDados(acumulado);
+        } else {
+          // Caso não haja registros no banco, mantém os valores padrão de exemplo
+          setDados({
+            receitaBruta: 1351400.0,
+            impostos: 0.0,
+            maoDeObra: 100.0,
+            manutencao: 100.0,
+            encargos: 0.0,
+            transporte: 0.0,
+            administrativas: 0.0,
+          });
+        }
+      } catch (err) {
+        console.error("Erro ao carregar dados financeiros:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    carregarDadosFinanceiros();
+  }, []);
+
+  // Cálculos consolidados
+  const custosTotais = dados.maoDeObra + dados.manutencao + dados.encargos + dados.transporte + dados.administrativas;
+  const resultadoFinal = dados.receitaBruta - dados.impostos - custosTotais;
+  const margemLiquida = dados.receitaBruta > 0 ? (resultadoFinal / dados.receitaBruta) * 100 : 0;
+
+  // Montagem do gráfico dinâmico
   const dadosCustos = [
-    { name: "Mão de Obra", value: 100, color: "#3b82f6" },
-    { name: "Manutenção", value: 100, color: "#f59e0b" },
-    { name: "Encargos", value: 0, color: "#10b981" },
-    { name: "Transporte", value: 0, color: "#8b5cf6" },
+    { name: "Mão de Obra", value: dados.maoDeObra, color: "#3b82f6" },
+    { name: "Manutenção", value: dados.manutencao, color: "#f59e0b" },
+    { name: "Encargos", value: dados.encargos, color: "#10b981" },
+    { name: "Transporte", value: dados.transporte, color: "#8b5cf6" },
+    { name: "Administrativas", value: dados.administrativas, color: "#ec4899" },
   ].filter((item) => item.value > 0);
 
   const formatarMoeda = (val: number) =>
     val.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  if (loading) {
+    return (
+      <div className="p-8 bg-slate-900 rounded-2xl border border-slate-800 flex justify-center items-center gap-2 text-slate-400">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        <span>Carregando painel financeiro...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl border border-slate-800 space-y-4">
@@ -47,7 +126,7 @@ export function DashboardFinanceiro() {
               <span className="text-xs font-semibold uppercase">Receita Bruta</span>
               <ArrowUpCircle className="w-5 h-5 text-emerald-400" />
             </div>
-            <p className="text-xl font-extrabold font-mono">{formatarMoeda(receitaBruta)}</p>
+            <p className="text-xl font-extrabold font-mono">{formatarMoeda(dados.receitaBruta)}</p>
             <p className="text-[10px] text-blue-200 mt-1">Entradas acumuladas</p>
           </Card>
 
@@ -93,35 +172,41 @@ export function DashboardFinanceiro() {
 
         {/* Área Central: Detalhamento Operacional */}
         <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Gráfico de Rosca - Custos Operacionais */}
+          {/* Gráfico de Rosca */}
           <Card className="p-4 bg-slate-800/50 border-slate-700 text-white flex flex-col justify-between">
             <h3 className="text-xs font-bold text-slate-300 uppercase mb-2">
               Distribuição por Tipo de Custo
             </h3>
             <div className="h-48 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={dadosCustos}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={75}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {dadosCustos.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: number) => formatarMoeda(value)}
-                    contentStyle={{ backgroundColor: "#1e293b", borderColor: "#334155", borderRadius: "8px" }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              {dadosCustos.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={dadosCustos}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={75}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {dadosCustos.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => formatarMoeda(value)}
+                      contentStyle={{ backgroundColor: "#1e293b", borderColor: "#334155", borderRadius: "8px" }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-xs text-slate-500">
+                  Nenhum custo lançado no período
+                </div>
+              )}
             </div>
-            <div className="flex justify-center gap-4 text-xs mt-2">
+            <div className="flex flex-wrap justify-center gap-3 text-xs mt-2">
               {dadosCustos.map((item) => (
                 <div key={item.name} className="flex items-center gap-1.5">
                   <span className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
@@ -139,23 +224,23 @@ export function DashboardFinanceiro() {
             <div className="space-y-2 text-xs">
               <div className="flex justify-between p-2 rounded bg-slate-800/80 border border-slate-700">
                 <span className="text-slate-300">Mão de Obra</span>
-                <span className="font-bold font-mono text-white">R$ 100,00</span>
+                <span className="font-bold font-mono text-white">{formatarMoeda(dados.maoDeObra)}</span>
               </div>
               <div className="flex justify-between p-2 rounded bg-slate-800/80 border border-slate-700">
                 <span className="text-slate-300">Manutenção</span>
-                <span className="font-bold font-mono text-white">R$ 100,00</span>
+                <span className="font-bold font-mono text-white">{formatarMoeda(dados.manutencao)}</span>
               </div>
-              <div className="flex justify-between p-2 rounded bg-slate-800/80 border border-slate-700 opacity-60">
-                <span className="text-slate-400">Encargos</span>
-                <span className="font-mono text-slate-400">R$ 0,00</span>
+              <div className="flex justify-between p-2 rounded bg-slate-800/80 border border-slate-700">
+                <span className="text-slate-300">Encargos</span>
+                <span className="font-mono text-slate-300">{formatarMoeda(dados.encargos)}</span>
               </div>
-              <div className="flex justify-between p-2 rounded bg-slate-800/80 border border-slate-700 opacity-60">
-                <span className="text-slate-400">Transporte</span>
-                <span className="font-mono text-slate-400">R$ 0,00</span>
+              <div className="flex justify-between p-2 rounded bg-slate-800/80 border border-slate-700">
+                <span className="text-slate-300">Transporte</span>
+                <span className="font-mono text-slate-300">{formatarMoeda(dados.transporte)}</span>
               </div>
-              <div className="flex justify-between p-2 rounded bg-slate-800/80 border border-slate-700 opacity-60">
+              <div className="flex justify-between p-2 rounded bg-slate-800/80 border border-slate-700 opacity-70">
                 <span className="text-slate-400">Impostos (Deduções)</span>
-                <span className="font-mono text-slate-400">R$ 0,00</span>
+                <span className="font-mono text-slate-400">{formatarMoeda(dados.impostos)}</span>
               </div>
             </div>
           </Card>
