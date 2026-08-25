@@ -141,60 +141,91 @@ function CustosPage() {
     }
   }
 
-  // Lista unificada para o select de filtros (combina cadastrados + usados no histórico)
-  const opcoesFiltroContrato = useMemo(() => {
-    const nomesMap = new Set<string>();
+  // Lista unificada para o select de filtros e janela de gerenciamento
+  const listaTodosContratos = useMemo(() => {
+    const mapaContratos = new Map<string, ContratoItem>();
 
+    // Adiciona os cadastrados oficialmente
     contratos.forEach((c) => {
       if (c.nome && c.nome.trim()) {
-        nomesMap.add(c.nome.trim());
+        mapaContratos.set(c.nome.trim().toLowerCase(), { id: c.id, nome: c.nome.trim() });
       }
     });
 
+    // Adiciona os criados via lançamentos financeiros
     lancamentos.forEach((l) => {
       if (l.contrato && l.contrato.trim()) {
-        nomesMap.add(l.contrato.trim());
+        const chave = l.contrato.trim().toLowerCase();
+        if (!mapaContratos.has(chave)) {
+          mapaContratos.set(chave, {
+            id: l.contrato_id || `virtual-${l.contrato.trim()}`,
+            nome: l.contrato.trim(),
+          });
+        }
       }
     });
 
-    return Array.from(nomesMap).sort((a, b) => a.localeCompare(b));
+    return Array.from(mapaContratos.values()).sort((a, b) => a.nome.localeCompare(b.nome));
   }, [contratos, lancamentos]);
 
-  async function handleEditarContrato(id: string) {
+  async function handleEditarContrato(item: ContratoItem) {
     if (!novoNomeEditado.trim()) return;
 
-    try {
-      const { error } = await supabase
-        .from("contratos")
-        .update({ nome_contrato: novoNomeEditado.trim() })
-        .eq("id", id);
+    const nomeAntigo = item.nome;
+    const novoNome = novoNomeEditado.trim();
 
-      if (!error) {
-        setContratos((prev) =>
-          prev.map((c) => (c.id === id ? { ...c, nome: novoNomeEditado.trim() } : c))
-        );
-        setContratoEditando(null);
-        setNovoNomeEditado("");
+    try {
+      // 1. Atualiza na tabela de contratos se não for apenas um contrato do histórico
+      if (!item.id.startsWith("virtual-")) {
+        await supabase
+          .from("contratos")
+          .update({ nome_contrato: novoNome })
+          .eq("id", item.id);
       }
+
+      // 2. Atualiza todos os lançamentos financeiros vinculados ao nome antigo
+      await supabase
+        .from("custos")
+        .update({ contrato: novoNome })
+        .eq("contrato", nomeAntigo);
+
+      // 3. Atualiza os estados locais
+      setContratos((prev) =>
+        prev.map((c) => (c.nome === nomeAntigo ? { ...c, nome: novoNome } : c))
+      );
+      setLancamentos((prev) =>
+        prev.map((l) => (l.contrato === nomeAntigo ? { ...l, contrato: novoNome } : l))
+      );
+
+      if (contratoSelecionado === nomeAntigo) {
+        setContratoSelecionado(novoNome);
+      }
+
+      setContratoEditando(null);
+      setNovoNomeEditado("");
     } catch (err) {
       console.error("Erro ao editar contrato:", err);
     }
   }
 
-  async function handleDeletarContrato(id: string) {
-    if (!confirm("Deseja realmente excluir este contrato?")) return;
+  async function handleDeletarContrato(item: ContratoItem) {
+    if (!confirm(`Deseja realmente excluir o contrato "${item.nome}" e seus registros vinculados?`)) return;
 
     try {
-      const { error } = await supabase.from("contratos").delete().eq("id", id);
+      // 1. Remove da tabela de contratos se existir lá
+      if (!item.id.startsWith("virtual-")) {
+        await supabase.from("contratos").delete().eq("id", item.id);
+      }
 
-      if (!error) {
-        const atualizada = contratos.filter((c) => c.id !== id);
-        setContratos(atualizada);
-        if (atualizada.length > 0) {
-          setContratoSelecionado(atualizada[0].nome);
-        } else {
-          setContratoSelecionado("");
-        }
+      // 2. Remove todos os lançamentos atrelados a este contrato
+      await supabase.from("custos").delete().eq("contrato", item.nome);
+
+      // 3. Atualiza estados locais
+      setContratos((prev) => prev.filter((c) => c.nome !== item.nome));
+      setLancamentos((prev) => prev.filter((l) => l.contrato !== item.nome));
+
+      if (contratoSelecionado === item.nome) {
+        setContratoSelecionado("");
       }
     } catch (err) {
       console.error("Erro ao deletar contrato:", err);
@@ -399,9 +430,9 @@ function CustosPage() {
               onChange={(e) => setFiltroContrato(e.target.value)}
             >
               <option value="TODOS">Todos os Contratos</option>
-              {opcoesFiltroContrato.map((nome) => (
-                <option key={nome} value={nome}>
-                  {nome}
+              {listaTodosContratos.map((c) => (
+                <option key={c.id} value={c.nome}>
+                  {c.nome}
                 </option>
               ))}
             </select>
@@ -563,11 +594,11 @@ function CustosPage() {
                         <DialogHeader>
                           <DialogTitle>Gerenciar Contratos Cadastrados</DialogTitle>
                         </DialogHeader>
-                        <div className="space-y-3 py-2">
-                          {contratos.length === 0 ? (
+                        <div className="space-y-3 py-2 max-h-[60vh] overflow-y-auto">
+                          {listaTodosContratos.length === 0 ? (
                             <p className="text-sm text-muted-foreground">Nenhum contrato cadastrado.</p>
                           ) : (
-                            contratos.map((c) => (
+                            listaTodosContratos.map((c) => (
                               <div
                                 key={c.id}
                                 className="flex items-center justify-between p-2 rounded border bg-muted/20"
@@ -581,7 +612,7 @@ function CustosPage() {
                                     />
                                     <Button
                                       size="sm"
-                                      onClick={() => handleEditarContrato(c.id)}
+                                      onClick={() => handleEditarContrato(c)}
                                       className="h-8 px-2"
                                     >
                                       Salvar
@@ -614,7 +645,7 @@ function CustosPage() {
                                         size="icon"
                                         variant="ghost"
                                         className="h-7 w-7 text-rose-600"
-                                        onClick={() => handleDeletarContrato(c.id)}
+                                        onClick={() => handleDeletarContrato(c)}
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
                                       </Button>
@@ -653,9 +684,9 @@ function CustosPage() {
                     value={contratoSelecionado}
                     onChange={(e) => setContratoSelecionado(e.target.value)}
                   >
-                    {opcoesFiltroContrato.map((nome) => (
-                      <option key={nome} value={nome}>
-                        {nome}
+                    {listaTodosContratos.map((c) => (
+                      <option key={c.id} value={c.nome}>
+                        {c.nome}
                       </option>
                     ))}
                   </select>
