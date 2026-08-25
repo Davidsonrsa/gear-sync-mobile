@@ -22,7 +22,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-export const Route = createFileRoute("/_authenticated/notas-fiscais/$id/")({
+export const Route = createFileRoute("/_authenticated/notas-fiscais/$id")({
   component: NotaFiscalDetail,
 });
 
@@ -83,10 +83,16 @@ function NotaFiscalDetail() {
         .single();
 
       if (error) throw error;
-      setFormData(data as NotaFiscal);
       return data as NotaFiscal;
     },
   });
+
+  // Atualiza o estado do formulário sempre que os dados da nota forem carregados
+  React.useEffect(() => {
+    if (nota) {
+      setFormData(nota);
+    }
+  }, [nota]);
 
   const updateMutation = useMutation({
     mutationFn: async (updates: Partial<NotaFiscal>) => {
@@ -147,7 +153,7 @@ function NotaFiscalDetail() {
         <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/notas-fiscais" })}>
           <ArrowLeft className="w-4 h-4" />
         </Button>
-        <h1 className="text-2xl font-bold">NF {nota.nf}</h1>
+        <h1 className="text-2xl font-bold">NF {nota.nf || nota.numero_nf}</h1>
       </div>
 
       <Card className="p-6">
@@ -159,7 +165,7 @@ function NotaFiscalDetail() {
               <div>
                 <Label>Número da NF</Label>
                 <Input
-                  value={formData.nf}
+                  value={formData.nf || formData.numero_nf || ""}
                   disabled={!isEditing}
                   onChange={(e) => setFormData({ ...formData, nf: e.target.value })}
                   className="mt-1"
@@ -182,9 +188,9 @@ function NotaFiscalDetail() {
               </div>
 
               <div>
-                <Label>Identificação</Label>
+                <Label>Identificação / Equipamento</Label>
                 <Input
-                  value={formData.identificacao ?? ""}
+                  value={formData.identificacao ?? formData.equipamento ?? ""}
                   disabled={!isEditing}
                   onChange={(e) =>
                     setFormData({
@@ -200,7 +206,7 @@ function NotaFiscalDetail() {
                 <Label>Data de Emissão</Label>
                 <Input
                   type="date"
-                  value={dateToInput(formData.data)}
+                  value={dateToInput(formData.data || formData.emissao)}
                   disabled={!isEditing}
                   onChange={(e) =>
                     setFormData({
@@ -213,9 +219,9 @@ function NotaFiscalDetail() {
               </div>
 
               <div className="md:col-span-2">
-                <Label>Descrição dos Produtos</Label>
+                <Label>Descrição dos Produtos / Observações</Label>
                 <Textarea
-                  value={formData.descricao_produto ?? ""}
+                  value={formData.descricao_produto ?? formData.observacao ?? ""}
                   disabled={!isEditing}
                   onChange={(e) =>
                     setFormData({
@@ -229,11 +235,11 @@ function NotaFiscalDetail() {
               </div>
 
               <div>
-                <Label>Valor</Label>
+                <Label>Valor Total (R$)</Label>
                 <Input
                   type="number"
                   step="0.01"
-                  value={formData.valor ?? ""}
+                  value={formData.valor ?? formData.valor_total ?? ""}
                   disabled={!isEditing}
                   onChange={(e) =>
                     setFormData({
@@ -271,23 +277,6 @@ function NotaFiscalDetail() {
             </div>
           </div>
 
-          {/* Observações */}
-          <div>
-            <Label>Observações</Label>
-            <Textarea
-              value={formData.observacao ?? ""}
-              disabled={!isEditing}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  observacao: e.target.value || null,
-                })
-              }
-              className="mt-1"
-              rows={4}
-            />
-          </div>
-
           {/* Ações */}
           <div className="flex gap-2 flex-wrap pt-4">
             {!isEditing ? (
@@ -310,7 +299,7 @@ function NotaFiscalDetail() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Deletar Nota Fiscal?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Tem certeza que deseja deletar a nota fiscal NF {nota.nf}? Esta ação não
+                          Tem certeza que deseja deletar a nota fiscal NF {nota.nf || nota.numero_nf}? Esta ação não
                           pode ser desfeita.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
