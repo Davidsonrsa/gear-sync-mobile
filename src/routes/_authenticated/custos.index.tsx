@@ -414,12 +414,12 @@ function CustosPage() {
               Ver Dashboard Financeiro
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-5xl bg-slate-900 border-slate-800 text-white p-6 max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-white">Painel de Desempenho Financeiro</DialogTitle>
-            </DialogHeader>
-            <DashboardFinanceiro lancamentos={lancamentosFiltrados} />
-          </DialogContent>
+          <DialogContent className="max-w-5xl !bg-slate-900 !opacity-100 border-slate-800 text-slate-100 p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
+  <DialogHeader>
+    <DialogTitle className="text-slate-100">Painel de Desempenho Financeiro</DialogTitle>
+  </DialogHeader>
+  <DashboardFinanceiro lancamentos={lancamentosFiltrados} />
+</DialogContent>
         </Dialog>
       </div>
 
