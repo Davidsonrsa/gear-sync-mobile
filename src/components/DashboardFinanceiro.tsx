@@ -22,7 +22,6 @@ const COLORS = ["#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#3B82F6", "#EC4899"
 export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
   const [contratoSelecionado, setContratoSelecionado] = useState<string>("TODOS");
 
-  // Lista única de contratos
   const listaContratos = useMemo(() => {
     const mapa = new Set<string>();
     lancamentos.forEach((item) => {
@@ -33,7 +32,6 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
     return Array.from(mapa).sort((a, b) => a.localeCompare(b));
   }, [lancamentos]);
 
-  // Lançamentos filtrados pelo contrato interno do modal
   const lancamentosFiltrados = useMemo(() => {
     if (contratoSelecionado === "TODOS") return lancamentos;
     return lancamentos.filter(
@@ -41,7 +39,6 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
     );
   }, [lancamentos, contratoSelecionado]);
 
-  // Cálculos consolidados
   const resumos = useMemo(() => {
     let receita = 0;
     let impostos = 0;
@@ -95,7 +92,6 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
     };
   }, [lancamentosFiltrados]);
 
-  // Dados formatados para o Gráfico de Rosca
   const pieData = useMemo(() => {
     const dados = [
       { name: "Mão de Obra", value: resumos.maoDeObra },
@@ -116,8 +112,8 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
   };
 
   return (
-    <div className="space-y-6 bg-slate-900 p-4 rounded-xl text-white">
-      {/* Filtro por Contrato */}
+    <div className="space-y-6 bg-slate-900 p-4 rounded-xl text-slate-100 border border-slate-800">
+      {/* Selector de Contrato com opções visíveis */}
       <div className="flex items-center gap-3 bg-slate-800 p-3 rounded-lg border border-slate-700">
         <Filter className="w-4 h-4 text-emerald-400" />
         <label htmlFor="modal-select-contrato" className="text-sm font-medium text-slate-200 whitespace-nowrap">
@@ -125,24 +121,25 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
         </label>
         <select
           id="modal-select-contrato"
-          className="flex h-9 w-full md:w-72 rounded-md border border-slate-700 bg-slate-900 px-3 py-1 text-sm text-white shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          className="flex h-9 w-full md:w-80 rounded-md border border-slate-700 bg-slate-950 px-3 py-1 text-sm text-slate-100 shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
           value={contratoSelecionado}
           onChange={(e) => setContratoSelecionado(e.target.value)}
         >
-          <option value="TODOS">Todos os Contratos</option>
+          <option value="TODOS" className="bg-slate-900 text-slate-100">
+            Todos os Contratos
+          </option>
           {listaContratos.map((c) => (
-            <option key={c} value={c}>
+            <option key={c} value={c} className="bg-slate-900 text-slate-100">
               {c}
             </option>
           ))}
         </select>
       </div>
 
-      {/* Grid com KPIs + Gráfico de Rosca */}
+      {/* Grid KPI + Rosca */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Lado Esquerdo: Cards KPI */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:col-span-2">
-          <Card className="bg-slate-800 border-slate-700 text-white">
+          <Card className="bg-slate-800/90 border-slate-700 text-slate-100 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-xs font-semibold text-slate-400 uppercase">Receita Bruta</CardTitle>
               <TrendingUp className="w-4 h-4 text-emerald-400" />
@@ -153,7 +150,7 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800 border-slate-700 text-white">
+          <Card className="bg-slate-800/90 border-slate-700 text-slate-100 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-xs font-semibold text-slate-400 uppercase">Custos / Despesas</CardTitle>
               <TrendingDown className="w-4 h-4 text-rose-400" />
@@ -164,7 +161,7 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800 border-slate-700 text-white">
+          <Card className="bg-slate-800/90 border-slate-700 text-slate-100 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-xs font-semibold text-slate-400 uppercase">Resultado Final</CardTitle>
               <DollarSign className={`w-4 h-4 ${resumos.resultadoFinal >= 0 ? "text-blue-400" : "text-rose-400"}`} />
@@ -177,7 +174,7 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800 border-slate-700 text-white">
+          <Card className="bg-slate-800/90 border-slate-700 text-slate-100 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-xs font-semibold text-slate-400 uppercase">Margem Líquida</CardTitle>
               <PieChartIcon className="w-4 h-4 text-purple-400" />
@@ -189,8 +186,8 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
           </Card>
         </div>
 
-        {/* Lado Direito: Gráfico de Rosca */}
-        <Card className="bg-slate-800 border-slate-700 text-white flex flex-col justify-between">
+        {/* Gráfico de Rosca */}
+        <Card className="bg-slate-800/90 border-slate-700 text-slate-100 shadow-md flex flex-col justify-between">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-semibold text-slate-400 uppercase">
               Distribuição por Tipo de Custo
@@ -217,9 +214,9 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
                   </Pie>
                   <Tooltip
                     formatter={(value: number) => formatBRL(value)}
-                    contentStyle={{ backgroundColor: "#0F172A", borderColor: "#334155", color: "#FFF" }}
+                    contentStyle={{ backgroundColor: "#020617", borderColor: "#334155", color: "#F8FAFC" }}
                   />
-                  <Legend wrapperStyle={{ fontSize: "12px" }} />
+                  <Legend wrapperStyle={{ fontSize: "12px", color: "#F8FAFC" }} />
                 </PieChart>
               </ResponsiveContainer>
             )}
@@ -227,8 +224,8 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
         </Card>
       </div>
 
-      {/* Detalhamento dos Custos */}
-      <Card className="bg-slate-800 border-slate-700 text-white">
+      {/* Detalhamento */}
+      <Card className="bg-slate-800/90 border-slate-700 text-slate-100 shadow-md">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold uppercase text-slate-400">
             Detalhamento de Custos Operacionais
@@ -236,25 +233,25 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 text-center">
-            <div className="p-3 bg-slate-900 rounded-lg border border-slate-700">
+            <div className="p-3 bg-slate-950 rounded-lg border border-slate-700">
               <span className="text-xs text-slate-400 block">Mão de Obra</span>
-              <span className="text-sm font-bold text-white">{formatBRL(resumos.maoDeObra)}</span>
+              <span className="text-sm font-bold text-slate-100">{formatBRL(resumos.maoDeObra)}</span>
             </div>
-            <div className="p-3 bg-slate-900 rounded-lg border border-slate-700">
+            <div className="p-3 bg-slate-950 rounded-lg border border-slate-700">
               <span className="text-xs text-slate-400 block">Manutenção</span>
-              <span className="text-sm font-bold text-white">{formatBRL(resumos.manutencao)}</span>
+              <span className="text-sm font-bold text-slate-100">{formatBRL(resumos.manutencao)}</span>
             </div>
-            <div className="p-3 bg-slate-900 rounded-lg border border-slate-700">
+            <div className="p-3 bg-slate-950 rounded-lg border border-slate-700">
               <span className="text-xs text-slate-400 block">Encargos</span>
-              <span className="text-sm font-bold text-white">{formatBRL(resumos.encargos)}</span>
+              <span className="text-sm font-bold text-slate-100">{formatBRL(resumos.encargos)}</span>
             </div>
-            <div className="p-3 bg-slate-900 rounded-lg border border-slate-700">
+            <div className="p-3 bg-slate-950 rounded-lg border border-slate-700">
               <span className="text-xs text-slate-400 block">Transporte</span>
-              <span className="text-sm font-bold text-white">{formatBRL(resumos.transporte)}</span>
+              <span className="text-sm font-bold text-slate-100">{formatBRL(resumos.transporte)}</span>
             </div>
-            <div className="p-3 bg-slate-900 rounded-lg border border-slate-700 col-span-2 sm:col-span-1">
+            <div className="p-3 bg-slate-950 rounded-lg border border-slate-700 col-span-2 sm:col-span-1">
               <span className="text-xs text-slate-400 block">Impostos (Deduções)</span>
-              <span className="text-sm font-bold text-white">{formatBRL(resumos.impostos)}</span>
+              <span className="text-sm font-bold text-slate-100">{formatBRL(resumos.impostos)}</span>
             </div>
           </div>
         </CardContent>
