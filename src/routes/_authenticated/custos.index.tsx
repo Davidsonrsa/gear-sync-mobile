@@ -96,11 +96,19 @@ function CustosPage() {
     try {
       const { data, error } = await supabase
         .from("contratos")
-        .select("id, nome_contrato")
-        .order("nome_contrato");
+        .select("*");
 
       if (!error && data) {
-        const lista = data.map((c: any) => ({ id: String(c.id), nome: c.nome_contrato }));
+        const lista: ContratoItem[] = data
+          .map((c: any) => {
+            const nomeEncontrado = c.nome_contrato || c.nome || c.descricao || c.cliente || "";
+            return {
+              id: String(c.id),
+              nome: String(nomeEncontrado).trim(),
+            };
+          })
+          .filter((c) => c.nome !== "");
+
         setContratos(lista);
         if (lista.length > 0 && !contratoSelecionado) {
           setContratoSelecionado(lista[0].nome);
@@ -141,18 +149,18 @@ function CustosPage() {
     }
   }
 
-  // Lista unificada para o select de filtros e janela de gerenciamento
+  // Lista unificada e sem duplicados de TODOS os contratos (Cadastrados + Lançados)
   const listaTodosContratos = useMemo(() => {
     const mapaContratos = new Map<string, ContratoItem>();
 
-    // Adiciona os cadastrados oficialmente
+    // 1. Adiciona do banco (tabela contratos)
     contratos.forEach((c) => {
       if (c.nome && c.nome.trim()) {
         mapaContratos.set(c.nome.trim().toLowerCase(), { id: c.id, nome: c.nome.trim() });
       }
     });
 
-    // Adiciona os criados via lançamentos financeiros
+    // 2. Adiciona do histórico de lançamentos
     lancamentos.forEach((l) => {
       if (l.contrato && l.contrato.trim()) {
         const chave = l.contrato.trim().toLowerCase();
@@ -175,21 +183,20 @@ function CustosPage() {
     const novoNome = novoNomeEditado.trim();
 
     try {
-      // 1. Atualiza na tabela de contratos se não for apenas um contrato do histórico
       if (!item.id.startsWith("virtual-")) {
+        // Tenta atualizar no banco contratos
         await supabase
           .from("contratos")
-          .update({ nome_contrato: novoNome })
+          .update({ nome_contrato: novoNome, nome: novoNome })
           .eq("id", item.id);
       }
 
-      // 2. Atualiza todos os lançamentos financeiros vinculados ao nome antigo
+      // Atualiza na tabela de custos
       await supabase
         .from("custos")
         .update({ contrato: novoNome })
         .eq("contrato", nomeAntigo);
 
-      // 3. Atualiza os estados locais
       setContratos((prev) =>
         prev.map((c) => (c.nome === nomeAntigo ? { ...c, nome: novoNome } : c))
       );
@@ -209,18 +216,15 @@ function CustosPage() {
   }
 
   async function handleDeletarContrato(item: ContratoItem) {
-    if (!confirm(`Deseja realmente excluir o contrato "${item.nome}" e seus registros vinculados?`)) return;
+    if (!confirm(`Deseja realmente excluir o contrato "${item.nome}" e seus lançamentos?`)) return;
 
     try {
-      // 1. Remove da tabela de contratos se existir lá
       if (!item.id.startsWith("virtual-")) {
         await supabase.from("contratos").delete().eq("id", item.id);
       }
 
-      // 2. Remove todos os lançamentos atrelados a este contrato
       await supabase.from("custos").delete().eq("contrato", item.nome);
 
-      // 3. Atualiza estados locais
       setContratos((prev) => prev.filter((c) => c.nome !== item.nome));
       setLancamentos((prev) => prev.filter((l) => l.contrato !== item.nome));
 
@@ -251,12 +255,15 @@ function CustosPage() {
       try {
         const { data: newContract, error: contractErr } = await supabase
           .from("contratos")
-          .insert([{ nome_contrato: nomeContratoFinal }])
+          .insert([{ nome_contrato: nomeContratoFinal, nome: nomeContratoFinal }])
           .select()
           .single();
 
         if (!contractErr && newContract) {
-          const novoObj = { id: String(newContract.id), nome: newContract.nome_contrato };
+          const novoObj = {
+            id: String(newContract.id),
+            nome: newContract.nome_contrato || newContract.nome || nomeContratoFinal,
+          };
           setContratos((prev) => [...prev, novoObj]);
         }
       } catch (err) {
