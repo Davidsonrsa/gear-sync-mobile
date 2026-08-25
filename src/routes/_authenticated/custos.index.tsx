@@ -254,7 +254,7 @@ function CustosPage() {
       try {
         const { data: newContract, error: contractErr } = await supabase
           .from("contratos")
-          .insert([{ nome_contrato: nomeContratoFinal, nome: nomeContratoFinal }])
+          .insert([{ nome_contrato: nomeContratoFinal }])
           .select()
           .single();
 
@@ -263,7 +263,7 @@ function CustosPage() {
         if (newContract) {
           const novoObj = {
             id: String(newContract.id),
-            nome: newContract.nome_contrato || newContract.nome || nomeContratoFinal,
+            nome: newContract.nome_contrato || nomeContratoFinal,
           };
           setContratos((prev) => [...prev, novoObj]);
         }
