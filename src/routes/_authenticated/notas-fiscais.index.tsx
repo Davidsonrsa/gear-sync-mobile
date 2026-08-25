@@ -245,7 +245,7 @@ function NotasFiscaisPage() {
 
       if (finalData && finalData.length > 0) {
         const mappedData: NotaFiscalItem[] = finalData.map((item: any) => ({
-          id: item.id?.toString() || Math.random().toString(),
+          id: String(item.id),
           numero_nf: extractNumeroNF(item),
           fornecedor: extractFornecedor(item),
           equipamento: extractEquipamento(item),
@@ -788,7 +788,10 @@ function NotasFiscaisPage() {
                 <Button
                   onClick={() => {
                     setOpenModalDetalhes(false);
-                   navigate({ to: "/notas-fiscais/$id", params: { id: nota.id } });
+                    navigate({
+                      to: "/notas-fiscais/$id",
+                      params: { id: notaSelecionada.id },
+                    });
                   }}
                   className="flex items-center gap-1.5"
                 >
