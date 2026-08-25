@@ -24,6 +24,7 @@ import {
   Truck,
   FileText,
   Pencil,
+  MapPin,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/notas-fiscais/")({
@@ -35,6 +36,7 @@ export interface NotaFiscalItem {
   numero_nf: string;
   fornecedor: string;
   equipamento: string;
+  cl: string; // <--- 1. CAMPO CL ADICIONADO NA INTERFACE
   emissao: string;
   valor_total: number;
   parcelas: string;
@@ -60,6 +62,7 @@ function NotasFiscaisPage() {
   const [numeroNf, setNumeroNf] = useState("");
   const [fornecedor, setFornecedor] = useState("");
   const [equipamento, setEquipamento] = useState("");
+  const [cl, setCl] = useState(""); // <--- 2. ESTADO DO CL ADICIONADO
   const [emissao, setEmissao] = useState("");
   const [valorTotal, setValorTotal] = useState("");
   const [venc01, setVenc01] = useState("");
@@ -158,6 +161,17 @@ function NotasFiscaisPage() {
     );
   };
 
+  // <--- 3. FUNÇÃO PARA EXTRAIR O CL
+  const extractCL = (item: any): string => {
+    return (
+      item.cl ||
+      item.centro_custo ||
+      item.centro_lucro ||
+      item.localidade ||
+      "—"
+    );
+  };
+
   const extractEmissao = (item: any): string => {
     return (
       item.emissao ||
@@ -249,6 +263,7 @@ function NotasFiscaisPage() {
           numero_nf: extractNumeroNF(item),
           fornecedor: extractFornecedor(item),
           equipamento: extractEquipamento(item),
+          cl: extractCL(item), // <--- MAPEA O CL AQUI
           emissao: extractEmissao(item),
           valor_total: Number(
             item.valor_total || item.valor || item.valor_nota || item.val_total || 0
@@ -280,6 +295,7 @@ function NotasFiscaisPage() {
           fornecedor: fornecedor,
           identificacao: equipamento || null,
           equipamento: equipamento || null,
+          cl: cl || null, // <--- 4. SALVA O CAMPO CL NO SUPABASE
           emissao: emissao || null,
           valor_total: parseFloat(valorTotal) || 0,
           venc_01: venc01 || null,
@@ -298,6 +314,7 @@ function NotasFiscaisPage() {
       setNumeroNf("");
       setFornecedor("");
       setEquipamento("");
+      setCl(""); // <--- RESETA O ESTADO DO CL
       setEmissao("");
       setValorTotal("");
       setVenc01("");
@@ -324,6 +341,7 @@ function NotasFiscaisPage() {
       nota.numero_nf.toLowerCase().includes(termo) ||
       nota.fornecedor.toLowerCase().includes(termo) ||
       nota.equipamento.toLowerCase().includes(termo) ||
+      nota.cl.toLowerCase().includes(termo) || // <--- 5. PERMITE BUSCAR PELO CL
       nota.observacao.toLowerCase().includes(termo);
 
     let matchData = true;
@@ -397,6 +415,7 @@ function NotasFiscaisPage() {
                 </div>
               </div>
 
+              {/* <--- 6. CAMPO CL ADICIONADO AO MODAL DE CADASTRO ---> */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label htmlFor="equipamento">Equipamento / Identificação</Label>
@@ -408,6 +427,18 @@ function NotasFiscaisPage() {
                   />
                 </div>
                 <div className="space-y-1">
+                  <Label htmlFor="cl">CL (Centro de Custo / Localidade)</Label>
+                  <Input
+                    id="cl"
+                    placeholder="Ex: CL-01 / BH"
+                    value={cl}
+                    onChange={(e) => setCl(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
                   <Label htmlFor="emissao">Data Emissão</Label>
                   <Input
                     id="emissao"
@@ -417,19 +448,18 @@ function NotasFiscaisPage() {
                     required
                   />
                 </div>
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="valor">Valor Total (R$)</Label>
-                <Input
-                  id="valor"
-                  type="number"
-                  step="0.01"
-                  placeholder="0,00"
-                  value={valorTotal}
-                  onChange={(e) => setValorTotal(e.target.value)}
-                  required
-                />
+                <div className="space-y-1">
+                  <Label htmlFor="valor">Valor Total (R$)</Label>
+                  <Input
+                    id="valor"
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={valorTotal}
+                    onChange={(e) => setValorTotal(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
 
               {/* Seção de Vencimentos */}
@@ -593,7 +623,7 @@ function NotasFiscaisPage() {
           <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
           <input
             type="text"
-            placeholder="Buscar por NF, fornecedor, equipamento..."
+            placeholder="Buscar por NF, fornecedor, equipamento, CL..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             className="w-full pl-8 pr-2 py-1 text-xs bg-transparent rounded-lg border-0 focus:outline-none text-slate-700 placeholder:text-slate-400"
@@ -647,26 +677,27 @@ function NotasFiscaisPage() {
         <table className="w-full text-xs text-left table-fixed">
           <thead className="border-b border-slate-300 text-slate-800 font-bold bg-slate-50">
             <tr>
-              <th className="py-2 px-1.5 w-[10%]">Número NF</th>
-              <th className="py-2 px-1.5 w-[22%]">Fornecedor</th>
-              <th className="py-2 px-1.5 w-[18%]">Equipamento</th>
-              <th className="py-2 px-1.5 w-[11%]">Emissão</th>
+              <th className="py-2 px-1.5 w-[9%]">Número NF</th>
+              <th className="py-2 px-1.5 w-[20%]">Fornecedor</th>
+              <th className="py-2 px-1.5 w-[16%]">Equipamento</th>
+              <th className="py-2 px-1.5 w-[10%]">CL</th> {/* <--- 7. COLUNA CL ADICIONADA À TABELA */}
+              <th className="py-2 px-1.5 w-[10%]">Emissão</th>
               <th className="py-2 px-1.5 w-[12%]">Valor Total</th>
-              <th className="py-2 px-1.5 w-[17%]">Parcelas / Venc.</th>
-              <th className="py-2 px-1.5 w-[10%] text-center">Ação</th>
+              <th className="py-2 px-1.5 w-[15%]">Parcelas / Venc.</th>
+              <th className="py-2 px-1.5 w-[8%] text-center">Ação</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 text-slate-800">
             {loading ? (
               <tr>
-                <td colSpan={7} className="py-6 text-center text-slate-500">
+                <td colSpan={8} className="py-6 text-center text-slate-500">
                   <Loader2 className="w-5 h-5 animate-spin mx-auto mb-1 text-slate-600" />
                   Carregando dados...
                 </td>
               </tr>
             ) : notasFiltradas.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-6 text-center text-slate-500">
+                <td colSpan={8} className="py-6 text-center text-slate-500">
                   Nenhuma nota fiscal encontrada.
                 </td>
               </tr>
@@ -681,6 +712,9 @@ function NotasFiscaisPage() {
                   </td>
                   <td className="py-2 px-1.5 truncate" title={item.equipamento}>
                     {item.equipamento !== "—" ? `🚗 ${item.equipamento}` : "—"}
+                  </td>
+                  <td className="py-2 px-1.5 font-medium text-slate-600 truncate" title={item.cl}>
+                    {item.cl} {/* <--- EXIBE O VALOR DO CL */}
                   </td>
                   <td className="py-2 px-1.5 truncate">
                     {formatDate(item.emissao)}
@@ -739,7 +773,17 @@ function NotasFiscaisPage() {
                 </div>
               </div>
 
+              {/* <--- 8. CL ADICIONADO AO MODAL DE DETALHES ---> */}
               <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+                <div>
+                  <span className="text-xs text-slate-400 block font-medium">
+                    CL (Centro de Lucro / Localidade)
+                  </span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1 mt-0.5">
+                    <MapPin className="w-3.5 h-3.5 text-slate-500" />
+                    {notaSelecionada.cl}
+                  </span>
+                </div>
                 <div>
                   <span className="text-xs text-slate-400 block font-medium">
                     Data de Emissão
@@ -749,6 +793,9 @@ function NotasFiscaisPage() {
                     {formatDate(notaSelecionada.emissao)}
                   </span>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                 <div>
                   <span className="text-xs text-slate-400 block font-medium">
                     Valor Total
@@ -757,15 +804,14 @@ function NotasFiscaisPage() {
                     {formatBRL(notaSelecionada.valor_total)}
                   </span>
                 </div>
-              </div>
-
-              <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                <span className="text-xs text-slate-400 block font-medium">
-                  Parcelas / Vencimentos
-                </span>
-                <span className="font-semibold text-slate-800 dark:text-slate-100 mt-0.5 block">
-                  {notaSelecionada.parcelas}
-                </span>
+                <div>
+                  <span className="text-xs text-slate-400 block font-medium">
+                    Parcelas / Vencimentos
+                  </span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-100 mt-0.5 block">
+                    {notaSelecionada.parcelas}
+                  </span>
+                </div>
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
