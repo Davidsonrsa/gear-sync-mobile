@@ -62,7 +62,11 @@ function NotasFiscaisPage() {
   const [equipamento, setEquipamento] = useState("");
   const [emissao, setEmissao] = useState("");
   const [valorTotal, setValorTotal] = useState("");
-  const [vencimento, setVencimento] = useState("");
+  const [venc01, setVenc01] = useState("");
+  const [venc02, setVenc02] = useState("");
+  const [venc03, setVenc03] = useState("");
+  const [venc04, setVenc04] = useState("");
+  const [venc05, setVenc05] = useState("");
   const [observacao, setObservacao] = useState("");
 
   const formatBRL = (val: number) => {
@@ -278,7 +282,11 @@ function NotasFiscaisPage() {
           equipamento: equipamento || null,
           emissao: emissao || null,
           valor_total: parseFloat(valorTotal) || 0,
-          venc_01: vencimento || null,
+          venc_01: venc01 || null,
+          venc_02: venc02 || null,
+          venc_03: venc03 || null,
+          venc_04: venc04 || null,
+          venc_05: venc05 || null,
           observacao: observacao || null,
         },
       ]);
@@ -292,7 +300,11 @@ function NotasFiscaisPage() {
       setEquipamento("");
       setEmissao("");
       setValorTotal("");
-      setVencimento("");
+      setVenc01("");
+      setVenc02("");
+      setVenc03("");
+      setVenc04("");
+      setVenc05("");
       setObservacao("");
     } catch (err: any) {
       alert("Erro ao salvar nota: " + (err.message || "Verifique a conexão"));
@@ -355,7 +367,7 @@ function NotasFiscaisPage() {
               Nova Nota Fiscal
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-lg rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800">
+          <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800">
             <DialogHeader>
               <DialogTitle className="text-lg font-bold">
                 Cadastrar Nova Nota Fiscal
@@ -407,27 +419,68 @@ function NotasFiscaisPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label htmlFor="valor">Valor Total (R$)</Label>
-                  <Input
-                    id="valor"
-                    type="number"
-                    step="0.01"
-                    placeholder="0,00"
-                    value={valorTotal}
-                    onChange={(e) => setValorTotal(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="vencimento">Vencimento 1ª Parcela</Label>
-                  <Input
-                    id="vencimento"
-                    type="date"
-                    value={vencimento}
-                    onChange={(e) => setVencimento(e.target.value)}
-                  />
+              <div className="space-y-1">
+                <Label htmlFor="valor">Valor Total (R$)</Label>
+                <Input
+                  id="valor"
+                  type="number"
+                  step="0.01"
+                  placeholder="0,00"
+                  value={valorTotal}
+                  onChange={(e) => setValorTotal(e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* Seção de Vencimentos */}
+              <div className="border-t border-slate-200 pt-3 space-y-2">
+                <Label className="font-bold text-slate-700 block">Vencimentos das Parcelas</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="venc01" className="text-xs">Vencimento 1ª Parcela</Label>
+                    <Input
+                      id="venc01"
+                      type="date"
+                      value={venc01}
+                      onChange={(e) => setVenc01(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="venc02" className="text-xs">Vencimento 2ª Parcela</Label>
+                    <Input
+                      id="venc02"
+                      type="date"
+                      value={venc02}
+                      onChange={(e) => setVenc02(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="venc03" className="text-xs">Vencimento 3ª Parcela</Label>
+                    <Input
+                      id="venc03"
+                      type="date"
+                      value={venc03}
+                      onChange={(e) => setVenc03(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="venc04" className="text-xs">Vencimento 4ª Parcela</Label>
+                    <Input
+                      id="venc04"
+                      type="date"
+                      value={venc04}
+                      onChange={(e) => setVenc04(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="venc05" className="text-xs">Vencimento 5ª Parcela</Label>
+                    <Input
+                      id="venc05"
+                      type="date"
+                      value={venc05}
+                      onChange={(e) => setVenc05(e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -653,7 +706,7 @@ function NotasFiscaisPage() {
         </table>
       </div>
 
-      {/* Modal de Detalhes Corrigida */}
+      {/* Modal de Detalhes */}
       <Dialog open={openModalDetalhes} onOpenChange={setOpenModalDetalhes}>
         <DialogContent className="sm:max-w-md rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800">
           <DialogHeader>
@@ -725,7 +778,6 @@ function NotasFiscaisPage() {
                 </p>
               </div>
 
-              {/* Botões de Ação na Modal */}
               <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="outline"
@@ -733,19 +785,19 @@ function NotasFiscaisPage() {
                 >
                   Fechar
                 </Button>
-               <Button
-  onClick={() => {
-    setOpenModalDetalhes(false);
-    navigate({
-      to: "/_authenticated/notas-fiscais/$id",
-      params: { id: notaSelecionada.id },
-    });
-  }}
-  className="flex items-center gap-1.5"
->
-  <Pencil className="w-3.5 h-3.5" />
-  Editar / Gerenciar
-</Button>
+                <Button
+                  onClick={() => {
+                    setOpenModalDetalhes(false);
+                    navigate({
+                      to: "/_authenticated/notas-fiscais/$id",
+                      params: { id: notaSelecionada.id },
+                    });
+                  }}
+                  className="flex items-center gap-1.5"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Editar / Gerenciar
+                </Button>
               </div>
             </div>
           )}
