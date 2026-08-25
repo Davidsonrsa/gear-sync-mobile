@@ -258,7 +258,9 @@ function CustosPage() {
           .select()
           .single();
 
-        if (!contractErr && newContract) {
+        if (contractErr) throw contractErr;
+
+        if (newContract) {
           const novoObj = {
             id: String(newContract.id),
             nome: newContract.nome_contrato || newContract.nome || nomeContratoFinal,
