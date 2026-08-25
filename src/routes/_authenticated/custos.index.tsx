@@ -137,7 +137,6 @@ function CustosPage() {
 
     let nomeContratoFinal = contratoSelecionado;
 
-    // Se criou um novo contrato via input
     if (isCriandoContrato && novoContratoNome.trim() !== "") {
       nomeContratoFinal = novoContratoNome.trim();
       try {
@@ -282,7 +281,7 @@ function CustosPage() {
       </div>
 
       {/* Filtros */}
-      <Card className="bg-card border shadow-sm">
+      <Card className="bg-white border shadow-sm">
         <CardContent className="p-4 flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2 text-sm font-medium">
             <Filter className="w-4 h-4 text-primary" />
@@ -329,7 +328,7 @@ function CustosPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-l-4 border-l-emerald-500 shadow-sm">
+        <Card className="bg-white border-l-4 border-l-emerald-500 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">
               Receita Bruta
@@ -344,7 +343,7 @@ function CustosPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-amber-500 shadow-sm">
+        <Card className="bg-white border-l-4 border-l-amber-500 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">
               Impostos (Deduções)
@@ -359,7 +358,7 @@ function CustosPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-rose-500 shadow-sm">
+        <Card className="bg-white border-l-4 border-l-rose-500 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">
               Custos / Despesas
@@ -375,7 +374,7 @@ function CustosPage() {
         </Card>
 
         <Card
-          className={`border-l-4 shadow-sm ${
+          className={`bg-white border-l-4 shadow-sm ${
             resumos.resultadoFinal >= 0 ? "border-l-blue-600" : "border-l-red-600"
           }`}
         >
@@ -406,7 +405,7 @@ function CustosPage() {
       </div>
 
       {/* Detalhamento de Custos Operacionais */}
-      <Card className="shadow-sm">
+      <Card className="bg-white shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold uppercase text-muted-foreground">
             Detalhamento de Custos Operacionais
@@ -414,23 +413,23 @@ function CustosPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 text-center">
-            <div className="p-3 bg-muted/40 rounded-lg border">
+            <div className="p-3 bg-white rounded-lg border">
               <span className="text-xs text-muted-foreground block">Mão de Obra</span>
               <span className="text-sm font-bold">{formatBRL(resumos.maoDeObra)}</span>
             </div>
-            <div className="p-3 bg-muted/40 rounded-lg border">
+            <div className="p-3 bg-white rounded-lg border">
               <span className="text-xs text-muted-foreground block">Encargos</span>
               <span className="text-sm font-bold">{formatBRL(resumos.encargos)}</span>
             </div>
-            <div className="p-3 bg-muted/40 rounded-lg border">
+            <div className="p-3 bg-white rounded-lg border">
               <span className="text-xs text-muted-foreground block">Manutenção</span>
               <span className="text-sm font-bold">{formatBRL(resumos.manutencao)}</span>
             </div>
-            <div className="p-3 bg-muted/40 rounded-lg border">
+            <div className="p-3 bg-white rounded-lg border">
               <span className="text-xs text-muted-foreground block">Transporte</span>
               <span className="text-sm font-bold">{formatBRL(resumos.transporte)}</span>
             </div>
-            <div className="p-3 bg-muted/40 rounded-lg border col-span-2 sm:col-span-1">
+            <div className="p-3 bg-white rounded-lg border col-span-2 sm:col-span-1">
               <span className="text-xs text-muted-foreground block">Administrativas</span>
               <span className="text-sm font-bold">{formatBRL(resumos.administrativas)}</span>
             </div>
@@ -439,7 +438,7 @@ function CustosPage() {
       </Card>
 
       {/* Formulário */}
-      <Card className="shadow-sm">
+      <Card className="bg-white shadow-sm">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <PlusCircle className="w-5 h-5 text-primary" />
@@ -573,7 +572,7 @@ function CustosPage() {
       </Card>
 
       {/* Tabela de Lançamentos */}
-      <Card className="shadow-sm">
+      <Card className="bg-white shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Histórico de Lançamentos</CardTitle>
           <span className="text-xs text-muted-foreground">
@@ -585,12 +584,57 @@ function CustosPage() {
             <thead className="bg-muted/50 text-xs uppercase text-muted-foreground border-b">
               <tr>
                 <th className="p-3">Data</th>
-                That means your database or system query executed correctly without any errors, but no data in your dataset met the specific conditions of your request.
-
-**Common reasons for this:**
-* **Filters are too restrictive:** Your `WHERE` clause (or filter settings) might be looking for a combination of criteria that doesn't exist in the data.
-* **Typo in search values:** A misspelled name, incorrect ID number, or wrong date format will prevent matching rows from being found.
-* **Empty table:** The table or dataset you queried might not have any records populated yet.
-* **Case sensitivity:** Searching for `"apple"` might not match `"Apple"` depending on your system's settings.
-
-If you are trying to write or debug a specific database query, feel free to share the statement you used and a basic description of your data, and we can troubleshoot it together.
+                <th className="p-3">Contrato</th>
+                <th className="p-3">Classificação</th>
+                <th className="p-3">Descrição</th>
+                <th className="p-3 text-right">Valor</th>
+                <th className="p-3 text-center">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="p-4 text-center">
+                    <Loader2 className="w-5 h-5 animate-spin mx-auto text-primary" />
+                  </td>
+                </tr>
+              ) : lancamentosFiltrados.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-4 text-center text-muted-foreground">
+                    Nenhum lançamento encontrado.
+                  </td>
+                </tr>
+              ) : (
+                lancamentosFiltrados.map((item) => (
+                  <tr key={item.id} className="border-b hover:bg-muted/30">
+                    <td className="p-3 whitespace-nowrap">{item.data}</td>
+                    <td className="p-3 font-medium">{item.contrato}</td>
+                    <td className="p-3">{item.tipo}</td>
+                    <td className="p-3">{item.descricao}</td>
+                    <td
+                      className={`p-3 text-right font-semibold ${
+                        item.tipo === "Receita" ? "text-emerald-600" : "text-rose-600"
+                      }`}
+                    >
+                      {item.tipo === "Receita" ? "+" : "-"} {formatBRL(item.valor)}
+                    </td>
+                    <td className="p-3 text-center">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
+                        onClick={() => handleDeletar(item.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
