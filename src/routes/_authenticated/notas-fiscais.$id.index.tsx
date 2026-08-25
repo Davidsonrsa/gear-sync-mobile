@@ -42,10 +42,10 @@ type NotaFiscal = {
   venc03: string | null;
   venc04: string | null;
   venc05: string | null;
-  numero_nf?: string;
-  equipamento?: string;
-  emissao?: string;
-  valor_total?: number;
+  numero_nf?: string | null;
+  equipamento?: string | null;
+  emissao?: string | null;
+  valor_total?: number | null;
 };
 
 function dateToInput(value: string | null | undefined) {
