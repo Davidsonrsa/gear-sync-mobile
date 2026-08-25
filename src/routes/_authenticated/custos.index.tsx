@@ -95,27 +95,22 @@ function CustosPage() {
 
   async function fetchContratos() {
     try {
-      const { data, error } = await supabase
-        .from("contratos")
-        .select("*");
+      const { data, error } = await supabase.from("contratos").select("*");
 
-      if (!error && data) {
+      if (error) throw error;
+
+      if (data) {
         const lista: ContratoItem[] = data
-          .map((c: any) => {
-            const nomeEncontrado = c.nome_contrato || c.nome || c.descricao || c.cliente || "";
-            return {
-              id: String(c.id),
-              nome: String(nomeEncontrado).trim(),
-            };
-          })
+          .map((c: any) => ({
+            id: String(c.id),
+            nome: String(c.nome_contrato || c.nome || c.descricao || c.cliente || "").trim(),
+          }))
           .filter((c) => c.nome !== "");
 
         setContratos(lista);
         if (lista.length > 0 && !contratoSelecionado) {
           setContratoSelecionado(lista[0].nome);
         }
-      } else {
-        setContratos([]);
       }
     } catch (err) {
       console.error("Erro ao carregar contratos:", err);
@@ -131,9 +126,11 @@ function CustosPage() {
         .select("*")
         .order("data", { ascending: false });
 
-      if (!error && data) {
+      if (error) throw error;
+
+      if (data) {
         const mappedData: ItemFinanceiro[] = data.map((item: any) => ({
-          id: item.id?.toString() || Math.random().toString(),
+          id: item.id?.toString() || crypto.randomUUID(),
           contrato: item.contrato || "",
           contrato_id: item.contrato_id ? String(item.contrato_id) : undefined,
           tipo: (item.categoria || item.tipo || "Despesas de Manutenção") as TipoLancamento,
@@ -150,18 +147,15 @@ function CustosPage() {
     }
   }
 
-  // Lista unificada e sem duplicados de TODOS os contratos (Cadastrados + Lançados)
   const listaTodosContratos = useMemo(() => {
     const mapaContratos = new Map<string, ContratoItem>();
 
-    // 1. Adiciona do banco (tabela contratos)
     contratos.forEach((c) => {
       if (c.nome && c.nome.trim()) {
         mapaContratos.set(c.nome.trim().toLowerCase(), { id: c.id, nome: c.nome.trim() });
       }
     });
 
-    // 2. Adiciona do histórico de lançamentos
     lancamentos.forEach((l) => {
       if (l.contrato && l.contrato.trim()) {
         const chave = l.contrato.trim().toLowerCase();
@@ -185,16 +179,20 @@ function CustosPage() {
 
     try {
       if (!item.id.startsWith("virtual-")) {
-        await supabase
+        const { error: errContrato } = await supabase
           .from("contratos")
           .update({ nome_contrato: novoNome, nome: novoNome })
           .eq("id", item.id);
+
+        if (errContrato) throw errContrato;
       }
 
-      await supabase
+      const { error: errCustos } = await supabase
         .from("custos")
         .update({ contrato: novoNome })
         .eq("contrato", nomeAntigo);
+
+      if (errCustos) throw errCustos;
 
       setContratos((prev) =>
         prev.map((c) => (c.nome === nomeAntigo ? { ...c, nome: novoNome } : c))
@@ -219,10 +217,12 @@ function CustosPage() {
 
     try {
       if (!item.id.startsWith("virtual-")) {
-        await supabase.from("contratos").delete().eq("id", item.id);
+        const { error: errContratos } = await supabase.from("contratos").delete().eq("id", item.id);
+        if (errContratos) throw errContratos;
       }
 
-      await supabase.from("custos").delete().eq("contrato", item.nome);
+      const { error: errCustos } = await supabase.from("custos").delete().eq("contrato", item.nome);
+      if (errCustos) throw errCustos;
 
       setContratos((prev) => prev.filter((c) => c.nome !== item.nome));
       setLancamentos((prev) => prev.filter((l) => l.contrato !== item.nome));
@@ -273,7 +273,7 @@ function CustosPage() {
     const itemContratoObj = contratos.find((c) => c.nome === nomeContratoFinal);
 
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("custos")
         .insert([
           {
@@ -287,6 +287,8 @@ function CustosPage() {
         ])
         .select()
         .single();
+
+      if (error) throw error;
 
       const idGerado = data?.id?.toString() || Date.now().toString();
 
@@ -309,6 +311,7 @@ function CustosPage() {
       setIsCriandoContrato(false);
       setContratoSelecionado(nomeContratoFinal);
     } catch (err: any) {
+      console.error("Erro ao salvar lançamento:", err);
       setMessage({ type: "error", text: "Erro ao salvar lançamento." });
     } finally {
       setSubmitting(false);
@@ -317,7 +320,9 @@ function CustosPage() {
 
   async function handleDeletar(id: string) {
     try {
-      await supabase.from("custos").delete().eq("id", id);
+      const { error } = await supabase.from("custos").delete().eq("id", id);
+      if (error) throw error;
+
       setLancamentos((prev) => prev.filter((item) => item.id !== id));
     } catch (err) {
       console.error("Erro ao deletar registro:", err);
@@ -400,8 +405,7 @@ function CustosPage() {
         </div>
       </div>
 
-      {/* Painel de Dashboard Estilo Power BI */}
-<DashboardFinanceiro lancamentos={lancamentosFiltrados} />
+      <DashboardFinanceiro lancamentos={lancamentosFiltrados} />
 
       {/* Filtros */}
       <Card className="bg-white border shadow-sm">
