@@ -121,19 +121,19 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
         </label>
         <select
           id="modal-select-contrato"
-  className="flex h-9 w-full md:w-80 rounded-md border border-slate-700 bg-slate-950 px-3 py-1 text-sm text-slate-100 shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
-  value={contratoSelecionado}
-  onChange={(e) => setContratoSelecionado(e.target.value)}
->
-  <option value="TODOS" style={{ backgroundColor: "#020617", color: "#ffffff" }}>
-    Todos os Contratos
-  </option>
-  {listaContratos.map((c) => (
-    <option key={c} value={c} style={{ backgroundColor: "#020617", color: "#ffffff" }}>
-      {c}
-    </option>
-  ))}
-</select>
+          className="flex h-9 w-full md:w-80 rounded-md border border-slate-700 bg-slate-950 px-3 py-1 text-sm text-slate-100 shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          value={contratoSelecionado}
+          onChange={(e) => setContratoSelecionado(e.target.value)}
+        >
+          <option value="TODOS" style={{ backgroundColor: "#020617", color: "#ffffff" }}>
+            Todos os Contratos
+          </option>
+          {listaContratos.map((c) => (
+            <option key={c} value={c} style={{ backgroundColor: "#020617", color: "#ffffff" }}>
+              {c}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Grid KPI + Rosca */}
