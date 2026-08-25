@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ import {
   Building2,
   Truck,
   FileText,
+  Pencil,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/notas-fiscais/")({
@@ -41,6 +42,7 @@ export interface NotaFiscalItem {
 }
 
 function NotasFiscaisPage() {
+  const navigate = useNavigate();
   const [openModalCadastro, setOpenModalCadastro] = useState(false);
   const [openModalDetalhes, setOpenModalDetalhes] = useState(false);
   const [notaSelecionada, setNotaSelecionada] = useState<NotaFiscalItem | null>(null);
@@ -353,7 +355,7 @@ function NotasFiscaisPage() {
               Nova Nota Fiscal
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-lg rounded-2xl">
+          <DialogContent className="sm:max-w-lg rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800">
             <DialogHeader>
               <DialogTitle className="text-lg font-bold">
                 Cadastrar Nova Nota Fiscal
@@ -587,7 +589,7 @@ function NotasFiscaisPage() {
         </button>
       </div>
 
-      {/* Tabela de Notas Otimizada (sem barra de rolagem horizontal) */}
+      {/* Tabela de Notas */}
       <div className="bg-white rounded-xl border border-slate-300 overflow-hidden shadow-xs w-full">
         <table className="w-full text-xs text-left table-fixed">
           <thead className="border-b border-slate-300 text-slate-800 font-bold bg-slate-50">
@@ -651,24 +653,24 @@ function NotasFiscaisPage() {
         </table>
       </div>
 
-      {/* Modal de Detalhes */}
+      {/* Modal de Detalhes Corrigida */}
       <Dialog open={openModalDetalhes} onOpenChange={setOpenModalDetalhes}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
+        <DialogContent className="sm:max-w-md rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold flex items-center gap-2">
-              <FileText className="w-5 h-5 text-slate-700" />
+            <DialogTitle className="text-lg font-bold flex items-center gap-2 text-slate-900 dark:text-slate-100">
+              <FileText className="w-5 h-5 text-slate-700 dark:text-slate-300" />
               Detalhes da Nota #{notaSelecionada?.numero_nf}
             </DialogTitle>
           </DialogHeader>
 
           {notaSelecionada && (
-            <div className="space-y-3 pt-2 text-sm text-slate-700">
-              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div className="space-y-3 pt-2 text-sm text-slate-700 dark:text-slate-300">
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                 <div>
                   <span className="text-xs text-slate-400 block font-medium">
                     Fornecedor
                   </span>
-                  <span className="font-semibold text-slate-800 flex items-center gap-1 mt-0.5">
+                  <span className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1 mt-0.5">
                     <Building2 className="w-3.5 h-3.5 text-slate-500" />
                     {notaSelecionada.fornecedor}
                   </span>
@@ -677,19 +679,19 @@ function NotasFiscaisPage() {
                   <span className="text-xs text-slate-400 block font-medium">
                     Equipamento / Identificação
                   </span>
-                  <span className="font-semibold text-slate-800 flex items-center gap-1 mt-0.5">
+                  <span className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1 mt-0.5">
                     <Truck className="w-3.5 h-3.5 text-slate-500" />
                     {notaSelecionada.equipamento}
                   </span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                 <div>
                   <span className="text-xs text-slate-400 block font-medium">
                     Data de Emissão
                   </span>
-                  <span className="font-semibold text-slate-800 flex items-center gap-1 mt-0.5">
+                  <span className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1 mt-0.5">
                     <Calendar className="w-3.5 h-3.5 text-slate-500" />
                     {formatDate(notaSelecionada.emissao)}
                   </span>
@@ -698,37 +700,48 @@ function NotasFiscaisPage() {
                   <span className="text-xs text-slate-400 block font-medium">
                     Valor Total
                   </span>
-                  <span className="font-bold text-emerald-600 text-base mt-0.5 block">
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 text-base mt-0.5 block">
                     {formatBRL(notaSelecionada.valor_total)}
                   </span>
                 </div>
               </div>
 
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                 <span className="text-xs text-slate-400 block font-medium">
                   Parcelas / Vencimentos
                 </span>
-                <span className="font-semibold text-slate-800 mt-0.5 block">
+                <span className="font-semibold text-slate-800 dark:text-slate-100 mt-0.5 block">
                   {notaSelecionada.parcelas}
                 </span>
               </div>
 
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                 <span className="text-xs text-slate-400 flex items-center gap-1 font-medium">
                   <FileText className="w-3.5 h-3.5 text-slate-500" />
                   Observações
                 </span>
-                <p className="text-sm text-slate-800 mt-1 whitespace-pre-wrap leading-relaxed">
+                <p className="text-sm text-slate-800 dark:text-slate-200 mt-1 whitespace-pre-wrap leading-relaxed">
                   {notaSelecionada.observacao}
                 </p>
               </div>
 
-              <div className="flex justify-end pt-2">
+              {/* Botões de Ação na Modal */}
+              <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="outline"
                   onClick={() => setOpenModalDetalhes(false)}
                 >
                   Fechar
+                </Button>
+                <Button
+                  onClick={() => {
+                    setOpenModalDetalhes(false);
+                    navigate({ to: `/_authenticated/notas-fiscais/$id/`, params: { id: notaSelecionada.id } });
+                  }}
+                  className="flex items-center gap-1.5"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Editar / Gerenciar
                 </Button>
               </div>
             </div>
