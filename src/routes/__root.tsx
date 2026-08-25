@@ -141,10 +141,10 @@ function RootShell({ children }: { children: ReactNode }) {
     </html>
   );
 }
-
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
@@ -156,19 +156,8 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-slate-50 text-slate-900 antialiased flex flex-col">
-        {/* Header Fixo do Topo com o Nome Visível no Mobile */}
-        <header className="w-full bg-[#0f1f3d] text-white px-4 py-3 flex items-center gap-3 border-b border-slate-800 shrink-0 sticky top-0 z-40">
-          <img src="/icon-512.png" alt="Logo" className="h-7 w-7 rounded shrink-0 object-contain" />
-          <span className="text-sm font-bold text-white tracking-wide truncate">
-            GIF - Gestão Integrada de Frotas
-          </span>
-        </header>
-
-        {/* Conteúdo com scroll e margem no rodapé para não encobrir o menu */}
-        <main className="flex-1 pb-20">
-          <Outlet />
-        </main>
+      <div className="min-h-screen bg-slate-50 text-slate-900 antialiased">
+        <Outlet />
       </div>
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
