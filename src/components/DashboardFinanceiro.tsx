@@ -1,16 +1,28 @@
 import { useState, useMemo } from "react";
-import { ItemFinanceiro } from "@/routes/_authenticated/custos/index"; // Ajuste a importação da interface conforme seu projeto
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Filter, TrendingUp, TrendingDown, DollarSign, PieChart as PieChartIcon } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+
+export interface ItemFinanceiro {
+  id: string;
+  contrato: string;
+  contrato_id?: string;
+  tipo: string;
+  descricao: string;
+  valor: number;
+  data: string;
+}
 
 interface DashboardFinanceiroProps {
   lancamentos: ItemFinanceiro[];
 }
 
+const COLORS = ["#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#3B82F6", "#EC4899", "#6366F1"];
+
 export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
   const [contratoSelecionado, setContratoSelecionado] = useState<string>("TODOS");
 
-  // Extrai a lista única de contratos disponíveis nos lançamentos
+  // Lista única de contratos
   const listaContratos = useMemo(() => {
     const mapa = new Set<string>();
     lancamentos.forEach((item) => {
@@ -21,7 +33,7 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
     return Array.from(mapa).sort((a, b) => a.localeCompare(b));
   }, [lancamentos]);
 
-  // Filtra os lançamentos com base no contrato selecionado no Modal
+  // Lançamentos filtrados pelo contrato interno do modal
   const lancamentosFiltrados = useMemo(() => {
     if (contratoSelecionado === "TODOS") return lancamentos;
     return lancamentos.filter(
@@ -29,7 +41,7 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
     );
   }, [lancamentos, contratoSelecionado]);
 
-  // Recalcula os totais para os cards e lista de custos
+  // Cálculos consolidados
   const resumos = useMemo(() => {
     let receita = 0;
     let impostos = 0;
@@ -83,6 +95,19 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
     };
   }, [lancamentosFiltrados]);
 
+  // Dados formatados para o Gráfico de Rosca
+  const pieData = useMemo(() => {
+    const dados = [
+      { name: "Mão de Obra", value: resumos.maoDeObra },
+      { name: "Manutenção", value: resumos.manutencao },
+      { name: "Encargos", value: resumos.encargos },
+      { name: "Transporte", value: resumos.transporte },
+      { name: "Impostos", value: resumos.impostos },
+      { name: "Administrativas", value: resumos.administrativas },
+    ];
+    return dados.filter((d) => d.value > 0);
+  }, [resumos]);
+
   const formatBRL = (val: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -91,78 +116,118 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
   };
 
   return (
-    <div className="space-y-6 pt-2">
-      {/* Selector de Contrato dentro do Dashboard */}
+    <div className="space-y-6 bg-slate-900 p-4 rounded-xl text-white">
+      {/* Filtro por Contrato */}
       <div className="flex items-center gap-3 bg-slate-800 p-3 rounded-lg border border-slate-700">
         <Filter className="w-4 h-4 text-emerald-400" />
-        <label htmlFor="select-contrato-dashboard" className="text-sm font-medium text-slate-200 whitespace-nowrap">
+        <label htmlFor="modal-select-contrato" className="text-sm font-medium text-slate-200 whitespace-nowrap">
           Filtrar por Contrato:
         </label>
         <select
-          id="select-contrato-dashboard"
+          id="modal-select-contrato"
           className="flex h-9 w-full md:w-72 rounded-md border border-slate-700 bg-slate-900 px-3 py-1 text-sm text-white shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
           value={contratoSelecionado}
           onChange={(e) => setContratoSelecionado(e.target.value)}
         >
           <option value="TODOS">Todos os Contratos</option>
-          {listaContratos.map((contrato) => (
-            <option key={contrato} value={contrato}>
-              {contrato}
+          {listaContratos.map((c) => (
+            <option key={c} value={c}>
+              {c}
             </option>
           ))}
         </select>
       </div>
 
-      {/* Cards de Métricas Principais */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-slate-800 border-slate-700 text-white">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold text-slate-400 uppercase">Receita Bruta</CardTitle>
-            <TrendingUp className="w-4 h-4 text-emerald-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-400">{formatBRL(resumos.receita)}</div>
-            <p className="text-xs text-slate-400 mt-1">Entradas acumuladas</p>
-          </CardContent>
-        </Card>
+      {/* Grid com KPIs + Gráfico de Rosca */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Lado Esquerdo: Cards KPI */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:col-span-2">
+          <Card className="bg-slate-800 border-slate-700 text-white">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-semibold text-slate-400 uppercase">Receita Bruta</CardTitle>
+              <TrendingUp className="w-4 h-4 text-emerald-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-emerald-400">{formatBRL(resumos.receita)}</div>
+              <p className="text-xs text-slate-400 mt-1">Entradas acumuladas</p>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-slate-800 border-slate-700 text-white">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold text-slate-400 uppercase">Custos / Despesas</CardTitle>
-            <TrendingDown className="w-4 h-4 text-rose-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-rose-400">{formatBRL(resumos.despesasTotais)}</div>
-            <p className="text-xs text-slate-400 mt-1">Total de saídas</p>
-          </CardContent>
-        </Card>
+          <Card className="bg-slate-800 border-slate-700 text-white">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-semibold text-slate-400 uppercase">Custos / Despesas</CardTitle>
+              <TrendingDown className="w-4 h-4 text-rose-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-rose-400">{formatBRL(resumos.despesasTotais)}</div>
+              <p className="text-xs text-slate-400 mt-1">Total de saídas</p>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-slate-800 border-slate-700 text-white">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold text-slate-400 uppercase">Resultado Final</CardTitle>
-            <DollarSign className={`w-4 h-4 ${resumos.resultadoFinal >= 0 ? "text-blue-400" : "text-rose-400"}`} />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${resumos.resultadoFinal >= 0 ? "text-blue-400" : "text-rose-400"}`}>
-              {formatBRL(resumos.resultadoFinal)}
-            </div>
-            <p className="text-xs text-slate-400 mt-1">Saldo líquido</p>
-          </CardContent>
-        </Card>
+          <Card className="bg-slate-800 border-slate-700 text-white">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-semibold text-slate-400 uppercase">Resultado Final</CardTitle>
+              <DollarSign className={`w-4 h-4 ${resumos.resultadoFinal >= 0 ? "text-blue-400" : "text-rose-400"}`} />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${resumos.resultadoFinal >= 0 ? "text-blue-400" : "text-rose-400"}`}>
+                {formatBRL(resumos.resultadoFinal)}
+              </div>
+              <p className="text-xs text-slate-400 mt-1">Saldo líquido</p>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-slate-800 border-slate-700 text-white">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold text-slate-400 uppercase">Margem Líquida</CardTitle>
-            <PieChartIcon className="w-4 h-4 text-purple-400" />
+          <Card className="bg-slate-800 border-slate-700 text-white">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-semibold text-slate-400 uppercase">Margem Líquida</CardTitle>
+              <PieChartIcon className="w-4 h-4 text-purple-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-400">{resumos.margemLucro.toFixed(1)}%</div>
+              <p className="text-xs text-slate-400 mt-1">Representatividade líquida</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Lado Direito: Gráfico de Rosca */}
+        <Card className="bg-slate-800 border-slate-700 text-white flex flex-col justify-between">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-semibold text-slate-400 uppercase">
+              Distribuição por Tipo de Custo
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-400">{resumos.margemLucro.toFixed(1)}%</div>
-            <p className="text-xs text-slate-400 mt-1">Representatividade líquida</p>
+          <CardContent className="h-64 flex items-center justify-center p-0">
+            {pieData.length === 0 ? (
+              <span className="text-xs text-slate-400">Sem despesas registradas</span>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {pieData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: number) => formatBRL(value)}
+                    contentStyle={{ backgroundColor: "#0F172A", borderColor: "#334155", color: "#FFF" }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: "12px" }} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Detalhamento dos Tipos de Custos */}
+      {/* Detalhamento dos Custos */}
       <Card className="bg-slate-800 border-slate-700 text-white">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold uppercase text-slate-400">
