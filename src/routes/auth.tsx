@@ -50,7 +50,7 @@ function AuthPage() {
                 className="w-full h-full object-contain"
               />
             </div>
-            <h1 className="text-lg font-bold text-center">GIF - Gestão Integrada de Frotas</h1>
+            <h1 className="text-lg font-bold text-center text-black">GIF - Gestão Integrada de Frotas</h1>
             <p className="text-xs text-muted-foreground text-center">
               Acesso restrito aos colaboradores
             </p>
