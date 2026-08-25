@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { DashboardFinanceiro } from "@/components/DashboardFinanceiro";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -184,14 +185,12 @@ function CustosPage() {
 
     try {
       if (!item.id.startsWith("virtual-")) {
-        // Tenta atualizar no banco contratos
         await supabase
           .from("contratos")
           .update({ nome_contrato: novoNome, nome: novoNome })
           .eq("id", item.id);
       }
 
-      // Atualiza na tabela de custos
       await supabase
         .from("custos")
         .update({ contrato: novoNome })
@@ -400,6 +399,9 @@ function CustosPage() {
           </p>
         </div>
       </div>
+
+      {/* Painel de Dashboard Estilo Power BI */}
+      <DashboardFinanceiro />
 
       {/* Filtros */}
       <Card className="bg-white border shadow-sm">
