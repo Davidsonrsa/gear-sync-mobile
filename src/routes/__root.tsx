@@ -109,18 +109,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", type: "image/png", href: "/icon-512.png" },
       { rel: "apple-touch-icon", href: "/icon-512.png" },
     ],
-    // Adicionado style para esconder a badge do Lovable
-    style: [
-      {
-        children: `
-          [class*="lovable-badge"],
-          [id*="lovable-badge"],
-          div[style*="z-index: 2147483647"] {
-            display: none !important;
-          }
-        `,
-      },
-    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -134,17 +122,18 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
+      {/* Adicione a classe bg-gray-100 direta no body */}
+      <body className="min-h-screen bg-gray-100 text-gray-900 antialiased">
         {children}
         <Scripts />
       </body>
     </html>
   );
 }
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
-
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
@@ -153,12 +142,12 @@ function RootComponent() {
     });
     return () => sub.subscription.unsubscribe();
   }, [router, queryClient]);
-
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-slate-50 text-slate-900 antialiased">
-        <Outlet />
-      </div>
+      {/* Wrapper com fundo cinza claro para toda a aplicação */}
+     <div className="min-h-screen bg-gray-100 text-gray-900 antialiased">
+  <Outlet />
+</div>
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
   );
