@@ -31,9 +31,15 @@ export type TipoLancamento =
   | "Despesas de Transporte"
   | "Despesas Administrativas";
 
+export interface ContratoItem {
+  id: string;
+  nome: string;
+}
+
 export interface ItemFinanceiro {
   id: string;
   contrato: string;
+  contrato_id?: string;
   tipo: TipoLancamento;
   descricao: string;
   valor: number;
@@ -42,12 +48,16 @@ export interface ItemFinanceiro {
 
 function CustosPage() {
   const [lancamentos, setLancamentos] = useState<ItemFinanceiro[]>([]);
+  const [contratos, setContratos] = useState<ContratoItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Form states
-  const [contrato, setContrato] = useState("Contrato Padrão - Frota");
+  const [contratoSelecionado, setContratoSelecionado] = useState<string>("Contrato Padrão - Frota");
+  const [novoContratoNome, setNovoContratoNome] = useState<string>("");
+  const [isCriandoContrato, setIsCriandoContrato] = useState<boolean>(false);
+  
   const [tipo, setTipo] = useState<TipoLancamento>("Despesas de Manutenção");
   const [description, setDescription] = useState("");
   const [value, setValue] = useState("");
@@ -57,7 +67,6 @@ function CustosPage() {
   const [filtroMes, setFiltroMes] = useState<string>("TODOS");
   const [filtroContrato, setFiltroContrato] = useState<string>("TODOS");
 
-  // Format currency R$
   const formatBRL = (val: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -65,10 +74,27 @@ function CustosPage() {
     }).format(val);
   };
 
-  // Carregar dados
   useEffect(() => {
+    fetchContratos();
     fetchData();
   }, []);
+
+  async function fetchContratos() {
+    try {
+      const { data, error } = await supabase
+        .from("contratos")
+        .select("id, nome_contrato")
+        .order("nome_contrato");
+
+      if (!error && data && data.length > 0) {
+        setContratos(data.map((c: any) => ({ id: c.id, nome: c.nome_contrato })));
+      } else {
+        setContratos([{ id: "default", nome: "Contrato Padrão - Frota" }]);
+      }
+    } catch (err) {
+      setContratos([{ id: "default", nome: "Contrato Padrão - Frota" }]);
+    }
+  }
 
   async function fetchData() {
     setLoading(true);
@@ -78,19 +104,20 @@ function CustosPage() {
         .select("*")
         .order("data", { ascending: false });
 
-      if (!error && data && data.length > 0) {
-        const MappedData: ItemFinanceiro[] = data.map((item: any) => ({
+      if (!error && data) {
+        const mappedData: ItemFinanceiro[] = data.map((item: any) => ({
           id: item.id?.toString() || Math.random().toString(),
           contrato: item.contrato || "Contrato Padrão - Frota",
+          contrato_id: item.contrato_id,
           tipo: (item.categoria || item.tipo || "Despesas de Manutenção") as TipoLancamento,
           descricao: item.descricao || "",
           valor: Number(item.valor) || 0,
           data: item.data || new Date().toISOString().split("T")[0],
         }));
-        setLancamentos(MappedData);
+        setLancamentos(mappedData);
       }
     } catch (err) {
-      console.log("Serviço remoto não configurado para schema estendido, usando controle local.", err);
+      console.error("Erro ao carregar lançamentos:", err);
     } finally {
       setLoading(false);
     }
@@ -108,67 +135,88 @@ function CustosPage() {
       return;
     }
 
-    const novoItem: ItemFinanceiro = {
-      id: Date.now().toString(),
-      contrato,
-      tipo,
-      descricao: description,
-      valor: numValue,
-      data: date,
-    };
+    let nomeContratoFinal = contratoSelecionado;
+
+    // Se criou um novo contrato via input
+    if (isCriandoContrato && novoContratoNome.trim() !== "") {
+      nomeContratoFinal = novoContratoNome.trim();
+      try {
+        const { data: newContract, error: contractErr } = await supabase
+          .from("contratos")
+          .insert([{ nome_contrato: nomeContratoFinal }])
+          .select()
+          .single();
+
+        if (!contractErr && newContract) {
+          setContratos((prev) => [...prev, { id: newContract.id, nome: newContract.nome_contrato }]);
+        }
+      } catch (err) {
+        console.warn("Não foi possível salvar novo contrato no banco:", err);
+      }
+    }
+
+    const itemContratoObj = contratos.find((c) => c.nome === nomeContratoFinal);
 
     try {
-      // Tentar salvar no Supabase
-      const { error } = await supabase.from("custos").insert([
-        {
-          contrato,
-          categoria: tipo,
-          descricao: description,
-          valor: numValue,
-          data: date,
-        },
-      ]);
+      const { data, error } = await supabase
+        .from("custos")
+        .insert([
+          {
+            contrato: nomeContratoFinal,
+            contrato_id: itemContratoObj?.id !== "default" ? itemContratoObj?.id : null,
+            categoria: tipo,
+            descricao: description,
+            valor: numValue,
+            data: date,
+          },
+        ])
+        .select()
+        .single();
 
-      if (error) {
-        console.warn("Registrado no estado visual por incompatibilidade de schema no Supabase:", error.message);
-      }
+      const idGerado = data?.id?.toString() || Date.now().toString();
+
+      const novoItem: ItemFinanceiro = {
+        id: idGerado,
+        contrato: nomeContratoFinal,
+        tipo,
+        descricao: description,
+        valor: numValue,
+        data: date,
+      };
+
+      setLancamentos((prev) => [novoItem, ...prev]);
+      setMessage({ type: "success", text: "Lançamento registrado com sucesso!" });
       
-      setLancamentos((prev) => [novoItem, ...prev]);
-      setMessage({ type: "success", text: "Lançamento registrado com sucesso!" });
       setDescription("");
       setValue("");
+      setNovoContratoNome("");
+      setIsCriandoContrato(false);
+      setContratoSelecionado(nomeContratoFinal);
     } catch (err: any) {
-      setLancamentos((prev) => [novoItem, ...prev]);
-      setMessage({ type: "success", text: "Lançamento registrado com sucesso!" });
-      setDescription("");
-      setValue("");
+      setMessage({ type: "error", text: "Erro ao salvar lançamento." });
     } finally {
       setSubmitting(false);
     }
   }
 
-  const handleDeletar = (id: string) => {
-    setLancamentos((prev) => prev.filter((item) => item.id !== id));
-  };
+  async function handleDeletar(id: string) {
+    try {
+      await supabase.from("custos").delete().eq("id", id);
+      setLancamentos((prev) => prev.filter((item) => item.id !== id));
+    } catch (err) {
+      console.error("Erro ao deletar registro:", err);
+    }
+  }
 
-  // Lista de Contratos Únicos para Filtro
-  const contratosDisponiveis = useMemo(() => {
-    const setC = new Set(lancamentos.map((item) => item.contrato));
-    if (!setC.has("Contrato Padrão - Frota")) setC.add("Contrato Padrão - Frota");
-    return Array.from(setC);
-  }, [lancamentos]);
-
-  // Filtragem Dinâmica
   const lancamentosFiltrados = useMemo(() => {
     return lancamentos.filter((item) => {
-      const mesItem = item.data.substring(0, 7); // AAAA-MM
+      const mesItem = item.data.substring(0, 7);
       const matchMes = filtroMes === "TODOS" || mesItem === filtroMes;
       const matchContrato = filtroContrato === "TODOS" || item.contrato === filtroContrato;
       return matchMes && matchContrato;
     });
   }, [lancamentos, filtroMes, filtroContrato]);
 
-  // Cálculos do Dashboard Financial
   const resumos = useMemo(() => {
     let receita = 0;
     let impostos = 0;
@@ -204,8 +252,7 @@ function CustosPage() {
       }
     });
 
-    const despesasTotais =
-      impostos + maoDeObra + encargos + manutencao + transporte + administrativas;
+    const despesasTotais = impostos + maoDeObra + encargos + manutencao + transporte + administrativas;
     const resultadoFinal = receita - despesasTotais;
     const margemLucro = receita > 0 ? (resultadoFinal / receita) * 100 : 0;
 
@@ -225,7 +272,6 @@ function CustosPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
-      {/* Cabeçalho */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Gestão Financeira de Contratos</h1>
@@ -235,7 +281,7 @@ function CustosPage() {
         </div>
       </div>
 
-      {/* Barra de Filtros */}
+      {/* Filtros */}
       <Card className="bg-card border shadow-sm">
         <CardContent className="p-4 flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2 text-sm font-medium">
@@ -271,9 +317,9 @@ function CustosPage() {
               onChange={(e) => setFiltroContrato(e.target.value)}
             >
               <option value="TODOS">Todos os Contratos</option>
-              {contratosDisponiveis.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              {contratos.map((c) => (
+                <option key={c.id} value={c.nome}>
+                  {c.nome}
                 </option>
               ))}
             </select>
@@ -281,9 +327,8 @@ function CustosPage() {
         </CardContent>
       </Card>
 
-      {/* DASHBOARD - Cards de Indicadores (KPIs) */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Receita Bruta */}
         <Card className="border-l-4 border-l-emerald-500 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">
@@ -299,7 +344,6 @@ function CustosPage() {
           </CardContent>
         </Card>
 
-        {/* Card 2: Total de Impostos */}
         <Card className="border-l-4 border-l-amber-500 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">
@@ -315,7 +359,6 @@ function CustosPage() {
           </CardContent>
         </Card>
 
-        {/* Card 3: Total Custos e Despesas */}
         <Card className="border-l-4 border-l-rose-500 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">
@@ -331,7 +374,6 @@ function CustosPage() {
           </CardContent>
         </Card>
 
-        {/* Card 4: Resultado Final (Lucro/Prejuízo) */}
         <Card
           className={`border-l-4 shadow-sm ${
             resumos.resultadoFinal >= 0 ? "border-l-blue-600" : "border-l-red-600"
@@ -363,7 +405,7 @@ function CustosPage() {
         </Card>
       </div>
 
-      {/* Detalhamento de Custos Por Categoria */}
+      {/* Detalhamento de Custos Operacionais */}
       <Card className="shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold uppercase text-muted-foreground">
@@ -396,7 +438,7 @@ function CustosPage() {
         </CardContent>
       </Card>
 
-      {/* Form de Novo Lançamento */}
+      {/* Formulário */}
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
@@ -420,17 +462,41 @@ function CustosPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="contrato" className="flex items-center gap-1">
-                  <Briefcase className="w-3.5 h-3.5 text-muted-foreground" /> Contrato
-                </Label>
-                <Input
-                  id="contrato"
-                  type="text"
-                  placeholder="Ex: Obra Mafra - Contrato 01"
-                  value={contrato}
-                  onChange={(e) => setContrato(e.target.value)}
-                  required
-                />
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="contrato" className="flex items-center gap-1">
+                    <Briefcase className="w-3.5 h-3.5 text-muted-foreground" /> Contrato
+                  </Label>
+                  <button
+                    type="button"
+                    onClick={() => setIsCriandoContrato(!isCriandoContrato)}
+                    className="text-xs text-primary underline focus:outline-none"
+                  >
+                    {isCriandoContrato ? "Selecionar Existente" : "+ Criar Novo"}
+                  </button>
+                </div>
+
+                {isCriandoContrato ? (
+                  <Input
+                    type="text"
+                    placeholder="Ex: Contrato Obra 02"
+                    value={novoContratoNome}
+                    onChange={(e) => setNovoContratoNome(e.target.value)}
+                    required
+                  />
+                ) : (
+                  <select
+                    id="contrato"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    value={contratoSelecionado}
+                    onChange={(e) => setContratoSelecionado(e.target.value)}
+                  >
+                    {contratos.map((c) => (
+                      <option key={c.id} value={c.nome}>
+                        {c.nome}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -506,7 +572,7 @@ function CustosPage() {
         </CardContent>
       </Card>
 
-      {/* Tabela de Histórico / Lançamentos */}
+      {/* Tabela de Lançamentos */}
       <Card className="shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Histórico de Lançamentos</CardTitle>
@@ -519,70 +585,12 @@ function CustosPage() {
             <thead className="bg-muted/50 text-xs uppercase text-muted-foreground border-b">
               <tr>
                 <th className="p-3">Data</th>
-                <th className="p-3">Contrato</th>
-                <th className="p-3">Classificação</th>
-                <th className="p-3">Descrição</th>
-                <th className="p-3 text-right">Valor (R$)</th>
-                <th className="p-3 text-center">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {lancamentosFiltrados.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-6 text-center text-muted-foreground">
-                    Nenhum lançamento encontrado para os filtros selecionados.
-                  </td>
-                </tr>
-              ) : (
-                lancamentosFiltrados.map((item) => {
-                  const isReceita = item.tipo === "Receita";
-                  return (
-                    <tr key={item.id} className="hover:bg-muted/30">
-                      <td className="p-3 whitespace-nowrap">
-                        {new Date(item.data + "T00:00:00").toLocaleDateString("pt-BR")}
-                      </td>
-                      <td className="p-3 font-medium">{item.contrato}</td>
-                      <td className="p-3">
-                        <span
-                          className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
-                            isReceita
-                              ? "bg-emerald-100 text-emerald-800"
-                              : item.tipo === "Impostos"
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-slate-100 text-slate-800"
-                          }`}
-                        >
-                          {item.tipo}
-                        </span>
-                      </td>
-                      <td className="p-3">{item.descricao}</td>
-                      <td
-                        className={`p-3 text-right font-semibold whitespace-nowrap ${
-                          isReceita ? "text-emerald-600" : "text-rose-600"
-                        }`}
-                      >
-                        {isReceita ? "+" : "-"} {formatBRL(item.valor)}
-                      </td>
-                      <td className="p-3 text-center">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
-                          onClick={() => handleDeletar(item.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+                That means your database or system query executed correctly without any errors, but no data in your dataset met the specific conditions of your request.
 
-export default CustosPage;
+**Common reasons for this:**
+* **Filters are too restrictive:** Your `WHERE` clause (or filter settings) might be looking for a combination of criteria that doesn't exist in the data.
+* **Typo in search values:** A misspelled name, incorrect ID number, or wrong date format will prevent matching rows from being found.
+* **Empty table:** The table or dataset you queried might not have any records populated yet.
+* **Case sensitivity:** Searching for `"apple"` might not match `"Apple"` depending on your system's settings.
+
+If you are trying to write or debug a specific database query, feel free to share the statement you used and a basic description of your data, and we can troubleshoot it together.
