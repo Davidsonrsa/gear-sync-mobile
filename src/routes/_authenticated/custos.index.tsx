@@ -181,7 +181,7 @@ function CustosPage() {
       if (!item.id.startsWith("virtual-")) {
         const { error: errContrato } = await supabase
           .from("contratos")
-          .update({ nome_contrato: novoNome, nome: novoNome })
+          .update({ nome_contrato: novoNome })
           .eq("id", item.id);
 
         if (errContrato) throw errContrato;
