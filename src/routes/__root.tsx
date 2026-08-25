@@ -144,9 +144,9 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Wrapper com fundo cinza claro para toda a aplicação */}
-      <div className="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased">
-        <Outlet />
-      </div>
+     <div className="min-h-screen bg-gray-100 text-gray-900 antialiased">
+  <Outlet />
+</div>
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
   );
