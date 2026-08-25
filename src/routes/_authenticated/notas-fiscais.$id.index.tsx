@@ -1,6 +1,6 @@
+import React, { useState, useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,11 +10,6 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
-import { createFileRoute } from "@tanstack/react-router";
-
-export const Route = createFileRoute("/_authenticated/notas-fiscais/$id")({
-  component: NotaFiscalDetail,
-});
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +41,10 @@ type NotaFiscal = {
   venc03: string | null;
   venc04: string | null;
   venc05: string | null;
+  numero_nf?: string;
+  equipamento?: string;
+  emissao?: string;
+  valor_total?: number;
 };
 
 function formatDate(value: string | null) {
@@ -55,7 +54,7 @@ function formatDate(value: string | null) {
   return `${day}/${month}/${year}`;
 }
 
-function dateToInput(value: string | null) {
+function dateToInput(value: string | null | undefined) {
   return value ?? "";
 }
 
@@ -92,8 +91,8 @@ function NotaFiscalDetail() {
     },
   });
 
-  // Atualiza o estado do formulário sempre que os dados da nota forem carregados
-  React.useEffect(() => {
+  // Atualiza os dados do formulário quando a consulta finalizar
+  useEffect(() => {
     if (nota) {
       setFormData(nota);
     }
