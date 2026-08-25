@@ -788,10 +788,7 @@ function NotasFiscaisPage() {
                 <Button
                   onClick={() => {
                     setOpenModalDetalhes(false);
-                    navigate({
-                      to: "/_authenticated/notas-fiscais/$id",
-                      params: { id: notaSelecionada.id },
-                    });
+                   navigate({ to: "/notas-fiscais/$id", params: { id: nota.id } });
                   }}
                   className="flex items-center gap-1.5"
                 >
