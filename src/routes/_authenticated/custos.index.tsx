@@ -405,9 +405,23 @@ function CustosPage() {
             Acompanhamento de receitas, impostos, custos operacionais e resultado líquido.
           </p>
         </div>
-      </div>
 
-      <DashboardFinanceiro lancamentos={lancamentosFiltrados} />
+        {/* Opção 1: Botão para abrir o Dashboard em Modal */}
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-primary" />
+              Ver Dashboard Financeiro
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-5xl bg-slate-900 border-slate-800 text-white p-6 max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-white">Painel de Desempenho Financeiro</DialogTitle>
+            </DialogHeader>
+            <DashboardFinanceiro lancamentos={lancamentosFiltrados} />
+          </DialogContent>
+        </Dialog>
+      </div>
 
       {/* Filtros */}
       <Card className="bg-white border shadow-sm">
