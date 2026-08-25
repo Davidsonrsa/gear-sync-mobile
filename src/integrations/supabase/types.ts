@@ -14,6 +14,118 @@ export type Database = {
   }
   public: {
     Tables: {
+      contrato_custos: {
+        Row: {
+          cl: string
+          contrato_id: string | null
+          created_at: string | null
+          custo_mao_obra: number | null
+          custo_materiais: number | null
+          custo_terceiros: number | null
+          despesas_adm: number | null
+          faturamento_bruto: number | null
+          id: string
+          impostos: number | null
+          mes_referencia: string
+        }
+        Insert: {
+          cl: string
+          contrato_id?: string | null
+          created_at?: string | null
+          custo_mao_obra?: number | null
+          custo_materiais?: number | null
+          custo_terceiros?: number | null
+          despesas_adm?: number | null
+          faturamento_bruto?: number | null
+          id?: string
+          impostos?: number | null
+          mes_referencia: string
+        }
+        Update: {
+          cl?: string
+          contrato_id?: string | null
+          created_at?: string | null
+          custo_mao_obra?: number | null
+          custo_materiais?: number | null
+          custo_terceiros?: number | null
+          despesas_adm?: number | null
+          faturamento_bruto?: number | null
+          id?: string
+          impostos?: number | null
+          mes_referencia?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contrato_custos_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contratos: {
+        Row: {
+          cl: string | null
+          created_at: string | null
+          id: string
+          nome_contrato: string
+        }
+        Insert: {
+          cl?: string | null
+          created_at?: string | null
+          id?: string
+          nome_contrato: string
+        }
+        Update: {
+          cl?: string | null
+          created_at?: string | null
+          id?: string
+          nome_contrato?: string
+        }
+        Relationships: []
+      }
+      custos: {
+        Row: {
+          categoria: string
+          contrato: string | null
+          contrato_id: string | null
+          created_at: string | null
+          data: string
+          descricao: string | null
+          id: string
+          valor: number
+        }
+        Insert: {
+          categoria: string
+          contrato?: string | null
+          contrato_id?: string | null
+          created_at?: string | null
+          data: string
+          descricao?: string | null
+          id?: string
+          valor: number
+        }
+        Update: {
+          categoria?: string
+          contrato?: string | null
+          contrato_id?: string | null
+          created_at?: string | null
+          data?: string
+          descricao?: string | null
+          id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custos_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipamento_fotos: {
         Row: {
           caption: string | null
@@ -48,6 +160,13 @@ export type Database = {
             columns: ["equipamento_id"]
             isOneToOne: false
             referencedRelation: "equipamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipamento_fotos_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "tacografos_vencimentos"
             referencedColumns: ["id"]
           },
           {
@@ -248,10 +367,18 @@ export type Database = {
             referencedRelation: "equipamentos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "manutencao_historico_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "tacografos_vencimentos"
+            referencedColumns: ["id"]
+          },
         ]
       }
       notas_fiscais: {
         Row: {
+          cl: string | null
           created_at: string
           created_by: string | null
           data: string | null
@@ -260,7 +387,7 @@ export type Database = {
           fornecedor: string | null
           id: string
           identificacao: string | null
-          nf: string
+          nf: string | null
           observacao: string | null
           updated_at: string
           valor: number | null
@@ -271,6 +398,7 @@ export type Database = {
           venc05: string | null
         }
         Insert: {
+          cl?: string | null
           created_at?: string
           created_by?: string | null
           data?: string | null
@@ -279,7 +407,7 @@ export type Database = {
           fornecedor?: string | null
           id?: string
           identificacao?: string | null
-          nf: string
+          nf?: string | null
           observacao?: string | null
           updated_at?: string
           valor?: number | null
@@ -290,6 +418,7 @@ export type Database = {
           venc05?: string | null
         }
         Update: {
+          cl?: string | null
           created_at?: string
           created_by?: string | null
           data?: string | null
@@ -298,7 +427,7 @@ export type Database = {
           fornecedor?: string | null
           id?: string
           identificacao?: string | null
-          nf?: string
+          nf?: string | null
           observacao?: string | null
           updated_at?: string
           valor?: number | null
@@ -314,6 +443,13 @@ export type Database = {
             columns: ["equipamento_id"]
             isOneToOne: false
             referencedRelation: "equipamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_fiscais_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "tacografos_vencimentos"
             referencedColumns: ["id"]
           },
         ]
@@ -347,6 +483,60 @@ export type Database = {
           visualizar?: boolean
         }
         Relationships: []
+      }
+      notificacoes: {
+        Row: {
+          created_at: string
+          data_vencimento: string | null
+          dias: number | null
+          equipamento_id: string | null
+          id: string
+          lida: boolean
+          mensagem: string
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_vencimento?: string | null
+          dias?: number | null
+          equipamento_id?: string | null
+          id?: string
+          lida?: boolean
+          mensagem: string
+          tipo: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_vencimento?: string | null
+          dias?: number | null
+          equipamento_id?: string | null
+          id?: string
+          lida?: boolean
+          mensagem?: string
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificacoes_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "equipamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notificacoes_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "tacografos_vencimentos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -425,11 +615,68 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      seguros_alerta: {
+        Row: {
+          data_vencimento: string | null
+          dias_para_vencer: number | null
+          id: string | null
+          seguradora: string | null
+          status_alerta: string | null
+          veiculo_equipamento: string | null
+        }
+        Insert: {
+          data_vencimento?: string | null
+          dias_para_vencer?: never
+          id?: string | null
+          seguradora?: string | null
+          status_alerta?: never
+          veiculo_equipamento?: string | null
+        }
+        Update: {
+          data_vencimento?: string | null
+          dias_para_vencer?: never
+          id?: string | null
+          seguradora?: string | null
+          status_alerta?: never
+          veiculo_equipamento?: string | null
+        }
+        Relationships: []
+      }
+      tacografos_vencimentos: {
+        Row: {
+          data_vencimento: string | null
+          dias: number | null
+          id: string | null
+          identificacao: string | null
+          numero: string | null
+          situacao: string | null
+          valor_original: string | null
+        }
+        Insert: {
+          data_vencimento?: never
+          dias?: never
+          id?: string | null
+          identificacao?: string | null
+          numero?: string | null
+          situacao?: never
+          valor_original?: string | null
+        }
+        Update: {
+          data_vencimento?: never
+          dias?: never
+          id?: string | null
+          identificacao?: string | null
+          numero?: string | null
+          situacao?: never
+          valor_original?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_manage_notas_fiscais: { Args: never; Returns: boolean }
       can_view_notas_fiscais: { Args: never; Returns: boolean }
+      gerar_notificacoes_tacografos: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
