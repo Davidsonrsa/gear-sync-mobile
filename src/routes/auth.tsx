@@ -39,81 +39,83 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-slate-100 text-slate-900">
-      <div className="flex-1 flex items-center justify-center p-6">
-        <Card className="w-full max-w-sm p-6 bg-white text-slate-900 shadow-2xl border border-slate-200">
-          <div className="flex flex-col items-center gap-3 mb-6">
-            <div className="w-28 h-28 rounded-2xl bg-white p-2 shadow-lg flex items-center justify-center overflow-hidden border border-slate-100">
-              <img
-                src="/logo SPX MAFRA JHM.png"
-                alt="SPH JHM Mafra"
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <h1 className="text-lg font-bold text-center text-slate-900">GIF - Gestão Integrada de Frotas</h1>
-            <p className="text-xs text-slate-500 text-center">
-              Acesso restrito aos colaboradores
-            </p>
+    /* Fundo geral azul escuro */
+    <div className="min-h-[100dvh] flex flex-col bg-[#0d47a1] text-slate-900 justify-center items-center p-4">
+      <Card className="w-full max-w-sm p-6 bg-white rounded-2xl shadow-2xl border-0">
+        <div className="flex flex-col items-center gap-2 mb-6">
+          <div className="w-24 h-24 rounded-2xl bg-white p-2 shadow-md flex items-center justify-center overflow-hidden border border-slate-100">
+            <img
+              src="/logo SPX MAFRA JHM.png"
+              alt="SPH JHM Mafra"
+              className="w-full h-full object-contain"
+            />
           </div>
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <Label htmlFor="mat" className="text-slate-800 font-medium">Matrícula</Label>
-              <Input
-                id="mat"
-                inputMode="text"
-                autoCapitalize="characters"
-                autoComplete="username"
-                required
-                value={mat}
-                onChange={(e) => setMat(e.target.value)}
-                className="mt-1 uppercase text-slate-900 bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                placeholder="Ex: 12345"
-              />
-            </div>
-            <div>
-              <Label htmlFor="password" className="text-slate-800 font-medium">Senha</Label>
-              <div className="relative mt-1">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pr-10 text-slate-900 bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors"
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-            <Button 
-              type="submit" 
-              disabled={loading} 
-              className="w-full h-11 text-base font-semibold bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-sm"
-            >
-              {loading ? "Entrando..." : "Entrar"}
-            </Button>
-          </form>
-          
-          <p className="mt-6 text-[11px] text-slate-500 text-center">
-            Sem acesso? Peça sua matrícula ao administrador.
+          <h1 className="text-base font-bold text-center text-slate-900">GIF - Gestão Integrada de Frotas</h1>
+          <p className="text-xs text-slate-500 text-center">
+            Acesso restrito aos colaboradores
           </p>
+        </div>
 
-          <div className="mt-4 pt-4 border-t border-slate-200 text-center">
-            <p className="text-[11px] text-slate-500">
-              📱 Para instalar no celular: abra este link no <b>Chrome</b> (Android) ou{" "}
-              <b>Safari</b> (iPhone) e use <b>"Adicionar à tela inicial"</b>.
-            </p>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <Label htmlFor="mat" className="text-xs font-semibold text-slate-700">Matrícula</Label>
+            <Input
+              id="mat"
+              inputMode="text"
+              autoCapitalize="characters"
+              autoComplete="username"
+              required
+              value={mat}
+              onChange={(e) => setMat(e.target.value)}
+              className="mt-1 uppercase text-slate-900 bg-white border border-slate-200 rounded-lg focus:border-blue-600 h-10"
+              placeholder="EX: 12345"
+            />
           </div>
-        </Card>
-      </div>
+
+          <div>
+            <Label htmlFor="password" className="text-xs font-semibold text-slate-700">Senha</Label>
+            <div className="relative mt-1">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pr-10 text-slate-900 bg-white border border-slate-200 rounded-lg focus:border-blue-600 h-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Botão com fundo azul escuro corporativo */}
+          <Button 
+            type="submit" 
+            disabled={loading} 
+            className="w-full h-11 text-sm font-semibold !bg-[#003b73] !text-white hover:!bg-[#002d59] transition-colors rounded-lg shadow-sm mt-2"
+          >
+            {loading ? "Entrando..." : "Entrar"}
+          </Button>
+        </form>
+
+        <p className="mt-5 text-[11px] text-slate-400 text-center">
+          Sem acesso? Peça sua matrícula ao administrador.
+        </p>
+
+        <div className="mt-4 pt-4 border-t border-slate-100 text-center">
+          <p className="text-[10px] text-slate-400 leading-relaxed">
+            📱 Para instalar no celular: abra este link no <b>Chrome</b> (Android) ou{" "}
+            <b>Safari</b> (iPhone) e use <b>"Adicionar à tela inicial"</b>.
+          </p>
+        </div>
+      </Card>
     </div>
   );
 }
