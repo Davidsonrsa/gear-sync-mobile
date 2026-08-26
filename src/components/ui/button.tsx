@@ -4,14 +4,14 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        // Cor do botão Salvar
+        // Botão Salvar (Azul com texto/ícone branco)
         default:
-          "bg-green-600 text-white shadow hover:bg-green-700 active:bg-green-800",
-        // Cor do botão Lixeira / Excluir
+          "bg-blue-600 text-white shadow hover:bg-blue-700 active:bg-blue-800",
+        // Botões Deletar / Limpar / Excluir (Vermelho com texto/ícone branco)
         destructive:
           "bg-red-600 text-white shadow-sm hover:bg-red-700 active:bg-red-800",
         outline:
