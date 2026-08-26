@@ -264,7 +264,7 @@ function Usuarios() {
             type="button"
             onClick={() => m.mutate()}
             disabled={m.isPending}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+           className="w-full font-semibold"
           >
             {m.isPending
               ? "Criando..."
