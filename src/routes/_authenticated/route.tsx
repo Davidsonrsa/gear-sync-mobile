@@ -48,11 +48,11 @@ function AuthenticatedLayout() {
     <div className="min-h-[100dvh] flex flex-col bg-background pb-20 md:pb-8">
       <header className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
         <div
-          className="px-4 py-3 flex items-center gap-4 md:max-w-7xl md:mx-auto md:w-full md:px-6"
+          className="px-4 py-3 flex items-center gap-3 md:max-w-7xl md:mx-auto md:w-full md:px-6"
           style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
         >
           {/* Logo */}
-          <div className="w-10 h-10 md:w-11 md:h-11 rounded-lg bg-white p-0.5 shrink-0 flex items-center justify-center overflow-hidden border border-gray-100 shadow-sm">
+          <div className="w-10 h-10 md:w-11 md:h-11 rounded-lg bg-white p-0.5 shrink-0 flex items-center justify-center overflow-hidden border border-gray-200 shadow-sm">
             <img
               src="/logo SPX MAFRA JHM.png"
               alt="SPH JHM Mafra"
@@ -60,70 +60,70 @@ function AuthenticatedLayout() {
             />
           </div>
 
-          {/* Título do App */}
+          {/* Nome e Perfil */}
           <div className="flex-1 min-w-0">
-            <h1 className="text-base md:text-lg font-bold leading-tight truncate text-gray-900">
+            <h1 className="text-base md:text-lg font-bold leading-tight truncate text-slate-900">
               GIF - Gestão Integrada de Frotas
             </h1>
-            <p className="text-[11px] md:text-xs text-gray-500 truncate font-medium">
+            <p className="text-[11px] md:text-xs text-slate-500 truncate font-semibold">
               {fullName || "—"} · {isAdmin ? "Admin" : "Colaborador"}
             </p>
           </div>
 
-          {/* Desktop nav */}
+          {/* Menu Desktop com cores explícitas e bordas visíveis */}
           <nav className="hidden md:flex items-center gap-2 shrink-0">
-            {/* Botão EQUIPAMENTOS */}
+            {/* EQUIPAMENTOS */}
             <Link
               to="/equipamentos"
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold tracking-wide border-2 transition-all ${
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-bold tracking-wide border-2 transition-all ${
                 isEquipamentosRoute
-                  ? "bg-white text-gray-900 border-gray-300 shadow-md scale-105"
-                  : "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:border-blue-700 shadow-sm"
+                  ? "bg-slate-900 text-white border-slate-900 shadow-md scale-105"
+                  : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 hover:text-slate-900 hover:border-slate-400"
               }`}
             >
-              <List className="w-4 h-4" />
+              <List className="w-4 h-4 shrink-0" />
               <span>EQUIPAMENTOS</span>
             </Link>
 
-            {/* Botão NOTAS FISCAIS */}
+            {/* NOTAS FISCAIS */}
             {canAccessNotasFiscais && (
               <Link
                 to="/notas-fiscais"
-                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold tracking-wide border-2 transition-all ${
+                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-bold tracking-wide border-2 transition-all ${
                   isNotasRoute
-                    ? "bg-white text-gray-900 border-gray-300 shadow-md scale-105"
-                    : "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:border-blue-700 shadow-sm"
+                    ? "bg-slate-900 text-white border-slate-900 shadow-md scale-105"
+                    : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 hover:text-slate-900 hover:border-slate-400"
                 }`}
               >
-                <FileText className="w-4 h-4" />
+                <FileText className="w-4 h-4 shrink-0" />
                 <span>NOTAS FISCAIS</span>
               </Link>
             )}
 
-            {/* Botão CONTROLE DE CUSTOS */}
+            {/* CONTROLE DE CUSTOS */}
             <Link
               to="/custos"
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold tracking-wide border-2 transition-all ${
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-bold tracking-wide border-2 transition-all ${
                 isCustosRoute
-                  ? "bg-white text-gray-900 border-gray-300 shadow-md scale-105"
-                  : "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:border-blue-700 shadow-sm"
+                  ? "bg-slate-900 text-white border-slate-900 shadow-md scale-105"
+                  : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 hover:text-slate-900 hover:border-slate-400"
               }`}
             >
-              <DollarSign className="w-4 h-4" />
+              <DollarSign className="w-4 h-4 shrink-0" />
               <span>CONTROLE DE CUSTOS</span>
             </Link>
 
-            {/* Botão ADMIN */}
+            {/* ADMIN */}
             {isAdmin && (
               <Link
                 to="/admin"
-                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold tracking-wide border-2 transition-all ${
+                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-bold tracking-wide border-2 transition-all ${
                   isAdminRoute
-                    ? "bg-white text-gray-900 border-gray-300 shadow-md scale-105"
-                    : "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:border-blue-700 shadow-sm"
+                    ? "bg-slate-900 text-white border-slate-900 shadow-md scale-105"
+                    : "bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200 hover:text-slate-900 hover:border-slate-400"
                 }`}
               >
-                <Settings className="w-4 h-4" />
+                <Settings className="w-4 h-4 shrink-0" />
                 <span>ADMIN</span>
               </Link>
             )}
@@ -134,10 +134,10 @@ function AuthenticatedLayout() {
             variant="ghost"
             size="icon"
             onClick={handleSignOut}
-            className="text-gray-600 hover:text-red-600 hover:bg-red-50 shrink-0 border border-gray-200 rounded-xl"
+            className="text-slate-600 hover:text-red-600 hover:bg-red-50 border-2 border-slate-300 rounded-full shrink-0"
             title="Sair"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-4 h-4" />
           </Button>
         </div>
       </header>
@@ -146,9 +146,9 @@ function AuthenticatedLayout() {
         <Outlet />
       </main>
 
-      {/* Mobile nav */}
+      {/* Menu Mobile */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,0.08)] md:hidden"
+        className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-slate-200 shadow-[0_-2px_8px_rgba(0,0,0,0.08)] md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div
@@ -159,8 +159,8 @@ function AuthenticatedLayout() {
             to="/equipamentos"
             className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
               isEquipamentosRoute
-                ? "text-blue-600 font-extrabold"
-                : "text-gray-500 font-medium hover:text-gray-900"
+                ? "text-slate-900 font-extrabold"
+                : "text-slate-500 font-medium hover:text-slate-800"
             }`}
           >
             <List className="w-5 h-5" />
@@ -172,8 +172,8 @@ function AuthenticatedLayout() {
               to="/notas-fiscais"
               className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
                 isNotasRoute
-                  ? "text-blue-600 font-extrabold"
-                  : "text-gray-500 font-medium hover:text-gray-900"
+                  ? "text-slate-900 font-extrabold"
+                  : "text-slate-500 font-medium hover:text-slate-800"
               }`}
             >
               <FileText className="w-5 h-5" />
@@ -185,8 +185,8 @@ function AuthenticatedLayout() {
             to="/custos"
             className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
               isCustosRoute
-                ? "text-blue-600 font-extrabold"
-                : "text-gray-500 font-medium hover:text-gray-900"
+                ? "text-slate-900 font-extrabold"
+                : "text-slate-500 font-medium hover:text-slate-800"
             }`}
           >
             <DollarSign className="w-5 h-5" />
@@ -200,8 +200,8 @@ function AuthenticatedLayout() {
               to="/admin"
               className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
                 isAdminRoute
-                  ? "text-blue-600 font-extrabold"
-                  : "text-gray-500 font-medium hover:text-gray-900"
+                  ? "text-slate-900 font-extrabold"
+                  : "text-slate-500 font-medium hover:text-slate-800"
               }`}
             >
               <Settings className="w-5 h-5" />
