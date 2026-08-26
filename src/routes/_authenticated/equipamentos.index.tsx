@@ -5,7 +5,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, ChevronRight, Plus, Gauge, ShieldCheck, AlertTriangle, Calendar } from "lucide-react";
+import {
+  Search,
+  ChevronRight,
+  Plus,
+  Trash2,
+  Gauge,
+  ShieldCheck,
+  AlertTriangle,
+  Calendar,
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Notificacoes } from "@/components/Notificacoes";
@@ -141,8 +150,7 @@ function BotaoTacografo() {
         <span>Tacógrafo</span>
         {tacografosVencidos.length > 0 ? (
           <span
-            className="font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none"
-            style={{ backgroundColor: "#dc2626", color: "#ffffff" }}
+            className="font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none bg-red-600 text-white"
           >
             {tacografosVencidos.length}
           </span>
@@ -193,16 +201,16 @@ function BotaoTacografo() {
               <div className="space-y-2">
                 {listaFiltrada.map((item: any, idx: number) => {
                   let bgCard = "bg-slate-50 border-slate-200";
-                  let badgeStyle = { backgroundColor: "#e2e8f0", color: "#334155" };
+                  let badgeClass = "bg-slate-200 text-slate-700";
                   let badgeText = "Em dia";
 
                   if (item.isVencido) {
                     bgCard = "bg-red-50 border-red-200";
-                    badgeStyle = { backgroundColor: "#dc2626", color: "#ffffff" };
+                    badgeClass = "bg-red-600 text-white";
                     badgeText = "Vencido";
                   } else if (item.isVencendoEmBreve) {
                     bgCard = "bg-amber-50 border-amber-200";
-                    badgeStyle = { backgroundColor: "#f59e0b", color: "#ffffff" };
+                    badgeClass = "bg-amber-500 text-white";
                     badgeText = item.diasRestantes === 0 ? "Hoje" : `Vence em ${item.diasRestantes}d`;
                   }
 
@@ -216,10 +224,7 @@ function BotaoTacografo() {
                           <p className="font-bold text-slate-900">
                             {item.numero || item.veiculo_equipamento || item.equipamento || "Equipamento"}
                           </p>
-                          <span
-                            className="text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm inline-block"
-                            style={badgeStyle}
-                          >
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm inline-block ${badgeClass}`}>
                             {badgeText}
                           </span>
                         </div>
@@ -329,10 +334,7 @@ function BotaoSeguro() {
         <ShieldCheck className="w-4 h-4 text-slate-500" />
         <span>Seguro</span>
         {segurosVencidos.length > 0 ? (
-          <span
-            className="font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none"
-            style={{ backgroundColor: "#dc2626", color: "#ffffff" }}
-          >
+          <span className="font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none bg-red-600 text-white">
             {segurosVencidos.length}
           </span>
         ) : null}
@@ -382,16 +384,16 @@ function BotaoSeguro() {
               <div className="space-y-2">
                 {listaFiltrada.map((item: any, idx: number) => {
                   let bgCard = "bg-slate-50 border-slate-200";
-                  let badgeStyle = { backgroundColor: "#e2e8f0", color: "#334155" };
+                  let badgeClass = "bg-slate-200 text-slate-700";
                   let badgeText = "Em dia";
 
                   if (item.isVencido) {
                     bgCard = "bg-red-50 border-red-200";
-                    badgeStyle = { backgroundColor: "#dc2626", color: "#ffffff" };
+                    badgeClass = "bg-red-600 text-white";
                     badgeText = "Vencido";
                   } else if (item.isVencendoEmBreve) {
                     bgCard = "bg-amber-50 border-amber-200";
-                    badgeStyle = { backgroundColor: "#f59e0b", color: "#ffffff" };
+                    badgeClass = "bg-amber-500 text-white";
                     badgeText = item.diasRestantes === 0 ? "Hoje" : `Vence em ${item.diasRestantes}d`;
                   }
 
@@ -405,10 +407,7 @@ function BotaoSeguro() {
                           <p className="font-bold text-slate-900">
                             {item.equipamento || item.numero || item.veiculo_equipamento || "Equipamento"}
                           </p>
-                          <span
-                            className="text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm inline-block"
-                            style={badgeStyle}
-                          >
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm inline-block ${badgeClass}`}>
                             {badgeText}
                           </span>
                         </div>
@@ -557,10 +556,7 @@ function EquipamentosList() {
           >
             <span>{onlyOverdue ? "Apenas Vencidos" : "Vencidos"}</span>
             {totalEquipamentosVencidos > 0 ? (
-              <span
-                className="font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none"
-                style={{ backgroundColor: "#dc2626", color: "#ffffff" }}
-              >
+              <span className="font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none bg-red-600 text-white">
                 {totalEquipamentosVencidos}
               </span>
             ) : null}
@@ -604,7 +600,6 @@ function EquipamentosList() {
                     ? "border-red-500 bg-red-50 animate-pulse"
                     : "border-slate-200 bg-white hover:border-slate-300"
                 }`}
-                style={overdue ? { backgroundColor: "#fef2f2", borderColor: "#ef4444" } : undefined}
               >
                 <div className="flex gap-3 items-start">
                   {coverUrl ? (
@@ -631,10 +626,7 @@ function EquipamentosList() {
                           </span>
                         )}
                         {overdue && (
-                          <span
-                            className="text-[10px] font-bold px-2.5 py-0.5 rounded-full text-white shadow-sm inline-block"
-                            style={{ backgroundColor: "#ef4444", color: "#ffffff" }}
-                          >
+                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full text-white bg-red-500 shadow-sm inline-block">
                             Revisão vencida
                           </span>
                         )}
@@ -700,13 +692,14 @@ function EquipamentosList() {
         })}
       </div>
 
+      {/* Botão Salvar/Adicionar flutuante com fundo azul e ícone branco */}
       {isAdmin && (
         <Link to="/admin">
           <Button
             size="icon"
             className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 text-white z-30"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-5 h-5 text-white" />
           </Button>
         </Link>
       )}
