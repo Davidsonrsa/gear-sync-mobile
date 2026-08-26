@@ -148,15 +148,15 @@ function NewEquipamento() {
         />
       </div>
       
-      <div className="pt-2">
-        <button
+     <div className="pt-2">
+        <Button
           type="button"
           onClick={() => create.mutate()}
           disabled={create.isPending}
-          className="btn-forcar-azul w-full h-11 rounded-lg font-bold text-sm tracking-wide shadow-md cursor-pointer flex items-center justify-center transition-all"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
         >
           {create.isPending ? "Criando..." : "Criar equipamento"}
-        </button>
+        </Button>
       </div>
 
       <p className="text-[11px] text-muted-foreground">
@@ -272,18 +272,18 @@ function Usuarios() {
         </div>
 
         <div className="pt-2">
-          <button
+          <Button
             type="button"
             onClick={() => m.mutate()}
             disabled={m.isPending}
-            className="btn-forcar-azul w-full h-11 rounded-lg font-bold text-sm tracking-wide shadow-md cursor-pointer flex items-center justify-center transition-all"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
           >
             {m.isPending
               ? "Criando..."
               : f.role === "admin"
                 ? "Criar administrador"
                 : "Criar colaborador"}
-          </button>
+          </Button>
         </div>
 
         <p className="text-[11px] text-muted-foreground">
