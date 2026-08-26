@@ -543,7 +543,9 @@ function EquipamentosList() {
             <SelectContent>
               <SelectItem value="__all">Todas as CL</SelectItem>
               {clOptions.map((c) => (
-                <SelectItem key={c} value={c}>CL {c}</SelectItem>
+                <SelectItem key={c} value={c}>
+                  CL {c}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -557,10 +559,7 @@ function EquipamentosList() {
           >
             <span>{onlyOverdue ? "Apenas Vencidos" : "Vencidos"}</span>
             {totalEquipamentosVencidos > 0 ? (
-              <span
-                className="font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none"
-                style={{ backgroundColor: "#dc2626", color: "#ffffff" }}
-              >
+              <span className="font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full bg-red-600 text-white animate-pulse">
                 {totalEquipamentosVencidos}
               </span>
             ) : null}
@@ -581,7 +580,9 @@ function EquipamentosList() {
       {!isLoading && filtered.length === 0 && (
         <Card className="p-12 text-center border-dashed border-slate-200 bg-slate-50">
           <Gauge className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-          <p className="text-xs font-medium text-slate-600">Nenhum equipamento localizado.</p>
+          <p className="text-xs font-medium text-slate-600">
+            Nenhum equipamento localizado.
+          </p>
         </Card>
       )}
 
@@ -601,7 +602,7 @@ function EquipamentosList() {
               <Card
                 className={`p-4 rounded-2xl transition-all border relative ${
                   overdue
-                    ? "bg-red-50/90 border-red-300 shadow-sm"
+                    ? "bg-red-50 border-red-400 shadow-md animate-pulse"
                     : "bg-white border-slate-200 hover:border-slate-300 shadow-sm"
                 }`}
               >
@@ -631,12 +632,27 @@ function EquipamentosList() {
                           </span>
                         )}
                         {overdue && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500 text-white shadow-sm">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-600 text-white shadow-sm">
                             Revisão vencida
                           </span>
                         )}
                       </div>
-                      <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+
+                      {/* Botão de Excluir / Lixeira Vermelho com ícone Branco */}
+                      {isAdmin && (
+                        <Button
+                          type="button"
+                          size="icon"
+                          className="h-7 w-7 bg-red-600 hover:bg-red-700 text-white rounded-lg shrink-0 shadow-xs"
+                          onClick={(evt) => {
+                            evt.preventDefault();
+                            evt.stopPropagation();
+                            // Ação de deletar
+                          }}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-white" />
+                        </Button>
+                      )}
                     </div>
 
                     {e.identificacao && (
@@ -654,19 +670,20 @@ function EquipamentosList() {
 
                 {/* Rodapé do Card: Status, Barra de Progresso e Horímetro */}
                 <div className="mt-3.5 space-y-2">
-                  {!overdue && (
-                    <div className="flex items-center">
-                      <span
-                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-                          e.status === "Em manutenção" || e.status === "Manutenção"
-                            ? "bg-amber-50 text-amber-700 border-amber-300"
-                            : "bg-white text-slate-700 border-slate-300"
-                        }`}
-                      >
-                        {e.status || "Operacional"}
-                      </span>
-                    </div>
-                  )}
+                  {/* Badge do Status Preservando Cores */}
+                  <div className="flex items-center">
+                    <span
+                      className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                        e.status === "Em manutenção" || e.status === "Manutenção"
+                          ? "bg-amber-100 text-amber-800 border-amber-300"
+                          : e.status === "Indisponível" || e.status === "Inativo"
+                          ? "bg-red-100 text-red-800 border-red-300"
+                          : "bg-emerald-100 text-emerald-800 border-emerald-300"
+                      }`}
+                    >
+                      {e.status || "Operacional"}
+                    </span>
+                  </div>
 
                   {/* Barra de Progresso e Horímetro Total */}
                   <div className="flex items-center gap-2 pt-0.5">
@@ -696,13 +713,14 @@ function EquipamentosList() {
         })}
       </div>
 
+      {/* Botão Flutuante de Adicionar em Azul com Ícone Branco */}
       {isAdmin && (
         <Link to="/admin">
           <Button
             size="icon"
             className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 text-white z-30"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-5 h-5 text-white" />
           </Button>
         </Link>
       )}
