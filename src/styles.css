@@ -46,7 +46,8 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.04 250);
 
-  --primary: oklch(0.36 0.1 250);
+  /* Verde/Azul para botões principais (Salvar) */
+  --primary: oklch(0.5 0.18 150); /* Verde vibrante */
   --primary-foreground: oklch(0.99 0 0);
 
   --secondary: oklch(0.93 0 0);
@@ -58,7 +59,8 @@
   --accent: oklch(0.72 0.18 55);
   --accent-foreground: oklch(0.15 0 0);
 
-  --destructive: oklch(0.58 0.22 25);
+  /* Vermelho marcante para botões de remoção (Lixeira) */
+  --destructive: oklch(0.55 0.22 27);
   --destructive-foreground: oklch(0.99 0 0);
 
   --success: oklch(0.62 0.16 145);
@@ -79,16 +81,20 @@
   --card-foreground: oklch(0.97 0 0);
   --popover: oklch(0.22 0 0);
   --popover-foreground: oklch(0.97 0 0);
-  --primary: oklch(0.7 0.12 240);
-  --primary-foreground: oklch(0.15 0 0);
+  
+  --primary: oklch(0.6 0.18 150);
+  --primary-foreground: oklch(0.99 0 0);
+  
   --secondary: oklch(0.27 0 0);
   --secondary-foreground: oklch(0.97 0 0);
   --muted: oklch(0.27 0 0);
   --muted-foreground: oklch(0.7 0 0);
   --accent: oklch(0.72 0.18 55);
   --accent-foreground: oklch(0.15 0 0);
-  --destructive: oklch(0.65 0.2 25);
+  
+  --destructive: oklch(0.6 0.22 27);
   --destructive-foreground: oklch(0.99 0 0);
+  
   --success: oklch(0.65 0.16 145);
   --success-foreground: oklch(0.15 0 0);
   --warning: oklch(0.78 0.16 80);
@@ -107,7 +113,6 @@
     color: var(--color-foreground);
     min-height: 100%;
   }
-  /* Cinza claro neutro e limpo */
   html {
     background-color: #f1f5f9;
   }
@@ -133,11 +138,22 @@
     font-size: 16px;
   }
   
-  /* Mantém o topo branco com borda definida para não sumir o menu */
   header, nav {
     background-color: #ffffff !important;
     border-bottom: 1px solid #e2e8f0;
   }
+}
+
+/* Regras globais forçadas para botões de Lixeira e Salvar */
+.bg-destructive,
+button[class*="bg-destructive"] {
+  background-color: #dc2626 !important; /* Vermelho forte */
+  color: #ffffff !important;
+}
+
+.bg-destructive:hover,
+button[class*="bg-destructive"]:hover {
+  background-color: #b91c1c !important;
 }
 
 @keyframes blink-red {
