@@ -599,19 +599,19 @@ function EquipamentosList() {
           return (
             <Link key={e.id} to="/equipamentos/$id" params={{ id: e.id }} className="group block">
               <Card
-                className={`p-3.5 rounded-2xl transition-all border-2 relative ${
+                className={`p-4 rounded-2xl transition-all border relative ${
                   overdue
-                    ? "border-red-500 bg-red-50 animate-pulse"
-                    : "border-slate-200 bg-white hover:border-slate-300"
+                    ? "bg-red-50/90 border-red-300 shadow-sm"
+                    : "bg-white border-slate-200 hover:border-slate-300 shadow-sm"
                 }`}
-                style={overdue ? { backgroundColor: "#fef2f2", borderColor: "#ef4444" } : undefined}
               >
+                {/* Topo do Card: Foto, Título, Badge e Seta */}
                 <div className="flex gap-3 items-start">
                   {coverUrl ? (
                     <img
                       src={coverUrl}
                       alt={e.numero}
-                      className="w-14 h-14 rounded-xl object-cover border border-slate-200 shrink-0"
+                      className="w-14 h-14 rounded-xl object-cover border border-slate-200 shrink-0 bg-white"
                     />
                   ) : (
                     <div className="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 text-slate-400">
@@ -622,19 +622,16 @@ function EquipamentosList() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className={`font-bold text-sm ${overdue ? "text-red-900" : "text-slate-800"}`}>
+                        <span className="font-bold text-sm text-slate-900">
                           {e.numero}
                         </span>
                         {e.cl && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200/70 text-slate-700">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
                             CL {e.cl}
                           </span>
                         )}
                         {overdue && (
-                          <span
-                            className="text-[10px] font-bold px-2.5 py-0.5 rounded-full text-white shadow-sm inline-block"
-                            style={{ backgroundColor: "#ef4444", color: "#ffffff" }}
-                          >
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500 text-white shadow-sm">
                             Revisão vencida
                           </span>
                         )}
@@ -643,26 +640,27 @@ function EquipamentosList() {
                     </div>
 
                     {e.identificacao && (
-                      <p className={`text-xs mt-0.5 truncate ${overdue ? "text-red-800" : "text-slate-500"}`}>
+                      <p className="text-xs text-slate-500 mt-0.5 truncate font-medium">
                         {e.identificacao}
                       </p>
                     )}
 
-                    <div className={`flex items-center gap-2 mt-1 text-[11px] font-mono ${overdue ? "text-red-700" : "text-slate-500"}`}>
+                    <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500 font-mono">
                       {e.placa && <span>{e.placa}</span>}
                       {e.localizacao && <span>• {e.localizacao}</span>}
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-3 space-y-1.5">
+                {/* Rodapé do Card: Status, Barra de Progresso e Horímetro */}
+                <div className="mt-3.5 space-y-2">
                   {!overdue && (
                     <div className="flex items-center">
                       <span
-                        className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
                           e.status === "Em manutenção" || e.status === "Manutenção"
-                            ? "bg-amber-100 text-amber-800 border-amber-300"
-                            : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            ? "bg-amber-50 text-amber-700 border-amber-300"
+                            : "bg-white text-slate-700 border-slate-300"
                         }`}
                       >
                         {e.status || "Operacional"}
@@ -670,8 +668,9 @@ function EquipamentosList() {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-slate-200 h-2 rounded-full overflow-hidden">
+                  {/* Barra de Progresso e Horímetro Total */}
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <div className="flex-1 bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200/50">
                       <div
                         className="h-full transition-all duration-300"
                         style={{
@@ -680,18 +679,15 @@ function EquipamentosList() {
                         }}
                       />
                     </div>
-                    <span className={`text-xs font-bold font-mono ${overdue ? "text-red-800" : "text-slate-700"}`}>
+                    <span className="text-xs font-bold font-mono text-slate-900 shrink-0">
                       {e.horimetro_atual ?? 0}h
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-center text-[10px]">
-                    <span className={overdue ? "text-red-700 font-semibold" : "text-slate-400"}>
-                      Hr rodado: {hrRodado}h
-                    </span>
-                    <span className={overdue ? "text-red-700 font-semibold" : "text-slate-400"}>
-                      limite: {limite}h
-                    </span>
+                  {/* Informações de Horas Rodadas e Limite */}
+                  <div className="flex justify-between items-center text-[10px] text-slate-500 font-medium pt-0.5">
+                    <span>Hr rodado: {hrRodado}h</span>
+                    <span>limite: {limite}h</span>
                   </div>
                 </div>
               </Card>
