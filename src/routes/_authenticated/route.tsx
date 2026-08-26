@@ -47,11 +47,11 @@ function AuthenticatedLayout() {
     <div className="min-h-[100dvh] flex flex-col bg-background pb-20 md:pb-8">
       <header className="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-sm">
         <div
-          className="px-4 py-3 flex items-center gap-3 md:max-w-7xl md:mx-auto md:w-full md:px-6"
+          className="px-4 py-3 flex items-center justify-between gap-2 md:max-w-7xl md:mx-auto md:w-full md:px-6"
           style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
         >
           {/* Logo */}
-          <div className="w-10 h-10 md:w-11 md:h-11 rounded-lg bg-white p-0.5 shrink-0 flex items-center justify-center overflow-hidden border border-slate-200 shadow-sm">
+          <div className="w-9 h-9 md:w-10 md:h-10 rounded-lg bg-white p-0.5 shrink-0 flex items-center justify-center overflow-hidden border border-slate-200 shadow-sm">
             <img
               src="/logo SPX MAFRA JHM.png"
               alt="SPH JHM Mafra"
@@ -60,21 +60,21 @@ function AuthenticatedLayout() {
           </div>
 
           {/* Nome e Perfil */}
-          <div className="flex-1 min-w-0">
-            <h1 className="text-base md:text-lg font-bold leading-tight truncate text-slate-900">
+          <div className="flex-1 min-w-0 px-2">
+            <h1 className="text-sm md:text-base font-bold leading-tight truncate text-slate-900">
               GIF - Gestão Integrada de Frotas
             </h1>
-            <p className="text-[11px] md:text-xs text-slate-500 truncate font-semibold">
+            <p className="text-[10px] md:text-xs text-slate-500 truncate font-semibold">
               {fullName || "—"} · {isAdmin ? "Admin" : "Colaborador"}
             </p>
           </div>
 
-          {/* Menu Desktop */}
-          <nav className="hidden md:flex items-center gap-2 shrink-0">
+          {/* Menu Desktop - Compacto e Proporcional */}
+          <nav className="hidden md:flex items-center gap-1.5 shrink-0">
             {/* EQUIPAMENTOS */}
             <Link
               to="/equipamentos"
-              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all"
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold tracking-wide border transition-all"
               style={{
                 backgroundColor: isEquipamentosRoute ? "#0f172a !important" : "#ffffff !important",
                 borderColor: "#0f172a !important",
@@ -82,8 +82,8 @@ function AuthenticatedLayout() {
               }}
             >
               <List
-                className="w-4 h-4 shrink-0"
-                style={{ color: isEquipamentosRoute ? "#ffffff !important" : "#0f172a !important", stroke: isEquipamentosRoute ? "#ffffff !important" : "#0f172a !important" }}
+                className="w-3.5 h-3.5 shrink-0"
+                style={{ color: isEquipamentosRoute ? "#ffffff !important" : "#0f172a !important" }}
               />
               <span style={{ color: isEquipamentosRoute ? "#ffffff !important" : "#0f172a !important" }}>
                 EQUIPAMENTOS
@@ -94,7 +94,7 @@ function AuthenticatedLayout() {
             {canAccessNotasFiscais && (
               <Link
                 to="/notas-fiscais"
-                className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all"
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold tracking-wide border transition-all"
                 style={{
                   backgroundColor: isNotasRoute ? "#0f172a !important" : "#ffffff !important",
                   borderColor: "#0f172a !important",
@@ -102,8 +102,8 @@ function AuthenticatedLayout() {
                 }}
               >
                 <FileText
-                  className="w-4 h-4 shrink-0"
-                  style={{ color: isNotasRoute ? "#ffffff !important" : "#0f172a !important", stroke: isNotasRoute ? "#ffffff !important" : "#0f172a !important" }}
+                  className="w-3.5 h-3.5 shrink-0"
+                  style={{ color: isNotasRoute ? "#ffffff !important" : "#0f172a !important" }}
                 />
                 <span style={{ color: isNotasRoute ? "#ffffff !important" : "#0f172a !important" }}>
                   NOTAS FISCAIS
@@ -114,7 +114,7 @@ function AuthenticatedLayout() {
             {/* CONTROLE DE CUSTOS */}
             <Link
               to="/custos"
-              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all"
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold tracking-wide border transition-all"
               style={{
                 backgroundColor: isCustosRoute ? "#0f172a !important" : "#ffffff !important",
                 borderColor: "#0f172a !important",
@@ -122,11 +122,11 @@ function AuthenticatedLayout() {
               }}
             >
               <DollarSign
-                className="w-4 h-4 shrink-0"
-                style={{ color: isCustosRoute ? "#ffffff !important" : "#0f172a !important", stroke: isCustosRoute ? "#ffffff !important" : "#0f172a !important" }}
+                className="w-3.5 h-3.5 shrink-0"
+                style={{ color: isCustosRoute ? "#ffffff !important" : "#0f172a !important" }}
               />
               <span style={{ color: isCustosRoute ? "#ffffff !important" : "#0f172a !important" }}>
-                CONTROLE DE CUSTOS
+                CUSTOS
               </span>
             </Link>
 
@@ -134,7 +134,7 @@ function AuthenticatedLayout() {
             {isAdmin && (
               <Link
                 to="/admin"
-                className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all"
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold tracking-wide border transition-all"
                 style={{
                   backgroundColor: isAdminRoute ? "#0f172a !important" : "#ffffff !important",
                   borderColor: "#0f172a !important",
@@ -142,8 +142,8 @@ function AuthenticatedLayout() {
                 }}
               >
                 <Settings
-                  className="w-4 h-4 shrink-0"
-                  style={{ color: isAdminRoute ? "#ffffff !important" : "#0f172a !important", stroke: isAdminRoute ? "#ffffff !important" : "#0f172a !important" }}
+                  className="w-3.5 h-3.5 shrink-0"
+                  style={{ color: isAdminRoute ? "#ffffff !important" : "#0f172a !important" }}
                 />
                 <span style={{ color: isAdminRoute ? "#ffffff !important" : "#0f172a !important" }}>
                   ADMIN
@@ -152,19 +152,19 @@ function AuthenticatedLayout() {
             )}
           </nav>
 
-          {/* Botão Sair - Com ícone visível em vermelho/escuro */}
+          {/* Botão Sair */}
           <button
             type="button"
             onClick={handleSignOut}
             title="Sair"
-            className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-100 hover:bg-red-100 hover:border-red-600 flex items-center justify-center transition-colors shrink-0"
+            className="w-9 h-9 rounded-full border border-slate-900 bg-white hover:bg-red-50 hover:border-red-600 flex items-center justify-center transition-colors shrink-0 ml-1"
             style={{
-              backgroundColor: "#f1f5f9 !important",
+              backgroundColor: "#ffffff !important",
               borderColor: "#0f172a !important",
             }}
           >
             <LogOut
-              className="w-5 h-5"
+              className="w-4 h-4"
               style={{ color: "#0f172a !important", stroke: "#0f172a !important" }}
             />
           </button>
