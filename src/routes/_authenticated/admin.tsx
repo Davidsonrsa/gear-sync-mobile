@@ -43,18 +43,6 @@ function AdminPage() {
   }
   return (
     <div className="px-3 py-3 md:px-6 md:py-6 max-w-md md:max-w-5xl mx-auto w-full">
-      {/* Estilo global injetado para forçar a cor azul sólida nos botões de ação */}
-      <style>{`
-        .btn-forcar-azul {
-          background-color: #2563eb !important;
-          color: #ffffff !important;
-          border: 1px solid #1d4ed8 !important;
-        }
-        .btn-forcar-azul:hover {
-          background-color: #1d4ed8 !important;
-        }
-      `}</style>
-
       <Tabs defaultValue="equipamentos">
         <TabsList className="grid grid-cols-2 w-full mb-3">
           <TabsTrigger value="equipamentos">Equipamentos</TabsTrigger>
@@ -148,7 +136,7 @@ function NewEquipamento() {
         />
       </div>
       
-     <div className="pt-2">
+      <div className="pt-2">
         <Button
           type="button"
           onClick={() => create.mutate()}
