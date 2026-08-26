@@ -17,10 +17,10 @@
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   
-  /* Mapeamento direto das cores dos botões */
-  --color-primary: #16a34a;
+  /* Cores Base do Sistema */
+  --color-primary: #2563eb; /* Azul */
   --color-primary-foreground: #ffffff;
-  --color-destructive: #dc2626;
+  --color-destructive: #dc2626; /* Vermelho */
   --color-destructive-foreground: #ffffff;
   
   --color-secondary: var(--secondary);
@@ -40,144 +40,110 @@
 
 :root {
   --radius: 0.75rem;
+  --background: #f1f5f9;
+  --foreground: #0f172a;
 
-  --background: oklch(0.96 0.005 240); 
-  --foreground: oklch(0.18 0.04 250);
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.04 250);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.04 250);
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
 
-  --secondary: oklch(0.93 0 0);
-  --secondary-foreground: oklch(0.25 0 0);
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
 
-  --muted: oklch(0.93 0 0);
-  --muted-foreground: oklch(0.4 0 0);
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
 
-  --accent: oklch(0.72 0.18 55);
-  --accent-foreground: oklch(0.15 0 0);
-
-  --success: oklch(0.62 0.16 145);
-  --success-foreground: oklch(0.99 0 0);
-
-  --warning: oklch(0.78 0.16 80);
-  --warning-foreground: oklch(0.2 0.04 60);
-
-  --border: oklch(0.88 0 0);
-  --input: oklch(0.9 0 0);
-  --ring: oklch(0.55 0.12 250);
-}
-
-.dark {
-  --background: oklch(0.18 0 0);
-  --foreground: oklch(0.97 0 0);
-  --card: oklch(0.22 0 0);
-  --card-foreground: oklch(0.97 0 0);
-  --popover: oklch(0.22 0 0);
-  --popover-foreground: oklch(0.97 0 0);
-  
-  --secondary: oklch(0.27 0 0);
-  --secondary-foreground: oklch(0.97 0 0);
-  --muted: oklch(0.27 0 0);
-  --muted-foreground: oklch(0.7 0 0);
-  --accent: oklch(0.72 0.18 55);
-  --accent-foreground: oklch(0.15 0 0);
-  
-  --success: oklch(0.65 0.16 145);
-  --success-foreground: oklch(0.15 0 0);
-  --warning: oklch(0.78 0.16 80);
-  --warning-foreground: oklch(0.2 0.04 60);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.6 0.1 240);
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #2563eb;
 }
 
 @layer base {
   * {
     border-color: var(--color-border);
   }
-  html,
-  body {
-    color: var(--color-foreground);
-    min-height: 100%;
-  }
-  html {
+  html, body {
     background-color: #f1f5f9;
+    color: #0f172a;
+    min-height: 100%;
+    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
   }
-  body {
-    background: transparent;
-    font-family:
-      ui-sans-serif,
-      system-ui,
-      -apple-system,
-      "Segoe UI",
-      Roboto,
-      sans-serif;
-    -webkit-tap-highlight-color: transparent;
-    overscroll-behavior-y: none;
-  }
-  .dark html {
-    background-color: #1e293b;
-  }
-  input,
-  textarea,
-  select,
-  button {
-    font-size: 16px;
-  }
-  
   header, nav {
     background-color: #ffffff !important;
     border-bottom: 1px solid #e2e8f0;
   }
 }
 
-@keyframes blink-red {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.4;
-  }
-}
-.blink-overdue {
-  animation: blink-red 0.9s ease-in-out infinite;
-}
-/* Botões de Ação Principal (Salvar) - AZUL */
-.bg-primary,
+/* ==========================================================================
+   FORÇAR ESTILOS DE BOTÕES DE FORMA INVIOLÁVEL
+   ========================================================================== */
+
+/* 1. BOTÕES PRINCIPAIS / SALVAR (Fundo Azul + Texto/Ícone Branco) */
 button[type="submit"],
-button[class*="bg-primary"] {
+button.bg-primary,
+button[class*="bg-primary"],
+button:not([class*="destructive"]):not([class*="outline"]):not([class*="ghost"]):not([class*="secondary"]) {
   background-color: #2563eb !important; /* Azul marcante */
   color: #ffffff !important;
+  font-weight: 600 !important;
 }
 
-.bg-primary:hover,
 button[type="submit"]:hover,
+button.bg-primary:hover,
 button[class*="bg-primary"]:hover {
   background-color: #1d4ed8 !important;
 }
 
-/* Botões de Remoção / Ação Crítica (Deletar, Limpar, Excluir) - VERMELHO */
-.bg-destructive,
+/* 2. BOTÕES DE EXCLUIR / DELETAR / LIMPAR / LIXEIRA (Fundo Vermelho + Texto/Ícone Branco) */
+button.bg-destructive,
 button[class*="destructive"],
-button[class*="bg-destructive"] {
+button[class*="bg-destructive"],
+button:has(svg.lucide-trash),
+button:has(svg.lucide-trash-2),
+button:has(svg.lucide-eraser) {
   background-color: #dc2626 !important; /* Vermelho forte */
   color: #ffffff !important;
+  font-weight: 600 !important;
+  padding: 0.5rem 0.75rem !important;
+  border-radius: 0.375rem !important;
 }
 
-.bg-destructive:hover,
+button.bg-destructive:hover,
 button[class*="destructive"]:hover,
 button[class*="bg-destructive"]:hover {
   background-color: #b91c1c !important;
 }
 
-/* Garante que todos os ícones (SVG) dentro desses botões fiquem brancos */
-.bg-primary svg,
-.bg-destructive svg,
+/* 3. LIXEIRAS ESPECÍFICAS DA TABELA DE CUSTOS (Imagem 3) */
+td button, 
+td button:has(svg) {
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+  padding: 6px !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 4. GARANTIR QUE TODOS OS ÍCONES SVG DENTRO DOS BOTÕES FIQUEM BRANCOS */
+button svg,
 button[type="submit"] svg,
-button[class*="destructive"] svg {
+button[class*="destructive"] svg,
+td button svg {
   color: #ffffff !important;
   stroke: #ffffff !important;
+  fill: none !important;
+}
+
+@keyframes blink-red {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.blink-overdue {
+  animation: blink-red 0.9s ease-in-out infinite;
 }
