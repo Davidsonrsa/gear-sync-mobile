@@ -375,16 +375,17 @@ function NotasFiscaisPage() {
           </p>
         </div>
 
-        <Dialog open={openModalCadastro} onOpenChange={setOpenModalCadastro}>
-          <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              className="rounded-full border-slate-300 text-slate-800 font-medium hover:bg-slate-50 px-3 py-1.5 text-xs flex items-center gap-1.5 shadow-xs"
-            >
-              <PlusCircle className="w-3.5 h-3.5 text-slate-700" />
-              Nova Nota Fiscal
-            </Button>
-          </DialogTrigger>
+      <Dialog open={openModalCadastro} onOpenChange={setOpenModalCadastro}>
+  <DialogTrigger asChild>
+    <Button
+      variant="outline"
+      className="rounded-full border-slate-300 text-slate-800 font-medium hover:bg-slate-50 px-3 py-1.5 text-xs flex items-center gap-1.5 shadow-xs"
+    >
+      <PlusCircle className="w-3.5 h-3.5 text-slate-700" />
+      Nova Nota Fiscal
+    </Button>
+  </DialogTrigger>
+  ...
           <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800">
             <DialogHeader>
               <DialogTitle className="text-lg font-bold">
