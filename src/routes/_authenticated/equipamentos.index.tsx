@@ -1,3 +1,4 @@
+import { Search, Gauge, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
