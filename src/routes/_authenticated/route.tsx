@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { LogOut, Settings, List, FileText } from "lucide-react";
+import { LogOut, Settings, List, FileText, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -27,7 +27,7 @@ function AuthenticatedLayout() {
   const loc = useLocation();
 
   const canAccessNotasFiscais = isAdmin || Boolean(notasFiscais?.autorizado);
-  
+
   const isCustosRoute = loc.pathname.startsWith("/custos");
   const isAdminRoute = loc.pathname.startsWith("/admin");
   const isNotasRoute = loc.pathname.startsWith("/notas-fiscais");
@@ -70,52 +70,53 @@ function AuthenticatedLayout() {
           <nav className="hidden md:flex items-center gap-1 shrink-0">
             <Link
               to="/equipamentos"
-              className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold tracking-wide transition-colors ${
                 !isAdminRoute && !isNotasRoute && !isCustosRoute
-                  ? "bg-primary-foreground/15"
-                  : "hover:bg-primary-foreground/10"
+                  ? "bg-primary-foreground/20 text-white font-bold"
+                  : "hover:bg-primary-foreground/10 text-primary-foreground/90"
               }`}
             >
               <List className="w-4 h-4" />
-              Equipamentos
+              <span>Equipamentos</span>
             </Link>
 
             {canAccessNotasFiscais && (
               <Link
                 to="/notas-fiscais"
-                className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold tracking-wide transition-colors ${
                   isNotasRoute
-                    ? "bg-primary-foreground/15"
-                    : "hover:bg-primary-foreground/10"
+                    ? "bg-primary-foreground/20 text-white font-bold"
+                    : "hover:bg-primary-foreground/10 text-primary-foreground/90"
                 }`}
               >
                 <FileText className="w-4 h-4" />
-                Notas Fiscais
+                <span>Notas Fiscais</span>
               </Link>
             )}
 
             <Link
               to="/custos"
-              className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold tracking-wide transition-colors ${
                 isCustosRoute
-                  ? "bg-primary-foreground/15"
-                  : "hover:bg-primary-foreground/10"
+                  ? "bg-primary-foreground/20 text-white font-bold"
+                  : "hover:bg-primary-foreground/10 text-primary-foreground/90"
               }`}
             >
-              Controle de Custos
+              <DollarSign className="w-4 h-4" />
+              <span>Controle de Custos</span>
             </Link>
 
             {isAdmin && (
               <Link
                 to="/admin"
-                className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold tracking-wide transition-colors ${
                   isAdminRoute
-                    ? "bg-primary-foreground/15"
-                    : "hover:bg-primary-foreground/10"
+                    ? "bg-primary-foreground/20 text-white font-bold"
+                    : "hover:bg-primary-foreground/10 text-primary-foreground/90"
                 }`}
               >
                 <Settings className="w-4 h-4" />
-                Admin
+                <span>Admin</span>
               </Link>
             )}
           </nav>
@@ -146,46 +147,55 @@ function AuthenticatedLayout() {
         >
           <Link
             to="/equipamentos"
-            className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+            className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
               !isAdminRoute && !isNotasRoute && !isCustosRoute
-                ? "text-primary"
-                : "text-muted-foreground"
+                ? "text-primary font-bold"
+                : "text-muted-foreground font-medium"
             }`}
           >
             <List className="w-5 h-5" />
-            Equipamentos
+            <span className="text-[11px] leading-none tracking-tight">Equipamentos</span>
           </Link>
 
           {canAccessNotasFiscais && (
             <Link
               to="/notas-fiscais"
-              className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-                isNotasRoute ? "text-primary" : "text-muted-foreground"
+              className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
+                isNotasRoute
+                  ? "text-primary font-bold"
+                  : "text-muted-foreground font-medium"
               }`}
             >
               <FileText className="w-5 h-5" />
-              Notas Fiscais
+              <span className="text-[11px] leading-none tracking-tight">Notas Fiscais</span>
             </Link>
           )}
 
           <Link
             to="/custos"
-            className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-              isCustosRoute ? "text-primary" : "text-muted-foreground"
+            className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
+              isCustosRoute
+                ? "text-primary font-bold"
+                : "text-muted-foreground font-medium"
             }`}
           >
-            Controle de Custos
+            <DollarSign className="w-5 h-5" />
+            <span className="text-[11px] leading-none tracking-tight text-center">
+              Controle de Custos
+            </span>
           </Link>
 
           {isAdmin && (
             <Link
               to="/admin"
-              className={`flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-                isAdminRoute ? "text-primary" : "text-muted-foreground"
+              className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
+                isAdminRoute
+                  ? "text-primary font-bold"
+                  : "text-muted-foreground font-medium"
               }`}
             >
               <Settings className="w-5 h-5" />
-              Admin
+              <span className="text-[11px] leading-none tracking-tight">Admin</span>
             </Link>
           )}
         </div>
