@@ -2,11 +2,9 @@ import { useState } from "react";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Select, 
   SelectContent, 
@@ -14,7 +12,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { PlusCircle, Users, Truck, Upload, Trash2, Key } from "lucide-react";
+import { PlusCircle, Users, Truck } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   ssr: false,
@@ -22,7 +20,6 @@ export const Route = createFileRoute("/_authenticated/admin")({
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/auth" });
     
-    // Verifica se é admin na tabela profiles
     const { data: profile } = await supabase
       .from("profiles")
       .select("is_admin")
@@ -39,6 +36,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 function AdminPage() {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<"equipamentos" | "usuarios">("equipamentos");
   
   // Estados para Novo Equipamento
   const [eqNumero, setEqNumero] = useState("");
@@ -101,7 +99,6 @@ function AdminPage() {
 
     setLoadingUser(true);
     try {
-      // Simulação de criação de usuário vinculado à matrícula
       const fakeEmail = `${userMatricula.toLowerCase().trim()}@gif.local`;
       
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -149,20 +146,39 @@ function AdminPage() {
         <p className="text-sm text-slate-500">Gerenciamento de frota, cadastros e acessos do sistema.</p>
       </div>
 
-      <Tabs defaultValue="equipamentos" className="w-full">
-        <TabsList className="grid w-full grid-max max-w-md mx-auto grid-cols-2 mb-6">
-          <TabsTrigger value="equipamentos" className="flex items-center gap-2 font-bold">
+      {/* Seletor de Abas Personalizado para garantir visibilidade perfeita */}
+      <div className="flex justify-center mb-8">
+        <div className="inline-flex p-1 bg-slate-100 rounded-full border border-slate-200">
+          <button
+            type="button"
+            onClick={() => setActiveTab("equipamentos")}
+            className="flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold tracking-wide transition-all cursor-pointer"
+            style={{
+              backgroundColor: activeTab === "equipamentos" ? "#0f172a !important" : "transparent !important",
+              color: activeTab === "equipamentos" ? "#ffffff !important" : "#475569 !important",
+            }}
+          >
             <Truck className="w-4 h-4" />
-            Equipamentos
-          </TabsTrigger>
-          <TabsTrigger value="usuarios" className="flex items-center gap-2 font-bold">
+            <span>EQUIPAMENTOS</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("usuarios")}
+            className="flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold tracking-wide transition-all cursor-pointer"
+            style={{
+              backgroundColor: activeTab === "usuarios" ? "#0f172a !important" : "transparent !important",
+              color: activeTab === "usuarios" ? "#ffffff !important" : "#475569 !important",
+            }}
+          >
             <Users className="w-4 h-4" />
-            Usuários
-          </TabsTrigger>
-        </TabsList>
+            <span>USUÁRIOS</span>
+          </button>
+        </div>
+      </div>
 
-        {/* ABA DE EQUIPAMENTOS */}
-        <TabsContent value="equipamentos" className="space-y-6">
+      {/* ABA DE EQUIPAMENTOS */}
+      {activeTab === "equipamentos" && (
+        <div className="space-y-6">
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
               <PlusCircle className="w-5 h-5 text-slate-800" />
@@ -228,13 +244,17 @@ function AdminPage() {
                 </div>
               </div>
 
-              {/* Botão com estilo forçado visível em preto/branco */}
-              <div className="pt-2">
+              {/* Botão Criar Equipamento com cor forçada */}
+              <div className="pt-3">
                 <button
                   type="submit"
                   disabled={loadingEq}
-                  className="w-full md:w-auto px-6 py-2.5 rounded-lg font-bold text-sm text-white bg-slate-900 hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 shadow-md cursor-pointer"
-                  style={{ backgroundColor: "#0f172a !important", color: "#ffffff !important" }}
+                  className="w-full md:w-auto px-6 py-3 rounded-lg font-bold text-sm tracking-wide transition-all shadow-md cursor-pointer"
+                  style={{
+                    backgroundColor: "#0f172a !important",
+                    color: "#ffffff !important",
+                    border: "1px solid #0f172a",
+                  }}
                 >
                   {loadingEq ? "Salvando..." : "Criar equipamento"}
                 </button>
@@ -245,10 +265,12 @@ function AdminPage() {
               </p>
             </form>
           </div>
-        </TabsContent>
+        </div>
+      )}
 
-        {/* ABA DE USUÁRIOS */}
-        <TabsContent value="usuarios" className="space-y-6">
+      {/* ABA DE USUÁRIOS */}
+      {activeTab === "usuarios" && (
+        <div className="space-y-6">
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
               <Users className="w-5 h-5 text-slate-800" />
@@ -308,13 +330,17 @@ function AdminPage() {
                 </div>
               </div>
 
-              {/* Botão com estilo forçado visível em preto/branco */}
-              <div className="pt-2">
+              {/* Botão Criar Colaborador com cor forçada */}
+              <div className="pt-3">
                 <button
                   type="submit"
                   disabled={loadingUser}
-                  className="w-full md:w-auto px-6 py-2.5 rounded-lg font-bold text-sm text-white bg-slate-900 hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 shadow-md cursor-pointer"
-                  style={{ backgroundColor: "#0f172a !important", color: "#ffffff !important" }}
+                  className="w-full md:w-auto px-6 py-3 rounded-lg font-bold text-sm tracking-wide transition-all shadow-md cursor-pointer"
+                  style={{
+                    backgroundColor: "#0f172a !important",
+                    color: "#ffffff !important",
+                    border: "1px solid #0f172a",
+                  }}
                 >
                   {loadingUser ? "Cadastrando..." : "Criar colaborador"}
                 </button>
@@ -325,8 +351,8 @@ function AdminPage() {
               </p>
             </form>
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
     </div>
   );
 }
