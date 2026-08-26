@@ -3,6 +3,25 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+@layer utilities {
+  /* Força a cor do Botão Salvar / Primário */
+  .bg-primary {
+    background-color: #16a34a !important; /* Verde */
+    color: #ffffff !important;
+  }
+  .bg-primary:hover {
+    background-color: #15803d !important;
+  }
+
+  /* Força a cor do Botão Lixeira / Destrutivo */
+  .bg-destructive {
+    background-color: #dc2626 !important; /* Vermelho */
+    color: #ffffff !important;
+  }
+  .bg-destructive:hover {
+    background-color: #b91c1c !important;
+  }
+}
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
