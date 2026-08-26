@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -146,7 +145,7 @@ function AdminPage() {
         <p className="text-sm text-slate-500">Gerenciamento de frota, cadastros e acessos do sistema.</p>
       </div>
 
-      {/* Seletor de Abas Personalizado para garantir visibilidade perfeita */}
+      {/* Seletor de Abas */}
       <div className="flex justify-center mb-8">
         <div className="inline-flex p-1 bg-slate-100 rounded-full border border-slate-200">
           <button
@@ -154,7 +153,7 @@ function AdminPage() {
             onClick={() => setActiveTab("equipamentos")}
             className="flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold tracking-wide transition-all cursor-pointer"
             style={{
-              backgroundColor: activeTab === "equipamentos" ? "#0f172a !important" : "transparent !important",
+              backgroundColor: activeTab === "equipamentos" ? "#2563eb !important" : "transparent !important",
               color: activeTab === "equipamentos" ? "#ffffff !important" : "#475569 !important",
             }}
           >
@@ -166,7 +165,7 @@ function AdminPage() {
             onClick={() => setActiveTab("usuarios")}
             className="flex items-center gap-2 px-6 py-2 rounded-full text-xs font-bold tracking-wide transition-all cursor-pointer"
             style={{
-              backgroundColor: activeTab === "usuarios" ? "#0f172a !important" : "transparent !important",
+              backgroundColor: activeTab === "usuarios" ? "#2563eb !important" : "transparent !important",
               color: activeTab === "usuarios" ? "#ffffff !important" : "#475569 !important",
             }}
           >
@@ -179,9 +178,29 @@ function AdminPage() {
       {/* ABA DE EQUIPAMENTOS */}
       {activeTab === "equipamentos" && (
         <div className="space-y-6">
+          {/* Card de Importar Planilha */}
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+              <Truck className="w-5 h-5 text-blue-600" />
+              Importar planilha
+            </h2>
+            <p className="text-xs text-slate-500 mb-4">
+              Aceita Excel (.xlsx) ou CSV. Use o mesmo layout da planilha (ITEM, CL, Nº, CARTAO TICKET, IDENTIFICAÇÃO, AFERIÇÃO, PLACA, ANO, LOCALIZAÇÃO, OPERADOR, TELEFONE, CNH, DATA, U.REVISÃO, H.REVISÃO, DATA, H.ATUAL, PROX. REVISÃO, HR RODADO, OBSERVAÇÕES).
+            </p>
+            {/* Input de arquivo visível com botão azul */}
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <input 
+                type="file" 
+                accept=".xlsx, .csv" 
+                className="text-xs text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
+              />
+            </div>
+          </div>
+
+          {/* Card Novo Equipamento */}
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <PlusCircle className="w-5 h-5 text-slate-800" />
+              <PlusCircle className="w-5 h-5 text-blue-600" />
               Novo equipamento
             </h2>
 
@@ -244,16 +263,16 @@ function AdminPage() {
                 </div>
               </div>
 
-              {/* Botão Criar Equipamento com cor forçada */}
+              {/* Botão Criar Equipamento com fundo Azul visível */}
               <div className="pt-3">
                 <button
                   type="submit"
                   disabled={loadingEq}
                   className="w-full md:w-auto px-6 py-3 rounded-lg font-bold text-sm tracking-wide transition-all shadow-md cursor-pointer"
                   style={{
-                    backgroundColor: "#0f172a !important",
+                    backgroundColor: "#2563eb !important",
                     color: "#ffffff !important",
-                    border: "1px solid #0f172a",
+                    border: "1px solid #1d4ed8",
                   }}
                 >
                   {loadingEq ? "Salvando..." : "Criar equipamento"}
@@ -273,7 +292,7 @@ function AdminPage() {
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <Users className="w-5 h-5 text-slate-800" />
+              <Users className="w-5 h-5 text-blue-600" />
               Cadastrar usuário
             </h2>
 
@@ -330,16 +349,16 @@ function AdminPage() {
                 </div>
               </div>
 
-              {/* Botão Criar Colaborador com cor forçada */}
+              {/* Botão Criar Colaborador com fundo Azul visível */}
               <div className="pt-3">
                 <button
                   type="submit"
                   disabled={loadingUser}
                   className="w-full md:w-auto px-6 py-3 rounded-lg font-bold text-sm tracking-wide transition-all shadow-md cursor-pointer"
                   style={{
-                    backgroundColor: "#0f172a !important",
+                    backgroundColor: "#2563eb !important",
                     color: "#ffffff !important",
-                    border: "1px solid #0f172a",
+                    border: "1px solid #1d4ed8",
                   }}
                 >
                   {loadingUser ? "Cadastrando..." : "Criar colaborador"}
