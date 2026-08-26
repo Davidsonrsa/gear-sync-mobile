@@ -136,16 +136,18 @@ function NewEquipamento() {
         />
       </div>
       
-      {/* Botão com estilo forçado em azul visível */}
-      <div className="pt-1">
+     {/* Botão com fundo azul sólido forçado */}
+      <div className="pt-2">
         <button
           type="button"
           onClick={() => create.mutate()}
           disabled={create.isPending}
-          className="w-full h-10 rounded-md font-medium text-sm transition-all shadow-sm cursor-pointer flex items-center justify-center"
+          className="w-full h-11 rounded-lg font-bold text-sm tracking-wide shadow-md cursor-pointer flex items-center justify-center"
           style={{
-            backgroundColor: "#2563eb !important",
-            color: "#ffffff !important",
+            backgroundColor: "#2563eb",
+            color: "#ffffff",
+            border: "1px solid #1d4ed8",
+            opacity: create.isPending ? 0.7 : 1
           }}
         >
           {create.isPending ? "Criando..." : "Criar equipamento"}
@@ -264,16 +266,18 @@ function Usuarios() {
           </select>
         </div>
 
-        {/* Botão com estilo forçado em azul visível */}
-        <div className="pt-1">
+       {/* Botão com fundo azul sólido forçado */}
+        <div className="pt-2">
           <button
             type="button"
             onClick={() => m.mutate()}
             disabled={m.isPending}
-            className="w-full h-10 rounded-md font-medium text-sm transition-all shadow-sm cursor-pointer flex items-center justify-center"
+            className="w-full h-11 rounded-lg font-bold text-sm tracking-wide shadow-md cursor-pointer flex items-center justify-center"
             style={{
-              backgroundColor: "#2563eb !important",
-              color: "#ffffff !important",
+              backgroundColor: "#2563eb",
+              color: "#ffffff",
+              border: "1px solid #1d4ed8",
+              opacity: m.isPending ? 0.7 : 1
             }}
           >
             {m.isPending
