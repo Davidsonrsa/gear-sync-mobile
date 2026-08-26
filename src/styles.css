@@ -145,3 +145,39 @@
 .blink-overdue {
   animation: blink-red 0.9s ease-in-out infinite;
 }
+/* Botões de Ação Principal (Salvar) - AZUL */
+.bg-primary,
+button[type="submit"],
+button[class*="bg-primary"] {
+  background-color: #2563eb !important; /* Azul marcante */
+  color: #ffffff !important;
+}
+
+.bg-primary:hover,
+button[type="submit"]:hover,
+button[class*="bg-primary"]:hover {
+  background-color: #1d4ed8 !important;
+}
+
+/* Botões de Remoção / Ação Crítica (Deletar, Limpar, Excluir) - VERMELHO */
+.bg-destructive,
+button[class*="destructive"],
+button[class*="bg-destructive"] {
+  background-color: #dc2626 !important; /* Vermelho forte */
+  color: #ffffff !important;
+}
+
+.bg-destructive:hover,
+button[class*="destructive"]:hover,
+button[class*="bg-destructive"]:hover {
+  background-color: #b91c1c !important;
+}
+
+/* Garante que todos os ícones (SVG) dentro desses botões fiquem brancos */
+.bg-primary svg,
+.bg-destructive svg,
+button[type="submit"] svg,
+button[class*="destructive"] svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
