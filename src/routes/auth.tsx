@@ -39,26 +39,26 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-gradient-to-b from-primary/90 to-primary text-primary-foreground">
+    <div className="min-h-[100dvh] flex flex-col bg-slate-100 text-slate-900">
       <div className="flex-1 flex items-center justify-center p-6">
-        <Card className="w-full max-w-sm p-6 bg-card text-card-foreground shadow-2xl">
+        <Card className="w-full max-w-sm p-6 bg-white text-slate-900 shadow-2xl border border-slate-200">
           <div className="flex flex-col items-center gap-3 mb-6">
-            <div className="w-28 h-28 rounded-2xl bg-white p-2 shadow-lg flex items-center justify-center overflow-hidden">
+            <div className="w-28 h-28 rounded-2xl bg-white p-2 shadow-lg flex items-center justify-center overflow-hidden border border-slate-100">
               <img
                 src="/logo SPX MAFRA JHM.png"
                 alt="SPH JHM Mafra"
                 className="w-full h-full object-contain"
               />
             </div>
-            <h1 className="text-lg font-bold text-center text-black">GIF - Gestão Integrada de Frotas</h1>
-            <p className="text-xs text-muted-foreground text-center">
+            <h1 className="text-lg font-bold text-center text-slate-900">GIF - Gestão Integrada de Frotas</h1>
+            <p className="text-xs text-slate-500 text-center">
               Acesso restrito aos colaboradores
             </p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <Label htmlFor="mat">Matrícula</Label>
+              <Label htmlFor="mat" className="text-slate-800 font-medium">Matrícula</Label>
               <Input
                 id="mat"
                 inputMode="text"
@@ -67,12 +67,12 @@ function AuthPage() {
                 required
                 value={mat}
                 onChange={(e) => setMat(e.target.value)}
-                className="mt-1 uppercase"
+                className="mt-1 uppercase text-slate-900 bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 placeholder="Ex: 12345"
               />
             </div>
             <div>
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password" className="text-slate-800 font-medium">Senha</Label>
               <div className="relative mt-1">
                 <Input
                   id="password"
@@ -81,28 +81,33 @@ function AuthPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pr-10"
+                  className="pr-10 text-slate-900 bg-white border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
-            <Button type="submit" disabled={loading} className="w-full h-11 text-base">
+            <Button 
+              type="submit" 
+              disabled={loading} 
+              className="w-full h-11 text-base font-semibold bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-sm"
+            >
               {loading ? "Entrando..." : "Entrar"}
             </Button>
           </form>
-          <p className="mt-6 text-[11px] text-muted-foreground text-center">
+          
+          <p className="mt-6 text-[11px] text-slate-500 text-center">
             Sem acesso? Peça sua matrícula ao administrador.
           </p>
 
-          <div className="mt-4 pt-4 border-t border-border text-center">
-            <p className="text-[11px] text-muted-foreground">
+          <div className="mt-4 pt-4 border-t border-slate-200 text-center">
+            <p className="text-[11px] text-slate-500">
               📱 Para instalar no celular: abra este link no <b>Chrome</b> (Android) ou{" "}
               <b>Safari</b> (iPhone) e use <b>"Adicionar à tela inicial"</b>.
             </p>
