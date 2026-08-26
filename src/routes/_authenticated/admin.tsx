@@ -43,6 +43,18 @@ function AdminPage() {
   }
   return (
     <div className="px-3 py-3 md:px-6 md:py-6 max-w-md md:max-w-5xl mx-auto w-full">
+      {/* Estilo global injetado para forçar a cor azul sólida nos botões de ação */}
+      <style>{`
+        .btn-forcar-azul {
+          background-color: #2563eb !important;
+          color: #ffffff !important;
+          border: 1px solid #1d4ed8 !important;
+        }
+        .btn-forcar-azul:hover {
+          background-color: #1d4ed8 !important;
+        }
+      `}</style>
+
       <Tabs defaultValue="equipamentos">
         <TabsList className="grid grid-cols-2 w-full mb-3">
           <TabsTrigger value="equipamentos">Equipamentos</TabsTrigger>
@@ -136,19 +148,12 @@ function NewEquipamento() {
         />
       </div>
       
-     {/* Botão com fundo azul sólido forçado */}
       <div className="pt-2">
         <button
           type="button"
           onClick={() => create.mutate()}
           disabled={create.isPending}
-          className="w-full h-11 rounded-lg font-bold text-sm tracking-wide shadow-md cursor-pointer flex items-center justify-center"
-          style={{
-            backgroundColor: "#2563eb",
-            color: "#ffffff",
-            border: "1px solid #1d4ed8",
-            opacity: create.isPending ? 0.7 : 1
-          }}
+          className="btn-forcar-azul w-full h-11 rounded-lg font-bold text-sm tracking-wide shadow-md cursor-pointer flex items-center justify-center transition-all"
         >
           {create.isPending ? "Criando..." : "Criar equipamento"}
         </button>
@@ -266,19 +271,12 @@ function Usuarios() {
           </select>
         </div>
 
-       {/* Botão com fundo azul sólido forçado */}
         <div className="pt-2">
           <button
             type="button"
             onClick={() => m.mutate()}
             disabled={m.isPending}
-            className="w-full h-11 rounded-lg font-bold text-sm tracking-wide shadow-md cursor-pointer flex items-center justify-center"
-            style={{
-              backgroundColor: "#2563eb",
-              color: "#ffffff",
-              border: "1px solid #1d4ed8",
-              opacity: m.isPending ? 0.7 : 1
-            }}
+            className="btn-forcar-azul w-full h-11 rounded-lg font-bold text-sm tracking-wide shadow-md cursor-pointer flex items-center justify-center transition-all"
           >
             {m.isPending
               ? "Criando..."
