@@ -70,19 +70,25 @@ function AuthenticatedLayout() {
             </p>
           </div>
 
-          {/* Menu Desktop - Todos os botões visíveis com borda e texto escuro */}
+          {/* Menu Desktop */}
           <nav className="hidden md:flex items-center gap-2 shrink-0">
             {/* EQUIPAMENTOS */}
             <Link
               to="/equipamentos"
               className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all ${
                 isEquipamentosRoute
-                  ? "bg-slate-900 text-white border-slate-900 shadow-md scale-105"
-                  : "bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200 hover:border-slate-400"
+                  ? "bg-slate-900 border-slate-900 shadow-md scale-105"
+                  : "bg-slate-50 border-slate-900 hover:bg-slate-200"
               }`}
             >
-              <List className="w-4 h-4 shrink-0" />
-              <span className="text-slate-800" style={{ color: isEquipamentosRoute ? "#ffffff" : "#1e293b" }}>
+              <List
+                className="w-4 h-4 shrink-0"
+                style={{ color: isEquipamentosRoute ? "#ffffff" : "#0f172a" }}
+              />
+              <span
+                className="font-extrabold"
+                style={{ color: isEquipamentosRoute ? "#ffffff" : "#0f172a" }}
+              >
                 EQUIPAMENTOS
               </span>
             </Link>
@@ -93,12 +99,18 @@ function AuthenticatedLayout() {
                 to="/notas-fiscais"
                 className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all ${
                   isNotasRoute
-                    ? "bg-slate-900 text-white border-slate-900 shadow-md scale-105"
-                    : "bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200 hover:border-slate-400"
+                    ? "bg-slate-900 border-slate-900 shadow-md scale-105"
+                    : "bg-slate-50 border-slate-900 hover:bg-slate-200"
                 }`}
               >
-                <FileText className="w-4 h-4 shrink-0" />
-                <span className="text-slate-800" style={{ color: isNotasRoute ? "#ffffff" : "#1e293b" }}>
+                <FileText
+                  className="w-4 h-4 shrink-0"
+                  style={{ color: isNotasRoute ? "#ffffff" : "#0f172a" }}
+                />
+                <span
+                  className="font-extrabold"
+                  style={{ color: isNotasRoute ? "#ffffff" : "#0f172a" }}
+                >
                   NOTAS FISCAIS
                 </span>
               </Link>
@@ -109,12 +121,18 @@ function AuthenticatedLayout() {
               to="/custos"
               className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all ${
                 isCustosRoute
-                  ? "bg-slate-900 text-white border-slate-900 shadow-md scale-105"
-                  : "bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200 hover:border-slate-400"
+                  ? "bg-slate-900 border-slate-900 shadow-md scale-105"
+                  : "bg-slate-50 border-slate-900 hover:bg-slate-200"
               }`}
             >
-              <DollarSign className="w-4 h-4 shrink-0" />
-              <span className="text-slate-800" style={{ color: isCustosRoute ? "#ffffff" : "#1e293b" }}>
+              <DollarSign
+                className="w-4 h-4 shrink-0"
+                style={{ color: isCustosRoute ? "#ffffff" : "#0f172a" }}
+              />
+              <span
+                className="font-extrabold"
+                style={{ color: isCustosRoute ? "#ffffff" : "#0f172a" }}
+              >
                 CONTROLE DE CUSTOS
               </span>
             </Link>
@@ -125,27 +143,33 @@ function AuthenticatedLayout() {
                 to="/admin"
                 className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all ${
                   isAdminRoute
-                    ? "bg-slate-900 text-white border-slate-900 shadow-md scale-105"
-                    : "bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200 hover:border-slate-400"
+                    ? "bg-slate-900 border-slate-900 shadow-md scale-105"
+                    : "bg-slate-50 border-slate-900 hover:bg-slate-200"
                 }`}
               >
-                <Settings className="w-4 h-4 shrink-0" />
-                <span className="text-slate-800" style={{ color: isAdminRoute ? "#ffffff" : "#1e293b" }}>
+                <Settings
+                  className="w-4 h-4 shrink-0"
+                  style={{ color: isAdminRoute ? "#ffffff" : "#0f172a" }}
+                />
+                <span
+                  className="font-extrabold"
+                  style={{ color: isAdminRoute ? "#ffffff" : "#0f172a" }}
+                >
                   ADMIN
                 </span>
               </Link>
             )}
           </nav>
 
-          {/* Botão Sair */}
+          {/* Botão Sair com ícone escuro visível */}
           <Button
             variant="ghost"
             size="icon"
             onClick={handleSignOut}
-            className="text-slate-700 hover:text-red-600 hover:bg-red-50 border-2 border-slate-300 rounded-full shrink-0"
+            className="hover:bg-red-50 border-2 border-slate-900 rounded-full shrink-0"
             title="Sair"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-4 h-4 text-slate-900 hover:text-red-600" style={{ color: "#0f172a" }} />
           </Button>
         </div>
       </header>
@@ -165,40 +189,50 @@ function AuthenticatedLayout() {
         >
           <Link
             to="/equipamentos"
-            className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
-              isEquipamentosRoute
-                ? "text-slate-900 font-extrabold"
-                : "text-slate-600 font-semibold hover:text-slate-900"
-            }`}
+            className="flex flex-col items-center justify-center gap-1 py-2.5 transition-colors"
           >
-            <List className="w-5 h-5" />
-            <span className="text-[10px] uppercase tracking-wider leading-none">EQUIPAMENTOS</span>
+            <List className="w-5 h-5" style={{ color: isEquipamentosRoute ? "#0f172a" : "#64748b" }} />
+            <span
+              className="text-[10px] uppercase tracking-wider leading-none"
+              style={{
+                color: isEquipamentosRoute ? "#0f172a" : "#64748b",
+                fontWeight: isEquipamentosRoute ? 900 : 600,
+              }}
+            >
+              EQUIPAMENTOS
+            </span>
           </Link>
 
           {canAccessNotasFiscais && (
             <Link
               to="/notas-fiscais"
-              className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
-                isNotasRoute
-                  ? "text-slate-900 font-extrabold"
-                  : "text-slate-600 font-semibold hover:text-slate-900"
-              }`}
+              className="flex flex-col items-center justify-center gap-1 py-2.5 transition-colors"
             >
-              <FileText className="w-5 h-5" />
-              <span className="text-[10px] uppercase tracking-wider leading-none">NOTAS FISCAIS</span>
+              <FileText className="w-5 h-5" style={{ color: isNotasRoute ? "#0f172a" : "#64748b" }} />
+              <span
+                className="text-[10px] uppercase tracking-wider leading-none"
+                style={{
+                  color: isNotasRoute ? "#0f172a" : "#64748b",
+                  fontWeight: isNotasRoute ? 900 : 600,
+                }}
+              >
+                NOTAS FISCAIS
+              </span>
             </Link>
           )}
 
           <Link
             to="/custos"
-            className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
-              isCustosRoute
-                ? "text-slate-900 font-extrabold"
-                : "text-slate-600 font-semibold hover:text-slate-900"
-            }`}
+            className="flex flex-col items-center justify-center gap-1 py-2.5 transition-colors"
           >
-            <DollarSign className="w-5 h-5" />
-            <span className="text-[10px] uppercase tracking-wider leading-none text-center">
+            <DollarSign className="w-5 h-5" style={{ color: isCustosRoute ? "#0f172a" : "#64748b" }} />
+            <span
+              className="text-[10px] uppercase tracking-wider leading-none text-center"
+              style={{
+                color: isCustosRoute ? "#0f172a" : "#64748b",
+                fontWeight: isCustosRoute ? 900 : 600,
+              }}
+            >
               CUSTOS
             </span>
           </Link>
@@ -206,14 +240,18 @@ function AuthenticatedLayout() {
           {isAdmin && (
             <Link
               to="/admin"
-              className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
-                isAdminRoute
-                  ? "text-slate-900 font-extrabold"
-                  : "text-slate-600 font-semibold hover:text-slate-900"
-              }`}
+              className="flex flex-col items-center justify-center gap-1 py-2.5 transition-colors"
             >
-              <Settings className="w-5 h-5" />
-              <span className="text-[10px] uppercase tracking-wider leading-none">ADMIN</span>
+              <Settings className="w-5 h-5" style={{ color: isAdminRoute ? "#0f172a" : "#64748b" }} />
+              <span
+                className="text-[10px] uppercase tracking-wider leading-none"
+                style={{
+                  color: isAdminRoute ? "#0f172a" : "#64748b",
+                  fontWeight: isAdminRoute ? 900 : 600,
+                }}
+              >
+                ADMIN
+              </span>
             </Link>
           )}
         </div>
