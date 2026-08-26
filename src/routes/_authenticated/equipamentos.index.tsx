@@ -4,7 +4,6 @@ import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Search,
   ChevronRight,
@@ -91,7 +90,7 @@ function BotaoTacografo() {
   const tacografosVencidos = useMemo(() => {
     if (!tacografos) return [];
     return tacografos.filter((item: any) => {
-      const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento;
+      const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento || item.data_validade;
       if (!dataVal) return false;
       const dias = calcularDiasVencimento(dataVal);
       return dias !== null && dias < 0;
@@ -101,7 +100,7 @@ function BotaoTacografo() {
   const tacografosComAlerta = useMemo(() => {
     if (!tacografos) return [];
     return tacografos.filter((item: any) => {
-      const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento;
+      const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento || item.data_validade;
       if (!dataVal) return false;
       const dias = calcularDiasVencimento(dataVal);
       return dias !== null && dias <= 30;
@@ -112,7 +111,7 @@ function BotaoTacografo() {
     if (!tacografos) return [];
     return tacografos
       .map((item: any) => {
-        const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento;
+        const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento || item.data_validade;
         const diasRestantes = dataVal ? calcularDiasVencimento(dataVal) : null;
         
         const isVencido = diasRestantes !== null && diasRestantes < 0;
@@ -145,23 +144,22 @@ function BotaoTacografo() {
 
   return (
     <>
-      <Button variant="outline" size="sm" className="h-9 relative bg-white gap-1.5" onClick={() => setOpen(true)}>
-        <Calendar className="w-4 h-4 text-slate-500" />
-        <span>Tacógrafo</span>
+      <Button variant="outline" size="sm" className="h-9 relative bg-white border-slate-300 gap-1.5" onClick={() => setOpen(true)}>
+        <Calendar className="w-4 h-4 text-slate-600" />
+        <span className="text-slate-800 font-medium">Tacógrafo</span>
         {tacografosVencidos.length > 0 ? (
-          <span
-            className="font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none bg-red-600 text-white"
-          >
+          <span className="font-bold text-[11px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full bg-red-600 text-white shadow-sm">
             {tacografosVencidos.length}
           </span>
-        ) : null}
+        ) : (
+          <span className="font-bold text-[11px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full bg-red-600 text-white shadow-sm">
+            !
+          </span>
+        )}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent
-          style={{ backgroundColor: "#ffffff", opacity: 1 }}
-          className="sm:max-w-md text-slate-900 border border-slate-300 shadow-2xl p-0 overflow-hidden"
-        >
+        <DialogContent className="sm:max-w-md text-slate-900 border border-slate-300 shadow-2xl p-0 overflow-hidden bg-white">
           <DialogHeader className="p-4 pb-3 border-b border-slate-200 bg-slate-50">
             <DialogTitle className="text-slate-900 font-bold text-base">
               Vencimentos de Tacógrafo
@@ -175,7 +173,7 @@ function BotaoTacografo() {
                 <div>
                   <p className="font-semibold">Atenção aos Vencimentos!</p>
                   <p className="text-[11px] text-amber-800">
-                    Existe(m) <strong>{tacografosComAlerta.length}</strong> tacógrafo(s) vencido(s) ou que vence(m) nos próximos 30 dias.
+                    Existe(m) <strong>{tacografosComAlerta.length}</strong> tacógrafo(s) vencido(s) ou vencendo nos próximos 30 dias.
                   </p>
                 </div>
               </div>
@@ -206,11 +204,11 @@ function BotaoTacografo() {
 
                   if (item.isVencido) {
                     bgCard = "bg-red-50 border-red-200";
-                    badgeClass = "bg-red-600 text-white";
+                    badgeClass = "bg-red-600 text-white font-bold";
                     badgeText = "Vencido";
                   } else if (item.isVencendoEmBreve) {
                     bgCard = "bg-amber-50 border-amber-200";
-                    badgeClass = "bg-amber-500 text-white";
+                    badgeClass = "bg-amber-500 text-white font-bold";
                     badgeText = item.diasRestantes === 0 ? "Hoje" : `Vence em ${item.diasRestantes}d`;
                   }
 
@@ -224,7 +222,7 @@ function BotaoTacografo() {
                           <p className="font-bold text-slate-900">
                             {item.numero || item.veiculo_equipamento || item.equipamento || "Equipamento"}
                           </p>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm inline-block ${badgeClass}`}>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full shadow-sm inline-block ${badgeClass}`}>
                             {badgeText}
                           </span>
                         </div>
@@ -330,21 +328,18 @@ function BotaoSeguro() {
 
   return (
     <>
-      <Button variant="outline" size="sm" className="h-9 relative bg-white gap-1.5" onClick={() => setOpen(true)}>
-        <ShieldCheck className="w-4 h-4 text-slate-500" />
-        <span>Seguro</span>
-        {segurosVencidos.length > 0 ? (
-          <span className="font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none bg-red-600 text-white">
+      <Button variant="outline" size="sm" className="h-9 relative bg-white border-slate-300 gap-1.5" onClick={() => setOpen(true)}>
+        <ShieldCheck className="w-4 h-4 text-slate-600" />
+        <span className="text-slate-800 font-medium">Seguro</span>
+        {segurosVencidos.length > 0 && (
+          <span className="font-bold text-[11px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full bg-red-600 text-white shadow-sm">
             {segurosVencidos.length}
           </span>
-        ) : null}
+        )}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent
-          style={{ backgroundColor: "#ffffff", opacity: 1 }}
-          className="sm:max-w-md text-slate-900 border border-slate-300 shadow-2xl p-0 overflow-hidden"
-        >
+        <DialogContent className="sm:max-w-md text-slate-900 border border-slate-300 shadow-2xl p-0 overflow-hidden bg-white">
           <DialogHeader className="p-4 pb-3 border-b border-slate-200 bg-slate-50">
             <DialogTitle className="text-slate-900 font-bold text-base">
               Gerenciar Seguros
@@ -389,11 +384,11 @@ function BotaoSeguro() {
 
                   if (item.isVencido) {
                     bgCard = "bg-red-50 border-red-200";
-                    badgeClass = "bg-red-600 text-white";
+                    badgeClass = "bg-red-600 text-white font-bold";
                     badgeText = "Vencido";
                   } else if (item.isVencendoEmBreve) {
                     bgCard = "bg-amber-50 border-amber-200";
-                    badgeClass = "bg-amber-500 text-white";
+                    badgeClass = "bg-amber-500 text-white font-bold";
                     badgeText = item.diasRestantes === 0 ? "Hoje" : `Vence em ${item.diasRestantes}d`;
                   }
 
@@ -407,7 +402,7 @@ function BotaoSeguro() {
                           <p className="font-bold text-slate-900">
                             {item.equipamento || item.numero || item.veiculo_equipamento || "Equipamento"}
                           </p>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm inline-block ${badgeClass}`}>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full shadow-sm inline-block ${badgeClass}`}>
                             {badgeText}
                           </span>
                         </div>
@@ -537,7 +532,7 @@ function EquipamentosList() {
 
           <Select value={cl} onValueChange={setCl}>
             <SelectTrigger className="h-9 text-xs w-[130px] bg-white border-slate-200">
-              <SelectValue placeholder="Classe (CL)" />
+              <SelectValue placeholder="Todas as CL" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all">Todas as CL</SelectItem>
@@ -555,11 +550,11 @@ function EquipamentosList() {
             className="h-9 text-xs border-slate-200 gap-1.5"
           >
             <span>{onlyOverdue ? "Apenas Vencidos" : "Vencidos"}</span>
-            {totalEquipamentosVencidos > 0 ? (
-              <span className="font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full border-none bg-red-600 text-white">
+            {totalEquipamentosVencidos > 0 && (
+              <span className="font-bold text-[10px] h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full bg-red-600 text-white shadow-sm">
                 {totalEquipamentosVencidos}
               </span>
-            ) : null}
+            )}
           </Button>
 
           <Notificacoes />
@@ -597,7 +592,7 @@ function EquipamentosList() {
               <Card
                 className={`p-3.5 rounded-2xl transition-all border-2 relative ${
                   overdue
-                    ? "border-red-500 bg-red-50 animate-pulse"
+                    ? "border-red-500 bg-red-50/40"
                     : "border-slate-200 bg-white hover:border-slate-300"
                 }`}
               >
@@ -626,7 +621,7 @@ function EquipamentosList() {
                           </span>
                         )}
                         {overdue && (
-                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full text-white bg-red-500 shadow-sm inline-block">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white bg-red-600 shadow-sm inline-block">
                             Revisão vencida
                           </span>
                         )}
@@ -635,12 +630,12 @@ function EquipamentosList() {
                     </div>
 
                     {e.identificacao && (
-                      <p className={`text-xs mt-0.5 truncate ${overdue ? "text-red-800" : "text-slate-500"}`}>
+                      <p className={`text-xs mt-0.5 truncate ${overdue ? "text-red-800 font-medium" : "text-slate-500"}`}>
                         {e.identificacao}
                       </p>
                     )}
 
-                    <div className={`flex items-center gap-2 mt-1 text-[11px] font-mono ${overdue ? "text-red-700" : "text-slate-500"}`}>
+                    <div className={`flex items-center gap-2 mt-1 text-[11px] font-mono ${overdue ? "text-red-700 font-semibold" : "text-slate-500"}`}>
                       {e.placa && <span>{e.placa}</span>}
                       {e.localizacao && <span>• {e.localizacao}</span>}
                     </div>
@@ -668,7 +663,7 @@ function EquipamentosList() {
                         className="h-full transition-all duration-300"
                         style={{
                           width: `${pct}%`,
-                          backgroundColor: overdue ? "#ef4444" : "#f59e0b",
+                          backgroundColor: overdue ? "#dc2626" : "#f59e0b",
                         }}
                       />
                     </div>
@@ -678,10 +673,10 @@ function EquipamentosList() {
                   </div>
 
                   <div className="flex justify-between items-center text-[10px]">
-                    <span className={overdue ? "text-red-700 font-semibold" : "text-slate-400"}>
+                    <span className={overdue ? "text-red-700 font-bold" : "text-slate-500"}>
                       Hr rodado: {hrRodado}h
                     </span>
-                    <span className={overdue ? "text-red-700 font-semibold" : "text-slate-400"}>
+                    <span className={overdue ? "text-red-700 font-bold" : "text-slate-500"}>
                       limite: {limite}h
                     </span>
                   </div>
@@ -692,14 +687,14 @@ function EquipamentosList() {
         })}
       </div>
 
-      {/* Botão Salvar/Adicionar flutuante com fundo azul e ícone branco */}
+      {/* Botão Flutuante de Adicionar com fundo azul vibrante */}
       {isAdmin && (
         <Link to="/admin">
           <Button
             size="icon"
-            className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 text-white z-30"
+            className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-xl bg-blue-600 hover:bg-blue-700 text-white z-30 flex items-center justify-center"
           >
-            <Plus className="w-5 h-5 text-white" />
+            <Plus className="w-6 h-6 text-white" />
           </Button>
         </Link>
       )}
