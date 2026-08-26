@@ -1,3 +1,4 @@
+```tsx
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -99,7 +100,12 @@ function EquipamentoDetail() {
   const { data: equip, isLoading } = useQuery({
     queryKey: ["equipamento", id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("equipamentos").select("*").eq("id", id).single();
+      const { data, error } = await supabase
+        .from("equipamentos")
+        .select("*")
+        .eq("id", id)
+        .single();
+
       if (error) throw error;
       return data as Equip;
     },
@@ -113,20 +119,28 @@ function EquipamentoDetail() {
         .select("id, storage_path, uploaded_by, caption, created_at")
         .eq("equipamento_id", id)
         .order("created_at", { ascending: false });
+
       if (error) throw error;
+
       const withUrl = await Promise.all(
         (data ?? []).map(async (f) => {
           const { data: signed } = await supabase.storage
             .from("equipamento-fotos")
             .createSignedUrl(f.storage_path, 60 * 60);
-          return { ...f, url: signed?.signedUrl ?? "" };
+
+          return {
+            ...f,
+            url: signed?.signedUrl ?? "",
+          };
         }),
       );
+
       return withUrl;
     },
   });
 
   const coverInput = useRef<HTMLInputElement>(null);
+
   const { data: coverUrl } = useQuery({
     queryKey: ["cover", id, equip?.cover_storage_path],
     enabled: !!equip?.cover_storage_path,
@@ -134,11 +148,13 @@ function EquipamentoDetail() {
       const { data } = await supabase.storage
         .from("equipamento-fotos")
         .createSignedUrl(equip!.cover_storage_path!, 60 * 60);
+
       return data?.signedUrl ?? null;
     },
   });
 
   const [form, setForm] = useState<Partial<Equip>>({});
+
   useEffect(() => {
     if (equip) setForm(equip);
   }, [equip]);
@@ -168,80 +184,133 @@ function EquipamentoDetail() {
             filtro_ar_cond1: payload.filtro_ar_cond1,
             filtro_ar_cond2: payload.filtro_ar_cond2,
           };
-      const { error } = await supabase.from("equipamentos").update(allowed).eq("id", id);
+
+      const { error } = await supabase
+        .from("equipamentos")
+        .update(allowed)
+        .eq("id", id);
+
       if (error) throw error;
     },
+
     onSuccess: () => {
       toast.success("Alterações salvas");
       qc.invalidateQueries({ queryKey: ["equipamento", id] });
       qc.invalidateQueries({ queryKey: ["equipamentos"] });
       qc.invalidateQueries({ queryKey: ["notificacoes"] });
     },
+
     onError: (e: Error) => toast.error(e.message),
   });
 
   const remove = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("equipamentos").delete().eq("id", id);
+      const { error } = await supabase
+        .from("equipamentos")
+        .delete()
+        .eq("id", id);
+
       if (error) throw error;
     },
+
     onSuccess: () => {
       toast.success("Equipamento excluído");
       qc.invalidateQueries({ queryKey: ["equipamentos"] });
       navigate({ to: "/equipamentos" });
     },
+
     onError: (e: Error) => toast.error(e.message),
   });
 
   async function handleUpload(files: FileList | null) {
     if (!files?.length || !userId) return;
+
     const file = files[0];
-    const caption = window.prompt("Observação da foto (opcional):", "") ?? "";
+    const caption =
+      window.prompt("Observação da foto (opcional):", "") ?? "";
+
     const ext = file.name.split(".").pop() || "jpg";
     const path = `${id}/${crypto.randomUUID()}.${ext}`;
+
     const { error: upErr } = await supabase.storage
       .from("equipamento-fotos")
-      .upload(path, file, { contentType: file.type, upsert: false });
+      .upload(path, file, {
+        contentType: file.type,
+        upsert: false,
+      });
+
     if (upErr) return toast.error(upErr.message);
-    const { error: insErr } = await supabase.from("equipamento_fotos").insert({
-      equipamento_id: id,
-      storage_path: path,
-      uploaded_by: userId,
-      caption: caption || null,
-    });
+
+    const { error: insErr } = await supabase
+      .from("equipamento_fotos")
+      .insert({
+        equipamento_id: id,
+        storage_path: path,
+        uploaded_by: userId,
+        caption: caption || null,
+      });
+
     if (insErr) return toast.error(insErr.message);
+
     toast.success("Foto enviada");
     qc.invalidateQueries({ queryKey: ["fotos", id] });
   }
 
-  async function deletePhoto(photoId: string, path: string, uploadedBy: string | null) {
-    if (!isAdmin && uploadedBy !== userId)
+  async function deletePhoto(
+    photoId: string,
+    path: string,
+    uploadedBy: string | null,
+  ) {
+    if (!isAdmin && uploadedBy !== userId) {
       return toast.error("Você só pode excluir suas próprias fotos");
-    await supabase.storage.from("equipamento-fotos").remove([path]);
-    const { error } = await supabase.from("equipamento_fotos").delete().eq("id", photoId);
+    }
+
+    await supabase.storage
+      .from("equipamento-fotos")
+      .remove([path]);
+
+    const { error } = await supabase
+      .from("equipamento_fotos")
+      .delete()
+      .eq("id", photoId);
+
     if (error) return toast.error(error.message);
+
     toast.success("Foto removida");
     qc.invalidateQueries({ queryKey: ["fotos", id] });
   }
 
   async function handleCoverUpload(files: FileList | null) {
     if (!files?.length || !isAdmin) return;
+
     const file = files[0];
     const ext = file.name.split(".").pop() || "jpg";
     const path = `${id}/cover-${crypto.randomUUID()}.${ext}`;
+
     const { error: upErr } = await supabase.storage
       .from("equipamento-fotos")
-      .upload(path, file, { contentType: file.type, upsert: false });
+      .upload(path, file, {
+        contentType: file.type,
+        upsert: false,
+      });
+
     if (upErr) return toast.error(upErr.message);
+
     if (equip?.cover_storage_path) {
-      await supabase.storage.from("equipamento-fotos").remove([equip.cover_storage_path]);
+      await supabase.storage
+        .from("equipamento-fotos")
+        .remove([equip.cover_storage_path]);
     }
+
     const { error } = await supabase
       .from("equipamentos")
       .update({ cover_storage_path: path })
       .eq("id", id);
+
     if (error) return toast.error(error.message);
+
     toast.success("Imagem principal atualizada");
+
     qc.invalidateQueries({ queryKey: ["equipamento", id] });
     qc.invalidateQueries({ queryKey: ["equipamentos"] });
     qc.invalidateQueries({ queryKey: ["cover", id] });
@@ -249,28 +318,46 @@ function EquipamentoDetail() {
 
   async function removeCover() {
     if (!isAdmin || !equip?.cover_storage_path) return;
-    await supabase.storage.from("equipamento-fotos").remove([equip.cover_storage_path]);
+
+    await supabase.storage
+      .from("equipamento-fotos")
+      .remove([equip.cover_storage_path]);
+
     const { error } = await supabase
       .from("equipamentos")
       .update({ cover_storage_path: null })
       .eq("id", id);
+
     if (error) return toast.error(error.message);
+
     toast.success("Imagem principal removida");
+
     qc.invalidateQueries({ queryKey: ["equipamento", id] });
     qc.invalidateQueries({ queryKey: ["equipamentos"] });
   }
 
   if (isLoading || !equip) {
-    return <div className="p-6 text-center text-muted-foreground">Carregando...</div>;
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        Carregando...
+      </div>
+    );
   }
 
   const ro = !isAdmin;
+
   const hrRodadoCalc =
     form.horimetro_atual != null && form.h_revisao != null
-      ? Math.max(0, Number(form.horimetro_atual) - Number(form.h_revisao))
+      ? Math.max(
+          0,
+          Number(form.horimetro_atual) - Number(form.h_revisao),
+        )
       : null;
+
   const limite = Number(form.limite_revisao ?? 500);
-  const overdue = hrRodadoCalc != null && hrRodadoCalc > limite;
+
+  const overdue =
+    hrRodadoCalc != null && hrRodadoCalc > limite;
 
   return (
     <div className="px-3 py-3 md:px-6 md:py-6 max-w-md md:max-w-5xl mx-auto w-full space-y-3">
@@ -279,34 +366,51 @@ function EquipamentoDetail() {
           to="/equipamentos"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="w-4 h-4" /> Voltar
+          <ArrowLeft className="w-4 h-4" />
+          Voltar
         </Link>
+
         <div className="flex items-center gap-3">
           <Link
             to="/equipamentos/$id/historico"
             params={{ id }}
             className="inline-flex items-center gap-1 text-xs text-primary font-medium"
           >
-            <FileText className="w-3.5 h-3.5" /> Histórico
+            <FileText className="w-3.5 h-3.5" />
+            Histórico
           </Link>
+
           <Link
             to="/equipamentos/$id/manutencao"
             params={{ id }}
             className="inline-flex items-center gap-1 text-xs text-primary font-medium"
           >
-            <Wrench className="w-3.5 h-3.5" /> Plano
+            <Wrench className="w-3.5 h-3.5" />
+            Plano
           </Link>
         </div>
       </div>
 
-      <Card className={`p-4 ${overdue ? "border-destructive ring-1 ring-destructive/40" : ""}`}>
+      <Card
+        className={`p-4 ${
+          overdue
+            ? "border-destructive ring-1 ring-destructive/40"
+            : ""
+        }`}
+      >
         {coverUrl && (
           <div className="relative mb-3 rounded-md overflow-hidden border border-border bg-muted">
-            <img src={coverUrl} alt="" className="w-full h-40 object-cover" />
+            <img
+              src={coverUrl}
+              alt=""
+              className="w-full h-40 object-cover"
+            />
+
             {isAdmin && (
               <button
+                type="button"
                 onClick={removeCover}
-                className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full p-1.5 shadow"
+                className="absolute top-2 right-2 bg-red-600 text-white hover:bg-red-700 rounded-full p-1.5 shadow"
                 title="Remover imagem"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -314,6 +418,7 @@ function EquipamentoDetail() {
             )}
           </div>
         )}
+
         {isAdmin && (
           <div className="mb-3">
             <input
@@ -326,6 +431,7 @@ function EquipamentoDetail() {
                 e.target.value = "";
               }}
             />
+
             <Button
               size="sm"
               variant="outline"
@@ -333,32 +439,59 @@ function EquipamentoDetail() {
               onClick={() => coverInput.current?.click()}
             >
               <ImagePlus className="w-4 h-4 mr-1.5" />
-              {coverUrl ? "Trocar imagem principal" : "Adicionar imagem principal"}
+              {coverUrl
+                ? "Trocar imagem principal"
+                : "Adicionar imagem principal"}
             </Button>
           </div>
         )}
+
         <div className="flex items-start justify-between gap-2 mb-1 flex-wrap">
-          <h2 className="text-xl font-bold text-primary">{equip.numero}</h2>
+          <h2 className="text-xl font-bold text-primary">
+            {equip.numero}
+          </h2>
+
           <div className="flex items-center gap-1.5 flex-wrap">
-            {equip.cl && <Badge variant="secondary">CL {equip.cl}</Badge>}
+            {equip.cl && (
+              <Badge variant="secondary">
+                CL {equip.cl}
+              </Badge>
+            )}
+
             {overdue && (
-              <Badge variant="destructive" className="blink-overdue">
+              <Badge
+                variant="destructive"
+                className="blink-overdue"
+              >
                 Revisão vencida
               </Badge>
             )}
           </div>
         </div>
+
         {equip.identificacao && (
-          <p className="text-xs text-muted-foreground">{equip.identificacao}</p>
+          <p className="text-xs text-muted-foreground">
+            {equip.identificacao}
+          </p>
         )}
+
         {hrRodadoCalc != null && (
           <p
-            className={`text-xs mt-2 ${overdue ? "text-destructive font-semibold blink-overdue" : "text-muted-foreground"}`}
+            className={`text-xs mt-2 ${
+              overdue
+                ? "text-destructive font-semibold blink-overdue"
+                : "text-muted-foreground"
+            }`}
           >
-            Hr rodado: <span className="tabular-nums">{hrRodadoCalc}h</span>
+            Hr rodado:{" "}
+            <span className="tabular-nums">
+              {hrRodadoCalc}h
+            </span>
+
             <span className="opacity-70">
               {" "}
-              (atual {form.horimetro_atual} − últ. revisão {form.h_revisao})
+              (atual {form.horimetro_atual} − últ. revisão{" "}
+              {form.h_revisao})
             </span>
           </p>
         )}
@@ -379,16 +512,26 @@ function EquipamentoDetail() {
               onChange={(e) =>
                 setForm({
                   ...form,
-                  horimetro_atual: e.target.value === "" ? null : Number(e.target.value),
+                  horimetro_atual:
+                    e.target.value === ""
+                      ? null
+                      : Number(e.target.value),
                 })
               }
             />
           </Field>
+
           <Field label="Data">
             <Input
               type="date"
               value={form.data_horimetro_atual ?? ""}
-              onChange={(e) => setForm({ ...form, data_horimetro_atual: e.target.value || null })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  data_horimetro_atual:
+                    e.target.value || null,
+                })
+              }
             />
           </Field>
         </div>
@@ -397,21 +540,41 @@ function EquipamentoDetail() {
           <Textarea
             rows={3}
             value={form.observacoes ?? ""}
-            onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                observacoes: e.target.value,
+              })
+            }
           />
         </Field>
 
-        <Button onClick={() => save.mutate(form)} disabled={save.isPending} className="w-full h-11">
-          <Save className="w-4 h-4 mr-2" /> {save.isPending ? "Salvando..." : "Salvar"}
+        <Button
+          variant="default"
+          onClick={() => save.mutate(form)}
+          disabled={save.isPending}
+          className="w-full h-11"
+        >
+          <Save className="w-4 h-4 mr-2" />
+          {save.isPending ? "Salvando..." : "Salvar"}
         </Button>
       </Card>
 
       <Card className="p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-sm">Fotos ({fotos?.length ?? 0})</h3>
-          <Button size="sm" variant="outline" onClick={() => fileInput.current?.click()}>
-            <Camera className="w-4 h-4 mr-1.5" /> Adicionar
+          <h3 className="font-semibold text-sm">
+            Fotos ({fotos?.length ?? 0})
+          </h3>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => fileInput.current?.click()}
+          >
+            <Camera className="w-4 h-4 mr-1.5" />
+            Adicionar
           </Button>
+
           <input
             ref={fileInput}
             type="file"
@@ -424,13 +587,17 @@ function EquipamentoDetail() {
             }}
           />
         </div>
+
         {!fotos || fotos.length === 0 ? (
           <button
+            type="button"
             onClick={() => fileInput.current?.click()}
             className="w-full border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center gap-2 text-muted-foreground hover:bg-muted/50"
           >
             <ImagePlus className="w-8 h-8" />
-            <span className="text-xs">Toque para adicionar a primeira foto</span>
+            <span className="text-xs">
+              Toque para adicionar a primeira foto
+            </span>
           </button>
         ) : (
           <div className="grid grid-cols-2 gap-2">
@@ -447,24 +614,43 @@ function EquipamentoDetail() {
                     loading="lazy"
                   />
                 </div>
+
                 {(isAdmin || f.uploaded_by === userId) && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <button className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1.5 shadow">
+                      <button
+                        type="button"
+                        className="absolute top-1 right-1 bg-red-600 text-white hover:bg-red-700 rounded-full p-1.5 shadow"
+                        title="Excluir foto"
+                      >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </AlertDialogTrigger>
+
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Excluir foto?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          Excluir foto?
+                        </AlertDialogTitle>
+
                         <AlertDialogDescription>
                           Esta ação não pode ser desfeita.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
+
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel>
+                          Cancelar
+                        </AlertDialogCancel>
+
                         <AlertDialogAction
-                          onClick={() => deletePhoto(f.id, f.storage_path, f.uploaded_by)}
+                          onClick={() =>
+                            deletePhoto(
+                              f.id,
+                              f.storage_path,
+                              f.uploaded_by,
+                            )
+                          }
                         >
                           Excluir
                         </AlertDialogAction>
@@ -472,6 +658,7 @@ function EquipamentoDetail() {
                     </AlertDialogContent>
                   </AlertDialog>
                 )}
+
                 {f.caption && (
                   <p className="text-[11px] px-2 py-1 bg-card text-foreground border-t border-border line-clamp-2">
                     {f.caption}
@@ -488,7 +675,9 @@ function EquipamentoDetail() {
           <span className="w-2 h-2 rounded-full bg-primary" />
           Dados do equipamento{" "}
           {ro && (
-            <span className="text-[11px] font-normal text-muted-foreground">(somente leitura)</span>
+            <span className="text-[11px] font-normal text-muted-foreground">
+              (somente leitura)
+            </span>
           )}
         </h3>
 
@@ -497,28 +686,51 @@ function EquipamentoDetail() {
             <Input
               value={form.numero ?? ""}
               readOnly={ro}
-              onChange={(e) => setForm({ ...form, numero: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  numero: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Classe">
             <Input
               value={form.cl ?? ""}
               readOnly={ro}
-              onChange={(e) => setForm({ ...form, cl: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  cl: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Placa">
             <Input
               value={form.placa ?? ""}
               readOnly={ro}
-              onChange={(e) => setForm({ ...form, placa: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  placa: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Ano">
             <Input
               value={form.ano ?? ""}
               readOnly={ro}
-              onChange={(e) => setForm({ ...form, ano: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  ano: e.target.value,
+                })
+              }
             />
           </Field>
         </div>
@@ -527,7 +739,12 @@ function EquipamentoDetail() {
           <Input
             value={form.identificacao ?? ""}
             readOnly={ro}
-            onChange={(e) => setForm({ ...form, identificacao: e.target.value })}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                identificacao: e.target.value,
+              })
+            }
           />
         </Field>
 
@@ -535,7 +752,12 @@ function EquipamentoDetail() {
           <Input
             value={form.cartao_ticket ?? ""}
             readOnly={ro}
-            onChange={(e) => setForm({ ...form, cartao_ticket: e.target.value })}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                cartao_ticket: e.target.value,
+              })
+            }
           />
         </Field>
 
@@ -543,7 +765,12 @@ function EquipamentoDetail() {
           <Input
             value={form.localizacao ?? ""}
             readOnly={ro}
-            onChange={(e) => setForm({ ...form, localizacao: e.target.value })}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                localizacao: e.target.value,
+              })
+            }
           />
         </Field>
 
@@ -552,14 +779,25 @@ function EquipamentoDetail() {
             <Input
               value={form.operador_contato ?? ""}
               readOnly={ro}
-              onChange={(e) => setForm({ ...form, operador_contato: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  operador_contato: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Telefone">
             <Input
               value={form.telefone ?? ""}
               readOnly={ro}
-              onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  telefone: e.target.value,
+                })
+              }
             />
           </Field>
         </div>
@@ -569,14 +807,25 @@ function EquipamentoDetail() {
             <Input
               value={form.cnh ?? ""}
               readOnly={ro}
-              onChange={(e) => setForm({ ...form, cnh: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  cnh: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Vencimento da Aferição do Tacógrafo">
             <Input
               value={form.afericao_taco ?? ""}
               readOnly={ro}
-              onChange={(e) => setForm({ ...form, afericao_taco: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  afericao_taco: e.target.value,
+                })
+              }
             />
           </Field>
         </div>
@@ -587,9 +836,16 @@ function EquipamentoDetail() {
               type="date"
               value={form.data_ultima_revisao ?? ""}
               readOnly={ro}
-              onChange={(e) => setForm({ ...form, data_ultima_revisao: e.target.value || null })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  data_ultima_revisao:
+                    e.target.value || null,
+                })
+              }
             />
           </Field>
+
           <Field label="U. revisão">
             <Input
               type="number"
@@ -598,7 +854,10 @@ function EquipamentoDetail() {
               onChange={(e) =>
                 setForm({
                   ...form,
-                  u_revisao: e.target.value === "" ? null : Number(e.target.value),
+                  u_revisao:
+                    e.target.value === ""
+                      ? null
+                      : Number(e.target.value),
                 })
               }
             />
@@ -614,11 +873,15 @@ function EquipamentoDetail() {
               onChange={(e) =>
                 setForm({
                   ...form,
-                  h_revisao: e.target.value === "" ? null : Number(e.target.value),
+                  h_revisao:
+                    e.target.value === ""
+                      ? null
+                      : Number(e.target.value),
                 })
               }
             />
           </Field>
+
           <Field label="Próx. revisão (h)">
             <Input
               type="number"
@@ -627,7 +890,10 @@ function EquipamentoDetail() {
               onChange={(e) =>
                 setForm({
                   ...form,
-                  proxima_revisao_horimetro: e.target.value === "" ? null : Number(e.target.value),
+                  proxima_revisao_horimetro:
+                    e.target.value === ""
+                      ? null
+                      : Number(e.target.value),
                 })
               }
             />
@@ -641,15 +907,23 @@ function EquipamentoDetail() {
               value={hrRodadoCalc ?? ""}
               readOnly
               className={
-                overdue ? "blink-overdue border-destructive text-destructive font-semibold" : ""
+                overdue
+                  ? "blink-overdue border-destructive text-destructive font-semibold"
+                  : ""
               }
             />
           </Field>
+
           <Field label="Status">
             <Input
               value={form.status ?? ""}
               readOnly={ro}
-              onChange={(e) => setForm({ ...form, status: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  status: e.target.value,
+                })
+              }
             />
           </Field>
         </div>
@@ -659,46 +933,84 @@ function EquipamentoDetail() {
             <Select
               value={String(limite)}
               onValueChange={(v) => {
-                const next = { ...form, limite_revisao: Number(v) };
+                const next = {
+                  ...form,
+                  limite_revisao: Number(v),
+                };
+
                 setForm(next);
-                save.mutate({ limite_revisao: Number(v) });
+                save.mutate({
+                  limite_revisao: Number(v),
+                });
               }}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
+
               <SelectContent>
                 {LIMITES_REVISAO.map((l) => (
-                  <SelectItem key={l} value={String(l)}>
+                  <SelectItem
+                    key={l}
+                    value={String(l)}
+                  >
                     {l} h
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           ) : (
-            <Input value={`${limite} h`} readOnly />
+            <Input
+              value={`${limite} h`}
+              readOnly
+            />
           )}
         </Field>
 
         {isAdmin && (
           <div className="flex gap-2 pt-2">
-            <Button onClick={() => save.mutate(form)} disabled={save.isPending} className="flex-1">
-              <Save className="w-4 h-4 mr-2" /> Salvar tudo
+            <Button
+              variant="default"
+              onClick={() => save.mutate(form)}
+              disabled={save.isPending}
+              className="flex-1"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Salvar tudo
             </Button>
+
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="icon">
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  title="Excluir equipamento"
+                >
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </AlertDialogTrigger>
+
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir equipamento?</AlertDialogTitle>
-                  <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+                  <AlertDialogTitle>
+                    Excluir equipamento?
+                  </AlertDialogTitle>
+
+                  <AlertDialogDescription>
+                    Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
                 </AlertDialogHeader>
+
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => remove.mutate()}>Excluir</AlertDialogAction>
+                  <AlertDialogCancel>
+                    Cancelar
+                  </AlertDialogCancel>
+
+                  <AlertDialogAction
+                    onClick={() => remove.mutate()}
+                  >
+                    Excluir
+                  </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -716,7 +1028,12 @@ function EquipamentoDetail() {
           <Input
             value={form.modelo ?? ""}
             readOnly={ro}
-            onChange={(e) => setForm({ ...form, modelo: e.target.value })}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                modelo: e.target.value,
+              })
+            }
           />
         </Field>
 
@@ -724,97 +1041,192 @@ function EquipamentoDetail() {
           <Field label="Óleo motor">
             <Input
               value={form.motor_oleo ?? ""}
-              onChange={(e) => setForm({ ...form, motor_oleo: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  motor_oleo: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Óleo hidráulico">
             <Input
               value={form.hidraulico_oleo ?? ""}
-              onChange={(e) => setForm({ ...form, hidraulico_oleo: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  hidraulico_oleo: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Óleo transmissão">
             <Input
               value={form.transmissao_oleo ?? ""}
-              onChange={(e) => setForm({ ...form, transmissao_oleo: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  transmissao_oleo: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Óleo eixo">
             <Input
               value={form.eixo_oleo ?? ""}
-              onChange={(e) => setForm({ ...form, eixo_oleo: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  eixo_oleo: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Óleo tandem">
             <Input
               value={form.tandem_oleo ?? ""}
-              onChange={(e) => setForm({ ...form, tandem_oleo: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  tandem_oleo: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Filtro lubrificante">
             <Input
               value={form.filtro_lub ?? ""}
-              onChange={(e) => setForm({ ...form, filtro_lub: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  filtro_lub: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Diesel primário">
             <Input
               value={form.filtro_diesel_p ?? ""}
-              onChange={(e) => setForm({ ...form, filtro_diesel_p: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  filtro_diesel_p: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Diesel secundário">
             <Input
               value={form.filtro_diesel_s ?? ""}
-              onChange={(e) => setForm({ ...form, filtro_diesel_s: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  filtro_diesel_s: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Sep. água">
             <Input
               value={form.filtro_sep_agua ?? ""}
-              onChange={(e) => setForm({ ...form, filtro_sep_agua: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  filtro_sep_agua: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Ar externo">
             <Input
               value={form.filtro_ar_ext ?? ""}
-              onChange={(e) => setForm({ ...form, filtro_ar_ext: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  filtro_ar_ext: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Ar interno">
             <Input
               value={form.filtro_ar_int ?? ""}
-              onChange={(e) => setForm({ ...form, filtro_ar_int: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  filtro_ar_int: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Transmissão">
             <Input
               value={form.filtro_trans ?? ""}
-              onChange={(e) => setForm({ ...form, filtro_trans: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  filtro_trans: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Hidráulico">
             <Input
               value={form.filtro_hidr ?? ""}
-              onChange={(e) => setForm({ ...form, filtro_hidr: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  filtro_hidr: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Respiro">
             <Input
               value={form.filtro_respiro ?? ""}
-              onChange={(e) => setForm({ ...form, filtro_respiro: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  filtro_respiro: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Ar cond. 1">
             <Input
               value={form.filtro_ar_cond1 ?? ""}
-              onChange={(e) => setForm({ ...form, filtro_ar_cond1: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  filtro_ar_cond1: e.target.value,
+                })
+              }
             />
           </Field>
+
           <Field label="Ar cond. 2">
             <Input
               value={form.filtro_ar_cond2 ?? ""}
-              onChange={(e) => setForm({ ...form, filtro_ar_cond2: e.target.value })}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  filtro_ar_cond2: e.target.value,
+                })
+              }
             />
           </Field>
         </div>
@@ -824,13 +1236,15 @@ function EquipamentoDetail() {
             onClick={() => save.mutate(form)}
             disabled={save.isPending}
             className="flex-1"
-            variant="secondary"
+            variant="default"
           >
-            <Save className="w-4 h-4 mr-2" /> Salvar filtros
+            <Save className="w-4 h-4 mr-2" />
+            Salvar filtros
           </Button>
+
           <Button
             type="button"
-            variant="outline"
+            variant="destructive"
             onClick={() =>
               setForm({
                 ...form,
@@ -853,27 +1267,47 @@ function EquipamentoDetail() {
               })
             }
           >
-            <Trash2 className="w-4 h-4 mr-2" /> Limpar
+            <Trash2 className="w-4 h-4 mr-2" />
+            Limpar
           </Button>
         </div>
       </Card>
 
-      <Link to="/equipamentos/$id/manutencao" params={{ id }}>
-        <Button variant="outline" className="w-full h-12">
-          <Printer className="w-4 h-4 mr-2" /> Formulário de manutenção (imprimir)
+      <Link
+        to="/equipamentos/$id/manutencao"
+        params={{ id }}
+      >
+        <Button
+          variant="outline"
+          className="w-full h-12"
+        >
+          <Printer className="w-4 h-4 mr-2" />
+          Formulário de manutenção (imprimir)
         </Button>
       </Link>
     </div>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      <div className="mt-1">{children}</div>
+      <Label className="text-xs text-muted-foreground">
+        {label}
+      </Label>
+
+      <div className="mt-1">
+        {children}
+      </div>
     </div>
   );
 }
 
 export default EquipamentoDetail;
+```
