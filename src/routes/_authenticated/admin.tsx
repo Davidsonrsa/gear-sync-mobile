@@ -95,7 +95,7 @@ function NewEquipamento() {
   return (
     <Card className="p-4 space-y-3">
       <h3 className="font-semibold text-sm flex items-center gap-2">
-        <Plus className="w-4 h-4" /> Novo equipamento
+        <Plus className="w-4 h-4 text-blue-600" /> Novo equipamento
       </h3>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -135,9 +135,23 @@ function NewEquipamento() {
           onChange={(e) => setF({ ...f, localizacao: e.target.value })}
         />
       </div>
-      <Button onClick={() => create.mutate()} disabled={create.isPending} className="w-full">
-        {create.isPending ? "Criando..." : "Criar equipamento"}
-      </Button>
+      
+      {/* Botão com estilo forçado em azul visível */}
+      <div className="pt-1">
+        <button
+          type="button"
+          onClick={() => create.mutate()}
+          disabled={create.isPending}
+          className="w-full h-10 rounded-md font-medium text-sm transition-all shadow-sm cursor-pointer flex items-center justify-center"
+          style={{
+            backgroundColor: "#2563eb !important",
+            color: "#ffffff !important",
+          }}
+        >
+          {create.isPending ? "Criando..." : "Criar equipamento"}
+        </button>
+      </div>
+
       <p className="text-[11px] text-muted-foreground">
         Os demais campos podem ser preenchidos depois na tela do equipamento.
       </p>
@@ -203,7 +217,7 @@ function Usuarios() {
     <div className="space-y-3">
       <Card className="p-4 space-y-3">
         <h3 className="font-semibold text-sm flex items-center gap-2">
-          <UserPlus className="w-4 h-4" /> Cadastrar usuário
+          <UserPlus className="w-4 h-4 text-blue-600" /> Cadastrar usuário
         </h3>
         <div>
           <Label className="text-xs">Nome completo *</Label>
@@ -249,13 +263,27 @@ function Usuarios() {
             <option value="admin">Administrador</option>
           </select>
         </div>
-        <Button onClick={() => m.mutate()} disabled={m.isPending} className="w-full">
-          {m.isPending
-            ? "Criando..."
-            : f.role === "admin"
-              ? "Criar administrador"
-              : "Criar colaborador"}
-        </Button>
+
+        {/* Botão com estilo forçado em azul visível */}
+        <div className="pt-1">
+          <button
+            type="button"
+            onClick={() => m.mutate()}
+            disabled={m.isPending}
+            className="w-full h-10 rounded-md font-medium text-sm transition-all shadow-sm cursor-pointer flex items-center justify-center"
+            style={{
+              backgroundColor: "#2563eb !important",
+              color: "#ffffff !important",
+            }}
+          >
+            {m.isPending
+              ? "Criando..."
+              : f.role === "admin"
+                ? "Criar administrador"
+                : "Criar colaborador"}
+          </button>
+        </div>
+
         <p className="text-[11px] text-muted-foreground">
           O usuário fará login com a <b>matrícula</b> e a senha definida aqui. Administradores terão
           acesso ao painel administrativo.
