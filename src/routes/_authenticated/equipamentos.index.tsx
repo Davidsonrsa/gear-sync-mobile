@@ -1,4 +1,13 @@
-import { Search, Gauge, ChevronRight, Plus, Trash2 } from "lucide-react";
+import {
+  Search,
+  Gauge,
+  ChevronRight,
+  Plus,
+  Trash2,
+  ShieldCheck,
+  AlertTriangle,
+  Calendar,
+} from "lucide-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
@@ -6,7 +15,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, ChevronRight, Plus, Gauge, ShieldCheck, AlertTriangle, Calendar } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Notificacoes } from "@/components/Notificacoes";
