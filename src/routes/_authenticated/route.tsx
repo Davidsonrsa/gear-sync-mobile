@@ -67,56 +67,56 @@ function AuthenticatedLayout() {
           </div>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1 shrink-0">
+          <nav className="hidden md:flex items-center gap-2 shrink-0">
             <Link
               to="/equipamentos"
-              className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold tracking-wide transition-colors ${
+              className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-base font-extrabold tracking-wider transition-all ${
                 !isAdminRoute && !isNotasRoute && !isCustosRoute
-                  ? "bg-primary-foreground/20 text-white font-bold"
-                  : "hover:bg-primary-foreground/10 text-primary-foreground/90"
+                  ? "bg-white text-black shadow-sm"
+                  : "hover:bg-primary-foreground/20 text-white"
               }`}
             >
-              <List className="w-4 h-4" />
-              <span>Equipamentos</span>
+              <List className="w-5 h-5" />
+              <span>EQUIPAMENTOS</span>
             </Link>
 
             {canAccessNotasFiscais && (
               <Link
                 to="/notas-fiscais"
-                className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold tracking-wide transition-colors ${
+                className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-base font-extrabold tracking-wider transition-all ${
                   isNotasRoute
-                    ? "bg-primary-foreground/20 text-white font-bold"
-                    : "hover:bg-primary-foreground/10 text-primary-foreground/90"
+                    ? "bg-white text-black shadow-sm"
+                    : "hover:bg-primary-foreground/20 text-white"
                 }`}
               >
-                <FileText className="w-4 h-4" />
-                <span>Notas Fiscais</span>
+                <FileText className="w-5 h-5" />
+                <span>NOTAS FISCAIS</span>
               </Link>
             )}
 
             <Link
               to="/custos"
-              className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold tracking-wide transition-colors ${
+              className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-base font-extrabold tracking-wider transition-all ${
                 isCustosRoute
-                  ? "bg-primary-foreground/20 text-white font-bold"
-                  : "hover:bg-primary-foreground/10 text-primary-foreground/90"
+                  ? "bg-white text-black shadow-sm"
+                  : "hover:bg-primary-foreground/20 text-white"
               }`}
             >
-              <DollarSign className="w-4 h-4" />
-              <span>Controle de Custos</span>
+              <DollarSign className="w-5 h-5" />
+              <span>CONTROLE DE CUSTOS</span>
             </Link>
 
             {isAdmin && (
               <Link
                 to="/admin"
-                className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold tracking-wide transition-colors ${
+                className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-base font-extrabold tracking-wider transition-all ${
                   isAdminRoute
-                    ? "bg-primary-foreground/20 text-white font-bold"
-                    : "hover:bg-primary-foreground/10 text-primary-foreground/90"
+                    ? "bg-white text-black shadow-sm"
+                    : "hover:bg-primary-foreground/20 text-white"
                 }`}
               >
-                <Settings className="w-4 h-4" />
-                <span>Admin</span>
+                <Settings className="w-5 h-5" />
+                <span>ADMIN</span>
               </Link>
             )}
           </nav>
@@ -149,12 +149,12 @@ function AuthenticatedLayout() {
             to="/equipamentos"
             className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
               !isAdminRoute && !isNotasRoute && !isCustosRoute
-                ? "text-primary font-bold"
-                : "text-muted-foreground font-medium"
+                ? "text-primary font-black scale-105"
+                : "text-muted-foreground font-semibold"
             }`}
           >
             <List className="w-5 h-5" />
-            <span className="text-[11px] leading-none tracking-tight">Equipamentos</span>
+            <span className="text-[10px] uppercase tracking-wider leading-none">EQUIPAMENTOS</span>
           </Link>
 
           {canAccessNotasFiscais && (
@@ -162,12 +162,12 @@ function AuthenticatedLayout() {
               to="/notas-fiscais"
               className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
                 isNotasRoute
-                  ? "text-primary font-bold"
-                  : "text-muted-foreground font-medium"
+                  ? "text-primary font-black scale-105"
+                  : "text-muted-foreground font-semibold"
               }`}
             >
               <FileText className="w-5 h-5" />
-              <span className="text-[11px] leading-none tracking-tight">Notas Fiscais</span>
+              <span className="text-[10px] uppercase tracking-wider leading-none">NOTAS FISCAIS</span>
             </Link>
           )}
 
@@ -175,13 +175,13 @@ function AuthenticatedLayout() {
             to="/custos"
             className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
               isCustosRoute
-                ? "text-primary font-bold"
-                : "text-muted-foreground font-medium"
+                ? "text-primary font-black scale-105"
+                : "text-muted-foreground font-semibold"
             }`}
           >
             <DollarSign className="w-5 h-5" />
-            <span className="text-[11px] leading-none tracking-tight text-center">
-              Controle de Custos
+            <span className="text-[10px] uppercase tracking-wider leading-none text-center">
+              CUSTOS
             </span>
           </Link>
 
@@ -190,12 +190,12 @@ function AuthenticatedLayout() {
               to="/admin"
               className={`flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
                 isAdminRoute
-                  ? "text-primary font-bold"
-                  : "text-muted-foreground font-medium"
+                  ? "text-primary font-black scale-105"
+                  : "text-muted-foreground font-semibold"
               }`}
             >
               <Settings className="w-5 h-5" />
-              <span className="text-[11px] leading-none tracking-tight">Admin</span>
+              <span className="text-[10px] uppercase tracking-wider leading-none">ADMIN</span>
             </Link>
           )}
         </div>
