@@ -76,16 +76,16 @@ function AuthenticatedLayout() {
               to="/equipamentos"
               className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all"
               style={{
-                backgroundColor: isEquipamentosRoute ? "#0f172a" : "#ffffff",
-                borderColor: "#0f172a",
-                color: isEquipamentosRoute ? "#ffffff" : "#0f172a",
+                backgroundColor: isEquipamentosRoute ? "#0f172a !important" : "#ffffff !important",
+                borderColor: "#0f172a !important",
+                color: isEquipamentosRoute ? "#ffffff !important" : "#0f172a !important",
               }}
             >
               <List
                 className="w-4 h-4 shrink-0"
-                style={{ color: isEquipamentosRoute ? "#ffffff" : "#0f172a" }}
+                style={{ color: isEquipamentosRoute ? "#ffffff !important" : "#0f172a !important", stroke: isEquipamentosRoute ? "#ffffff !important" : "#0f172a !important" }}
               />
-              <span style={{ color: isEquipamentosRoute ? "#ffffff" : "#0f172a" }}>
+              <span style={{ color: isEquipamentosRoute ? "#ffffff !important" : "#0f172a !important" }}>
                 EQUIPAMENTOS
               </span>
             </Link>
@@ -96,16 +96,16 @@ function AuthenticatedLayout() {
                 to="/notas-fiscais"
                 className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all"
                 style={{
-                  backgroundColor: isNotasRoute ? "#0f172a" : "#ffffff",
-                  borderColor: "#0f172a",
-                  color: isNotasRoute ? "#ffffff" : "#0f172a",
+                  backgroundColor: isNotasRoute ? "#0f172a !important" : "#ffffff !important",
+                  borderColor: "#0f172a !important",
+                  color: isNotasRoute ? "#ffffff !important" : "#0f172a !important",
                 }}
               >
                 <FileText
                   className="w-4 h-4 shrink-0"
-                  style={{ color: isNotasRoute ? "#ffffff" : "#0f172a" }}
+                  style={{ color: isNotasRoute ? "#ffffff !important" : "#0f172a !important", stroke: isNotasRoute ? "#ffffff !important" : "#0f172a !important" }}
                 />
-                <span style={{ color: isNotasRoute ? "#ffffff" : "#0f172a" }}>
+                <span style={{ color: isNotasRoute ? "#ffffff !important" : "#0f172a !important" }}>
                   NOTAS FISCAIS
                 </span>
               </Link>
@@ -116,16 +116,16 @@ function AuthenticatedLayout() {
               to="/custos"
               className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all"
               style={{
-                backgroundColor: isCustosRoute ? "#0f172a" : "#ffffff",
-                borderColor: "#0f172a",
-                color: isCustosRoute ? "#ffffff" : "#0f172a",
+                backgroundColor: isCustosRoute ? "#0f172a !important" : "#ffffff !important",
+                borderColor: "#0f172a !important",
+                color: isCustosRoute ? "#ffffff !important" : "#0f172a !important",
               }}
             >
               <DollarSign
                 className="w-4 h-4 shrink-0"
-                style={{ color: isCustosRoute ? "#ffffff" : "#0f172a" }}
+                style={{ color: isCustosRoute ? "#ffffff !important" : "#0f172a !important", stroke: isCustosRoute ? "#ffffff !important" : "#0f172a !important" }}
               />
-              <span style={{ color: isCustosRoute ? "#ffffff" : "#0f172a" }}>
+              <span style={{ color: isCustosRoute ? "#ffffff !important" : "#0f172a !important" }}>
                 CONTROLE DE CUSTOS
               </span>
             </Link>
@@ -136,31 +136,37 @@ function AuthenticatedLayout() {
                 to="/admin"
                 className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all"
                 style={{
-                  backgroundColor: isAdminRoute ? "#0f172a" : "#ffffff",
-                  borderColor: "#0f172a",
-                  color: isAdminRoute ? "#ffffff" : "#0f172a",
+                  backgroundColor: isAdminRoute ? "#0f172a !important" : "#ffffff !important",
+                  borderColor: "#0f172a !important",
+                  color: isAdminRoute ? "#ffffff !important" : "#0f172a !important",
                 }}
               >
                 <Settings
                   className="w-4 h-4 shrink-0"
-                  style={{ color: isAdminRoute ? "#ffffff" : "#0f172a" }}
+                  style={{ color: isAdminRoute ? "#ffffff !important" : "#0f172a !important", stroke: isAdminRoute ? "#ffffff !important" : "#0f172a !important" }}
                 />
-                <span style={{ color: isAdminRoute ? "#ffffff" : "#0f172a" }}>
+                <span style={{ color: isAdminRoute ? "#ffffff !important" : "#0f172a !important" }}>
                   ADMIN
                 </span>
               </Link>
             )}
           </nav>
 
-          {/* Botão Sair Nativo (garante visibilidade do ícone) */}
+          {/* Botão Sair - Com ícone visível em vermelho/escuro */}
           <button
             type="button"
             onClick={handleSignOut}
             title="Sair"
-            className="w-9 h-9 rounded-full border-2 border-slate-900 bg-white flex items-center justify-center hover:bg-red-50 hover:border-red-600 transition-colors shrink-0"
-            style={{ borderColor: "#0f172a", backgroundColor: "#ffffff" }}
+            className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-100 hover:bg-red-100 hover:border-red-600 flex items-center justify-center transition-colors shrink-0"
+            style={{
+              backgroundColor: "#f1f5f9 !important",
+              borderColor: "#0f172a !important",
+            }}
           >
-            <LogOut className="w-4 h-4" style={{ color: "#0f172a", stroke: "#0f172a" }} />
+            <LogOut
+              className="w-5 h-5"
+              style={{ color: "#0f172a !important", stroke: "#0f172a !important" }}
+            />
           </button>
         </div>
       </header>
@@ -182,11 +188,11 @@ function AuthenticatedLayout() {
             to="/equipamentos"
             className="flex flex-col items-center justify-center gap-1 py-2.5 transition-colors"
           >
-            <List className="w-5 h-5" style={{ color: isEquipamentosRoute ? "#0f172a" : "#64748b" }} />
+            <List className="w-5 h-5" style={{ color: isEquipamentosRoute ? "#0f172a !important" : "#64748b !important" }} />
             <span
               className="text-[10px] uppercase tracking-wider leading-none"
               style={{
-                color: isEquipamentosRoute ? "#0f172a" : "#64748b",
+                color: isEquipamentosRoute ? "#0f172a !important" : "#64748b !important",
                 fontWeight: isEquipamentosRoute ? 900 : 600,
               }}
             >
@@ -199,11 +205,11 @@ function AuthenticatedLayout() {
               to="/notas-fiscais"
               className="flex flex-col items-center justify-center gap-1 py-2.5 transition-colors"
             >
-              <FileText className="w-5 h-5" style={{ color: isNotasRoute ? "#0f172a" : "#64748b" }} />
+              <FileText className="w-5 h-5" style={{ color: isNotasRoute ? "#0f172a !important" : "#64748b !important" }} />
               <span
                 className="text-[10px] uppercase tracking-wider leading-none"
                 style={{
-                  color: isNotasRoute ? "#0f172a" : "#64748b",
+                  color: isNotasRoute ? "#0f172a !important" : "#64748b !important",
                   fontWeight: isNotasRoute ? 900 : 600,
                 }}
               >
@@ -216,11 +222,11 @@ function AuthenticatedLayout() {
             to="/custos"
             className="flex flex-col items-center justify-center gap-1 py-2.5 transition-colors"
           >
-            <DollarSign className="w-5 h-5" style={{ color: isCustosRoute ? "#0f172a" : "#64748b" }} />
+            <DollarSign className="w-5 h-5" style={{ color: isCustosRoute ? "#0f172a !important" : "#64748b !important" }} />
             <span
               className="text-[10px] uppercase tracking-wider leading-none text-center"
               style={{
-                color: isCustosRoute ? "#0f172a" : "#64748b",
+                color: isCustosRoute ? "#0f172a !important" : "#64748b !important",
                 fontWeight: isCustosRoute ? 900 : 600,
               }}
             >
@@ -233,11 +239,11 @@ function AuthenticatedLayout() {
               to="/admin"
               className="flex flex-col items-center justify-center gap-1 py-2.5 transition-colors"
             >
-              <Settings className="w-5 h-5" style={{ color: isAdminRoute ? "#0f172a" : "#64748b" }} />
+              <Settings className="w-5 h-5" style={{ color: isAdminRoute ? "#0f172a !important" : "#64748b !important" }} />
               <span
                 className="text-[10px] uppercase tracking-wider leading-none"
                 style={{
-                  color: isAdminRoute ? "#0f172a" : "#64748b",
+                  color: isAdminRoute ? "#0f172a !important" : "#64748b !important",
                   fontWeight: isAdminRoute ? 900 : 600,
                 }}
               >
