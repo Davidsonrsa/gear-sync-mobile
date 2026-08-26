@@ -145,7 +145,6 @@ function EquipamentoDetail() {
 
   const save = useMutation({
     mutationFn: async (payload: Partial<Equip>) => {
-      // Para colaborador: permitido horímetro, observações, filtros e lubrificantes.
       const allowed = isAdmin
         ? payload
         : {
@@ -234,7 +233,6 @@ function EquipamentoDetail() {
       .from("equipamento-fotos")
       .upload(path, file, { contentType: file.type, upsert: false });
     if (upErr) return toast.error(upErr.message);
-    // remove previous cover file, if any
     if (equip?.cover_storage_path) {
       await supabase.storage.from("equipamento-fotos").remove([equip.cover_storage_path]);
     }
@@ -266,7 +264,7 @@ function EquipamentoDetail() {
     return <div className="p-6 text-center text-muted-foreground">Carregando...</div>;
   }
 
-  const ro = !isAdmin; // colaborador: campos readonly exceto os 3 permitidos
+  const ro = !isAdmin;
   const hrRodadoCalc =
     form.horimetro_atual != null && form.h_revisao != null
       ? Math.max(0, Number(form.horimetro_atual) - Number(form.h_revisao))
@@ -366,7 +364,6 @@ function EquipamentoDetail() {
         )}
       </Card>
 
-      {/* Editáveis por TODOS */}
       <Card className="p-4 space-y-3 border-accent/40">
         <h3 className="font-semibold text-sm flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-accent" />
@@ -409,7 +406,6 @@ function EquipamentoDetail() {
         </Button>
       </Card>
 
-      {/* Fotos */}
       <Card className="p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-sm">Fotos ({fotos?.length ?? 0})</h3>
@@ -487,7 +483,6 @@ function EquipamentoDetail() {
         )}
       </Card>
 
-      {/* Dados gerais (admin edita; colaborador só lê) */}
       <Card className="p-4 space-y-3">
         <h3 className="font-semibold text-sm flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-primary" />
@@ -711,7 +706,6 @@ function EquipamentoDetail() {
         )}
       </Card>
 
-      {/* Filtros e Lubrificantes — todos podem editar */}
       <Card className="p-4 space-y-3">
         <h3 className="font-semibold text-sm flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-warning" />
@@ -881,3 +875,5 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
+export default EquipamentoDetail;
