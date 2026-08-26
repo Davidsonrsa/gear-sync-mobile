@@ -9,7 +9,6 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { LogOut, Settings, List, FileText, DollarSign } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -75,20 +74,18 @@ function AuthenticatedLayout() {
             {/* EQUIPAMENTOS */}
             <Link
               to="/equipamentos"
-              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all ${
-                isEquipamentosRoute
-                  ? "bg-slate-900 border-slate-900 shadow-md scale-105"
-                  : "bg-slate-50 border-slate-900 hover:bg-slate-200"
-              }`}
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all"
+              style={{
+                backgroundColor: isEquipamentosRoute ? "#0f172a" : "#ffffff",
+                borderColor: "#0f172a",
+                color: isEquipamentosRoute ? "#ffffff" : "#0f172a",
+              }}
             >
               <List
                 className="w-4 h-4 shrink-0"
                 style={{ color: isEquipamentosRoute ? "#ffffff" : "#0f172a" }}
               />
-              <span
-                className="font-extrabold"
-                style={{ color: isEquipamentosRoute ? "#ffffff" : "#0f172a" }}
-              >
+              <span style={{ color: isEquipamentosRoute ? "#ffffff" : "#0f172a" }}>
                 EQUIPAMENTOS
               </span>
             </Link>
@@ -97,20 +94,18 @@ function AuthenticatedLayout() {
             {canAccessNotasFiscais && (
               <Link
                 to="/notas-fiscais"
-                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all ${
-                  isNotasRoute
-                    ? "bg-slate-900 border-slate-900 shadow-md scale-105"
-                    : "bg-slate-50 border-slate-900 hover:bg-slate-200"
-                }`}
+                className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all"
+                style={{
+                  backgroundColor: isNotasRoute ? "#0f172a" : "#ffffff",
+                  borderColor: "#0f172a",
+                  color: isNotasRoute ? "#ffffff" : "#0f172a",
+                }}
               >
                 <FileText
                   className="w-4 h-4 shrink-0"
                   style={{ color: isNotasRoute ? "#ffffff" : "#0f172a" }}
                 />
-                <span
-                  className="font-extrabold"
-                  style={{ color: isNotasRoute ? "#ffffff" : "#0f172a" }}
-                >
+                <span style={{ color: isNotasRoute ? "#ffffff" : "#0f172a" }}>
                   NOTAS FISCAIS
                 </span>
               </Link>
@@ -119,20 +114,18 @@ function AuthenticatedLayout() {
             {/* CONTROLE DE CUSTOS */}
             <Link
               to="/custos"
-              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all ${
-                isCustosRoute
-                  ? "bg-slate-900 border-slate-900 shadow-md scale-105"
-                  : "bg-slate-50 border-slate-900 hover:bg-slate-200"
-              }`}
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all"
+              style={{
+                backgroundColor: isCustosRoute ? "#0f172a" : "#ffffff",
+                borderColor: "#0f172a",
+                color: isCustosRoute ? "#ffffff" : "#0f172a",
+              }}
             >
               <DollarSign
                 className="w-4 h-4 shrink-0"
                 style={{ color: isCustosRoute ? "#ffffff" : "#0f172a" }}
               />
-              <span
-                className="font-extrabold"
-                style={{ color: isCustosRoute ? "#ffffff" : "#0f172a" }}
-              >
+              <span style={{ color: isCustosRoute ? "#ffffff" : "#0f172a" }}>
                 CONTROLE DE CUSTOS
               </span>
             </Link>
@@ -141,36 +134,34 @@ function AuthenticatedLayout() {
             {isAdmin && (
               <Link
                 to="/admin"
-                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all ${
-                  isAdminRoute
-                    ? "bg-slate-900 border-slate-900 shadow-md scale-105"
-                    : "bg-slate-50 border-slate-900 hover:bg-slate-200"
-                }`}
+                className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs md:text-sm font-extrabold tracking-wide border-2 transition-all"
+                style={{
+                  backgroundColor: isAdminRoute ? "#0f172a" : "#ffffff",
+                  borderColor: "#0f172a",
+                  color: isAdminRoute ? "#ffffff" : "#0f172a",
+                }}
               >
                 <Settings
                   className="w-4 h-4 shrink-0"
                   style={{ color: isAdminRoute ? "#ffffff" : "#0f172a" }}
                 />
-                <span
-                  className="font-extrabold"
-                  style={{ color: isAdminRoute ? "#ffffff" : "#0f172a" }}
-                >
+                <span style={{ color: isAdminRoute ? "#ffffff" : "#0f172a" }}>
                   ADMIN
                 </span>
               </Link>
             )}
           </nav>
 
-          {/* Botão Sair com ícone escuro visível */}
-          <Button
-            variant="ghost"
-            size="icon"
+          {/* Botão Sair Nativo (garante visibilidade do ícone) */}
+          <button
+            type="button"
             onClick={handleSignOut}
-            className="hover:bg-red-50 border-2 border-slate-900 rounded-full shrink-0"
             title="Sair"
+            className="w-9 h-9 rounded-full border-2 border-slate-900 bg-white flex items-center justify-center hover:bg-red-50 hover:border-red-600 transition-colors shrink-0"
+            style={{ borderColor: "#0f172a", backgroundColor: "#ffffff" }}
           >
-            <LogOut className="w-4 h-4 text-slate-900 hover:text-red-600" style={{ color: "#0f172a" }} />
-          </Button>
+            <LogOut className="w-4 h-4" style={{ color: "#0f172a", stroke: "#0f172a" }} />
+          </button>
         </div>
       </header>
 
