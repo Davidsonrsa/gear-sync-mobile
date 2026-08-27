@@ -911,7 +911,6 @@ function NotasFiscaisPage() {
 <div className="flex justify-between items-center pt-4">
   {/* Botão Excluir */}
   <Button
-    variant="destructive" // Se quiser manter vermelho, remova esta linha. Para azul, use a classe abaixo:
     onClick={() => handleDeletarNota(notaSelecionada.id, notaSelecionada.numero_nf)}
     className="bg-blue-600 hover:bg-blue-700 text-white font-medium flex items-center gap-1.5"
   >
@@ -927,8 +926,6 @@ function NotasFiscaisPage() {
     Fechar
   </Button>
 </div>
-              
-            </div>
           )}
         </DialogContent>
       </Dialog>
