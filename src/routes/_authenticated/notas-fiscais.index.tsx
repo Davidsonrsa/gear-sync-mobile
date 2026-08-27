@@ -92,14 +92,15 @@ function NotasFiscaisPage() {
       }
 
       const formattedData = jsonData.map((row) => ({
-        numero_nf: String(row["Número NF"] || row["nf"] || row["numero_nf"] || ""),
+        nf: String(row["Número NF"] || row["nf"] || row["numero_nf"] || ""),
         fornecedor: row["Fornecedor"] || row["fornecedor"] || null,
-        equipamento: row["Equipamento"] || row["identificacao"] || null,
+        identificacao: row["Equipamento"] || row["identificacao"] || null,
         cl: row["CL"] || row["cl"] || null,
-        emissao: row["Emissão"] || row["data"] || null,
-        valor_total: row["Valor Total"] ? Number(row["Valor Total"]) : 0,
+        data: row["Emissão"] || row["data"] || null,
+        valor: row["Valor Total"] ? Number(row["Valor Total"]) : 0,
         observacao: row["Descrição"] || row["observacao"] || null,
       }));
+
 
       const { error } = await supabase.from("notas_fiscais").insert(formattedData);
 
