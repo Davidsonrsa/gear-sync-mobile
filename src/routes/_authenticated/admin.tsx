@@ -136,16 +136,16 @@ function NewEquipamento() {
         />
       </div>
       
-      <div className="pt-2">
-        <Button
-          type="button"
-          onClick={() => create.mutate()}
-          disabled={create.isPending}
-          className="w-full font-semibold"
-        >
-          {create.isPending ? "Criando..." : "Criar equipamento"}
-        </Button>
-      </div>
+     <div className="pt-2">
+  <Button
+    type="button"
+    onClick={() => create.mutate()}
+    disabled={create.isPending}
+    className="w-full font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
+  >
+    {create.isPending ? "Criando..." : "Criar equipamento"}
+  </Button>
+</div>
 
       <p className="text-[11px] text-muted-foreground">
         Os demais campos podem ser preenchidos depois na tela do equipamento.
