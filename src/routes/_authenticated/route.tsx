@@ -40,15 +40,16 @@ function AuthenticatedLayout() {
         style={{ backgroundColor: "#33859c" }}
       >
         <div 
-          className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-4 w-full"
+          className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4 w-full"
           style={{ backgroundColor: "#33859c" }}
         >
           
-          <div className="flex items-center space-x-3 shrink-0">
+          {/* Logo ampliada e proporcional */}
+          <div className="flex items-center space-x-3.5 shrink-0">
             <img 
               src={LOGO_URL} 
               alt="GIF Logo" 
-              className="h-11 w-11 rounded-lg object-cover bg-white p-0.5 shadow-sm shrink-0" 
+              className="h-12 w-12 rounded-lg object-cover bg-white p-0.5 shadow-sm shrink-0" 
             />
             <div className="flex flex-col justify-center">
               <h1 className="text-sm md:text-base font-extrabold tracking-tight text-black leading-tight">
@@ -63,14 +64,15 @@ function AuthenticatedLayout() {
             </div>
           </div>
 
-          <nav className="flex items-center gap-1 overflow-x-auto py-1">
+          {/* Navegação sem fundo branco nos botões (ativo destacado com borda/sublinhado sutil) */}
+          <nav className="flex items-center gap-1.5 overflow-x-auto py-1">
             {navItems.map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
                 to={to}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap text-black hover:bg-black/10 transition-colors [&.active]:bg-white [&.active]:text-black [&.active]:shadow-sm"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap text-black hover:bg-black/10 transition-colors [&.active]:bg-black/20 [&.active]:text-black [&.active]:border-b-2 [&.active]:border-black"
               >
-                <Icon className="w-3.5 h-3.5 text-black" />
+                <Icon className="w-4 h-4 text-black" />
                 <span>{label}</span>
               </Link>
             ))}
@@ -81,9 +83,9 @@ function AuthenticatedLayout() {
               size="sm" 
               variant="ghost" 
               onClick={handleLogout} 
-              className="text-black hover:bg-black/10 hover:text-black gap-1.5 border border-black/20 text-xs h-8 px-2.5 font-bold bg-transparent"
+              className="text-black hover:bg-black/10 hover:text-black gap-1.5 border border-black/25 text-xs h-8 px-2.5 font-bold bg-transparent"
             >
-              <LogOut className="w-3.5 h-3.5 text-black" />
+              <LogOut className="w-4 h-4 text-black" />
               <span className="hidden sm:inline">Sair</span>
             </Button>
           </div>
