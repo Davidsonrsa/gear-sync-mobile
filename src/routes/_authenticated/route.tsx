@@ -39,15 +39,13 @@ function AuthenticatedLayout() {
   ].filter((i) => i.show);
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      {/* Cabeçalho com estilo inline para garantir o fundo azul escuro #0f1f3d */}
+    <div className="min-h-screen bg-slate-50">
       <header 
-        className="fixed top-0 left-0 right-0 z-50 text-white shadow-lg"
-        style={{ backgroundColor: "#0f1f3d" }}
+        className="fixed top-0 left-0 right-0 z-50 text-white shadow-lg w-full"
+        style={{ backgroundColor: "#11386f" }}
       >
-        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3" style={{ backgroundColor: "#11386f" }}>
           
-          {/* Logo, Título e Dados do Usuário */}
           <div className="flex items-center justify-between w-full md:w-auto">
             <div className="flex items-center space-x-3">
               <img 
@@ -61,7 +59,7 @@ function AuthenticatedLayout() {
                 </h1>
                 <p className="text-xs text-slate-200 flex items-center gap-1.5 mt-0.5">
                   <span className="font-medium text-white">{fullName || "Usuário"}</span>
-                  <Badge variant="outline" className="text-[10px] border-slate-400 text-white bg-slate-800/80 px-1.5 py-0">
+                  <Badge variant="outline" className="text-[10px] border-slate-400 text-white bg-black/30 px-1.5 py-0">
                     {isAdmin ? "Admin" : "Colaborador"}
                   </Badge>
                 </p>
@@ -72,20 +70,19 @@ function AuthenticatedLayout() {
               size="sm" 
               variant="ghost" 
               onClick={handleLogout} 
-              className="text-white hover:bg-slate-800 hover:text-white md:hidden"
+              className="text-white hover:bg-white/20 hover:text-white md:hidden"
             >
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
 
-          {/* Navegação e Botão Sair (Desktop) */}
           <div className="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
             <nav className="flex items-center gap-1.5">
               {navItems.map(({ to, label, icon: Icon }) => (
                 <Link
                   key={to}
                   to={to}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap text-slate-200 hover:bg-slate-800 hover:text-white transition-colors [&.active]:bg-white [&.active]:text-[#0f1f3d] [&.active]:shadow"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap text-slate-100 hover:bg-white/20 hover:text-white transition-colors [&.active]:bg-white [&.active]:text-[#11386f] [&.active]:shadow"
                 >
                   <Icon className="w-3.5 h-3.5" />
                   {label}
@@ -97,7 +94,7 @@ function AuthenticatedLayout() {
               size="sm" 
               variant="ghost" 
               onClick={handleLogout} 
-              className="hidden md:flex text-white hover:bg-slate-800 hover:text-white gap-1.5 shrink-0 border border-slate-700"
+              className="hidden md:flex text-white hover:bg-white/20 hover:text-white gap-1.5 shrink-0 border border-white/20"
             >
               <LogOut className="w-4 h-4" />
               <span>Sair</span>
@@ -107,7 +104,6 @@ function AuthenticatedLayout() {
         </div>
       </header>
 
-      {/* Espaçamento para evitar que o conteúdo fique escondido sob a barra fixa */}
       <main className="pt-28 md:pt-20">
         <Outlet />
       </main>
