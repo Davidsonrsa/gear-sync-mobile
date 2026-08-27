@@ -596,7 +596,12 @@ function NotasFiscaisPage() {
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={submitting}>
+                {/* Botão Salvar com fundo Azul */}
+                <Button 
+                  type="submit" 
+                  disabled={submitting}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                >
                   {submitting ? (
                     <Loader2 className="w-4 h-4 animate-spin mr-1" />
                   ) : null}
@@ -905,11 +910,12 @@ function NotasFiscaisPage() {
               </div>
 
               <div className="pt-2 flex justify-between items-center">
+                {/* Botão Excluir com Fundo Vermelho e Ícone de Lixeira */}
                 <Button
                   variant="destructive"
                   size="sm"
                   onClick={() => handleDeletarNota(notaSelecionada.id, notaSelecionada.numero_nf)}
-                  className="flex items-center gap-1.5 text-xs"
+                  className="bg-red-600 hover:bg-red-700 text-white font-medium flex items-center gap-1.5 text-xs shadow-xs"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   Excluir Nota
