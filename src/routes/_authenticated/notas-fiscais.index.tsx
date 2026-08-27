@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import * as XLSX from "xlsx";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +25,6 @@ import {
   Building2,
   Truck,
   FileText,
-  Pencil,
   MapPin,
 } from "lucide-react";
 
@@ -52,6 +53,8 @@ function NotasFiscaisPage() {
   const [notasList, setNotasList] = useState<NotaFiscalItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Filtros
   const [busca, setBusca] = useState("");
@@ -71,6 +74,46 @@ function NotasFiscaisPage() {
   const [venc04, setVenc04] = useState("");
   const [venc05, setVenc05] = useState("");
   const [observacao, setObservacao] = useState("");
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+      if (!jsonData || jsonData.length === 0) {
+        toast.error("O arquivo está vazio ou em formato inválido.");
+        return;
+      }
+
+      const formattedData = jsonData.map((row) => ({
+        numero_nf: String(row["Número NF"] || row["nf"] || row["numero_nf"] || ""),
+        fornecedor: row["Fornecedor"] || row["fornecedor"] || null,
+        equipamento: row["Equipamento"] || row["identificacao"] || null,
+        cl: row["CL"] || row["cl"] || null,
+        emissao: row["Emissão"] || row["data"] || null,
+        valor_total: row["Valor Total"] ? Number(row["Valor Total"]) : 0,
+        observacao: row["Descrição"] || row["observacao"] || null,
+      }));
+
+      const { error } = await supabase.from("notas_fiscais").insert(formattedData);
+
+      if (error) throw error;
+
+      toast.success(`${formattedData.length} notas fiscais importadas com sucesso!`);
+      fetchNotas();
+    } catch (err: any) {
+      toast.error("Erro ao importar arquivo: " + (err.message || err));
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const formatBRL = (val: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -664,10 +707,29 @@ function NotasFiscaisPage() {
           Limpar
         </button>
 
-        <button className="px-2.5 py-1 rounded border border-slate-300 text-xs font-medium text-slate-800 flex items-center gap-1 hover:bg-slate-50 ml-auto">
-          <FileSpreadsheet className="w-3 h-3" />
-          Excel
-        </button>
+        {/* Input de arquivo invisível */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileUpload}
+          accept=".xlsx, .xls, .csv"
+          className="hidden"
+        />
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={importing}
+          className="rounded-lg border-slate-300 text-xs font-medium text-slate-800 flex items-center gap-1.5 hover:bg-slate-50 ml-auto"
+        >
+          {importing ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+          )}
+          {importing ? "Importando..." : "Excel"}
+        </Button>
       </div>
 
       {/* Tabela de Notas */}
@@ -816,31 +878,9 @@ function NotasFiscaisPage() {
                   <FileText className="w-3.5 h-3.5 text-slate-500" />
                   Observações
                 </span>
-                <p className="text-sm text-slate-800 dark:text-slate-200 mt-1 whitespace-pre-wrap leading-relaxed">
+                <p className="text-xs text-slate-700 dark:text-slate-300 mt-1 whitespace-pre-wrap">
                   {notaSelecionada.observacao}
                 </p>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setOpenModalDetalhes(false)}
-                >
-                  Fechar
-                </Button>
-                <Button
-                  onClick={() => {
-                    setOpenModalDetalhes(false);
-                    navigate({
-                      to: "/notas-fiscais/$id",
-                      params: { id: notaSelecionada.id },
-                    });
-                  }}
-                  className="flex items-center gap-1.5"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                  Editar / Gerenciar
-                </Button>
               </div>
             </div>
           )}
@@ -849,5 +889,3 @@ function NotasFiscaisPage() {
     </div>
   );
 }
-
-export default NotasFiscaisPage;
