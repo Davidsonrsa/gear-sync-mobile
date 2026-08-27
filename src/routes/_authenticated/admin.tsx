@@ -137,11 +137,12 @@ function NewEquipamento() {
       </div>
       
      <div className="pt-2">
+  <div className="pt-2">
   <Button
     type="button"
     onClick={() => create.mutate()}
     disabled={create.isPending}
-    className="w-full font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
+    className="w-full font-semibold bg-blue-900 text-white hover:bg-blue-800"
   >
     {create.isPending ? "Criando..." : "Criar equipamento"}
   </Button>
