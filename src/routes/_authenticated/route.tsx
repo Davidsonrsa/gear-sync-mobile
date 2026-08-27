@@ -26,7 +26,6 @@ function AuthenticatedLayout() {
     navigate({ to: "/auth" });
   }
 
-  // Forçando a exibição de todos os itens na barra principal
   const navItems = [
     { to: "/equipamentos", label: "Frota", icon: Truck },
     { to: "/custos", label: "Custos", icon: DollarSign },
@@ -40,67 +39,59 @@ function AuthenticatedLayout() {
         className="fixed top-0 left-0 right-0 z-50 text-white shadow-lg w-full"
         style={{ backgroundColor: "#11386f" }}
       >
-        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
           
-          <div className="flex items-center justify-between w-full md:w-auto">
-            <div className="flex items-center space-x-3">
-              <img 
-                src={LOGO_URL} 
-                alt="GIF Logo" 
-                className="h-12 w-12 rounded-lg object-cover bg-white p-0.5 shadow shrink-0" 
-              />
-              <div>
-                <h1 className="text-base md:text-lg font-bold tracking-tight text-white leading-tight">
-                  GIF - Gestão Integrada de Frotas
-                </h1>
-                <p className="text-xs text-slate-200 flex items-center gap-1.5 mt-0.5">
-                  <span className="font-medium text-white">{fullName || "Usuário"}</span>
-                  <Badge variant="outline" className="text-[10px] border-slate-400 text-white bg-black/30 px-1.5 py-0">
-                    {isAdmin ? "Admin" : "Colaborador"}
-                  </Badge>
-                </p>
-              </div>
+          {/* Lado Esquerdo: Logo e Título */}
+          <div className="flex items-center space-x-3 shrink-0">
+            <img 
+              src={LOGO_URL} 
+              alt="GIF Logo" 
+              className="h-10 w-10 rounded-lg object-cover bg-white p-0.5 shadow" 
+            />
+            <div>
+              <h1 className="text-sm md:text-base font-bold tracking-tight text-white leading-tight">
+                GIF - Gestão Integrada de Frotas
+              </h1>
+              <p className="text-[11px] text-slate-200 flex items-center gap-1.5">
+                <span className="font-medium text-white">{fullName || "Usuário"}</span>
+                <Badge variant="outline" className="text-[9px] border-slate-400 text-white bg-black/30 px-1 py-0">
+                  {isAdmin ? "Admin" : "Colaborador"}
+                </Badge>
+              </p>
             </div>
-
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              onClick={handleLogout} 
-              className="text-white hover:bg-white/20 hover:text-white md:hidden"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
           </div>
 
-          <div className="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-            <nav className="flex items-center gap-1.5">
-              {navItems.map(({ to, label, icon: Icon }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap text-slate-100 hover:bg-white/20 hover:text-white transition-colors [&.active]:bg-white [&.active]:text-[#11386f] [&.active]:shadow"
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {label}
-                </Link>
-              ))}
-            </nav>
+          {/* Centro: Menu de navegação fixo e alinhado */}
+          <nav className="flex items-center gap-1 overflow-x-auto py-1">
+            {navItems.map(({ to, label, icon: Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap text-slate-100 hover:bg-white/20 hover:text-white transition-colors [&.active]:bg-white [&.active]:text-[#11386f] [&.active]:shadow"
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{label}</span>
+              </Link>
+            ))}
+          </nav>
 
+          {/* Lado Direito: Botão Sair */}
+          <div className="shrink-0">
             <Button 
               size="sm" 
               variant="ghost" 
               onClick={handleLogout} 
-              className="hidden md:flex text-white hover:bg-white/20 hover:text-white gap-1.5 shrink-0 border border-white/20"
+              className="text-white hover:bg-white/20 hover:text-white gap-1.5 border border-white/20 text-xs h-8 px-2.5"
             >
-              <LogOut className="w-4 h-4" />
-              <span>Sair</span>
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Sair</span>
             </Button>
           </div>
 
         </div>
       </header>
 
-      <main className="pt-28 md:pt-20">
+      <main className="pt-20">
         <Outlet />
       </main>
     </div>
