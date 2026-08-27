@@ -39,9 +39,11 @@ function AuthenticatedLayout() {
         className="fixed top-0 left-0 right-0 z-50 shadow-md w-full"
         style={{ backgroundColor: "#33859c" }}
       >
-        <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-4">
+        <div 
+          className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-4 w-full"
+          style={{ backgroundColor: "#33859c" }}
+        >
           
-          {/* Logo e Título perfeitamente proporcionais */}
           <div className="flex items-center space-x-3 shrink-0">
             <img 
               src={LOGO_URL} 
@@ -61,7 +63,6 @@ function AuthenticatedLayout() {
             </div>
           </div>
 
-          {/* Navegação integrada diretamente na barra ciano, sem fundos brancos */}
           <nav className="flex items-center gap-1 overflow-x-auto py-1">
             {navItems.map(({ to, label, icon: Icon }) => (
               <Link
@@ -75,7 +76,6 @@ function AuthenticatedLayout() {
             ))}
           </nav>
 
-          {/* Botão Sair integrado */}
           <div className="shrink-0">
             <Button 
               size="sm" 
