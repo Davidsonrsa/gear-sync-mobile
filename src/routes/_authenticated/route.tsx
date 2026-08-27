@@ -36,7 +36,7 @@ function AuthenticatedLayout() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header 
-        className="fixed top-0 left-0 right-0 z-50 text-white shadow-lg w-full"
+        className="fixed top-0 left-0 right-0 z-50 text-black shadow-lg w-full"
         style={{ backgroundColor: "#33859c" }}
       >
         <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
@@ -48,12 +48,12 @@ function AuthenticatedLayout() {
               className="h-10 w-10 rounded-lg object-cover bg-white p-0.5 shadow" 
             />
             <div>
-              <h1 className="text-sm md:text-base font-bold tracking-tight text-white leading-tight">
+              <h1 className="text-sm md:text-base font-bold tracking-tight text-black leading-tight">
                 GIF - Gestão Integrada de Frotas
               </h1>
-              <p className="text-[11px] text-slate-100 flex items-center gap-1.5">
-                <span className="font-medium text-white">{fullName || "Usuário"}</span>
-                <Badge variant="outline" className="text-[9px] border-white/40 text-white bg-black/20 px-1 py-0">
+              <p className="text-[11px] text-black/90 flex items-center gap-1.5">
+                <span className="font-semibold text-black">{fullName || "Usuário"}</span>
+                <Badge variant="outline" className="text-[9px] border-black/40 text-black bg-white/40 px-1 py-0">
                   {isAdmin ? "Admin" : "Colaborador"}
                 </Badge>
               </p>
@@ -65,9 +65,9 @@ function AuthenticatedLayout() {
               <Link
                 key={to}
                 to={to}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap text-white hover:bg-white/20 transition-colors [&.active]:bg-white [&.active]:text-[#33859c] [&.active]:shadow"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap text-black hover:bg-black/10 transition-colors [&.active]:bg-white [&.active]:text-black [&.active]:shadow"
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon className="w-3.5 h-3.5 text-black" />
                 <span>{label}</span>
               </Link>
             ))}
@@ -78,9 +78,9 @@ function AuthenticatedLayout() {
               size="sm" 
               variant="ghost" 
               onClick={handleLogout} 
-              className="text-white hover:bg-white/20 hover:text-white gap-1.5 border border-white/20 text-xs h-8 px-2.5"
+              className="text-black hover:bg-black/10 hover:text-black gap-1.5 border border-black/20 text-xs h-8 px-2.5 font-bold"
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="w-3.5 h-3.5 text-black" />
               <span className="hidden sm:inline">Sair</span>
             </Button>
           </div>
