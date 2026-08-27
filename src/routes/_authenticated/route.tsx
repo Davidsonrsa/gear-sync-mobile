@@ -46,10 +46,10 @@ function AuthenticatedLayout() {
           
           <div className="flex items-center space-x-3.5 shrink-0">
             <img 
-              src={LOGO_URL} 
-              alt="GIF Logo" 
-              className="h-12 w-12 rounded-lg object-cover bg-white p-0.5 shadow-sm shrink-0" 
-            />
+  src={LOGO_URL} 
+  alt="GIF Logo" 
+  className="h-12 w-12 rounded-lg object-contain shadow-sm shrink-0 bg-white" 
+/>
             <div className="flex flex-col justify-center">
               <h1 className="text-sm md:text-base font-extrabold tracking-tight text-black leading-tight">
                 GIF - Gestão Integrada de Frotas
