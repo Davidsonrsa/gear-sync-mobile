@@ -141,8 +141,8 @@ function NewEquipamento() {
     type="button"
     onClick={() => create.mutate()}
     disabled={create.isPending}
-    className="w-full font-semibold text-white hover:opacity-90"
-    style={{ backgroundColor: "#1d4ed8" }}
+    className="w-full font-semibold bg-blue-700 hover:bg-blue-600"
+    style={{ color: "#000000" }}
   >
     {create.isPending ? "Criando..." : "Criar equipamento"}
   </Button>
