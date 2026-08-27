@@ -44,7 +44,6 @@ function AuthenticatedLayout() {
           style={{ backgroundColor: "#33859c" }}
         >
           
-          {/* Logo ampliada e proporcional */}
           <div className="flex items-center space-x-3.5 shrink-0">
             <img 
               src={LOGO_URL} 
@@ -64,13 +63,12 @@ function AuthenticatedLayout() {
             </div>
           </div>
 
-          {/* Navegação sem fundo branco nos botões (ativo destacado com borda/sublinhado sutil) */}
-          <nav className="flex items-center gap-1.5 overflow-x-auto py-1">
+          <nav className="flex items-center gap-1.5 overflow-x-auto py-1 bg-transparent">
             {navItems.map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
                 to={to}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap text-black hover:bg-black/10 transition-colors [&.active]:bg-black/20 [&.active]:text-black [&.active]:border-b-2 [&.active]:border-black"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap text-black bg-transparent hover:bg-black/10 transition-colors [&.active]:bg-black/25 [&.active]:text-black [&.active]:shadow-none"
               >
                 <Icon className="w-4 h-4 text-black" />
                 <span>{label}</span>
