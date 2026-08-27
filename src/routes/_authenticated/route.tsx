@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
-  const { isAdmin, fullName, notasFiscais } = useAuth();
+  const { isAdmin, fullName } = useAuth();
   const navigate = useNavigate();
 
   async function handleLogout() {
@@ -26,17 +26,13 @@ function AuthenticatedLayout() {
     navigate({ to: "/auth" });
   }
 
+  // Forçando a exibição de todos os itens na barra principal
   const navItems = [
-    { to: "/equipamentos", label: "Frota", icon: Truck, show: true },
-    { to: "/custos", label: "Custos", icon: DollarSign, show: true },
-    {
-      to: "/notas-fiscais",
-      label: "Notas Fiscais",
-      icon: FileText,
-      show: isAdmin || notasFiscais.autorizado,
-    },
-    { to: "/admin", label: "Admin", icon: Settings, show: isAdmin },
-  ].filter((i) => i.show);
+    { to: "/equipamentos", label: "Frota", icon: Truck },
+    { to: "/custos", label: "Custos", icon: DollarSign },
+    { to: "/notas-fiscais", label: "Notas Fiscais", icon: FileText },
+    { to: "/admin", label: "Admin", icon: Settings },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -44,7 +40,7 @@ function AuthenticatedLayout() {
         className="fixed top-0 left-0 right-0 z-50 text-white shadow-lg w-full"
         style={{ backgroundColor: "#11386f" }}
       >
-        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3" style={{ backgroundColor: "#11386f" }}>
+        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           
           <div className="flex items-center justify-between w-full md:w-auto">
             <div className="flex items-center space-x-3">
