@@ -36,10 +36,13 @@ function AuthenticatedLayout() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header 
-        className="fixed top-0 left-0 right-0 z-50 text-black shadow-lg w-full"
-        style={{ backgroundColor: "#33859c" }}
+        className="fixed top-0 left-0 right-0 z-50 shadow-lg w-full"
+        style={{ backgroundColor: "#33859c !important" as any, background: "#33859c" }}
       >
-        <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
+        <div 
+          className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4 w-full"
+          style={{ backgroundColor: "#33859c" }}
+        >
           
           <div className="flex items-center space-x-3 shrink-0">
             <img 
