@@ -36,7 +36,7 @@ export interface NotaFiscalItem {
   numero_nf: string;
   fornecedor: string;
   equipamento: string;
-  cl: string; // <--- 1. CAMPO CL ADICIONADO NA INTERFACE
+  cl: string;
   emissao: string;
   valor_total: number;
   parcelas: string;
@@ -62,7 +62,7 @@ function NotasFiscaisPage() {
   const [numeroNf, setNumeroNf] = useState("");
   const [fornecedor, setFornecedor] = useState("");
   const [equipamento, setEquipamento] = useState("");
-  const [cl, setCl] = useState(""); // <--- 2. ESTADO DO CL ADICIONADO
+  const [cl, setCl] = useState("");
   const [emissao, setEmissao] = useState("");
   const [valorTotal, setValorTotal] = useState("");
   const [venc01, setVenc01] = useState("");
@@ -161,7 +161,6 @@ function NotasFiscaisPage() {
     );
   };
 
-  // <--- 3. FUNÇÃO PARA EXTRAIR O CL
   const extractCL = (item: any): string => {
     return (
       item.cl ||
@@ -263,7 +262,7 @@ function NotasFiscaisPage() {
           numero_nf: extractNumeroNF(item),
           fornecedor: extractFornecedor(item),
           equipamento: extractEquipamento(item),
-          cl: extractCL(item), // <--- MAPEA O CL AQUI
+          cl: extractCL(item),
           emissao: extractEmissao(item),
           valor_total: Number(
             item.valor_total || item.valor || item.valor_nota || item.val_total || 0
@@ -295,7 +294,7 @@ function NotasFiscaisPage() {
           fornecedor: fornecedor,
           identificacao: equipamento || null,
           equipamento: equipamento || null,
-          cl: cl || null, // <--- 4. SALVA O CAMPO CL NO SUPABASE
+          cl: cl || null,
           emissao: emissao || null,
           valor_total: parseFloat(valorTotal) || 0,
           venc_01: venc01 || null,
@@ -314,7 +313,7 @@ function NotasFiscaisPage() {
       setNumeroNf("");
       setFornecedor("");
       setEquipamento("");
-      setCl(""); // <--- RESETA O ESTADO DO CL
+      setCl("");
       setEmissao("");
       setValorTotal("");
       setVenc01("");
@@ -341,7 +340,7 @@ function NotasFiscaisPage() {
       nota.numero_nf.toLowerCase().includes(termo) ||
       nota.fornecedor.toLowerCase().includes(termo) ||
       nota.equipamento.toLowerCase().includes(termo) ||
-      nota.cl.toLowerCase().includes(termo) || // <--- 5. PERMITE BUSCAR PELO CL
+      nota.cl.toLowerCase().includes(termo) ||
       nota.observacao.toLowerCase().includes(termo);
 
     let matchData = true;
@@ -375,17 +374,16 @@ function NotasFiscaisPage() {
           </p>
         </div>
 
-      <Dialog open={openModalCadastro} onOpenChange={setOpenModalCadastro}>
-  <DialogTrigger asChild>
-    <Button
-      variant="outline"
-      className="rounded-full border-slate-300 text-slate-800 font-medium hover:bg-slate-50 px-3 py-1.5 text-xs flex items-center gap-1.5 shadow-xs"
-    >
-      <PlusCircle className="w-3.5 h-3.5 text-slate-700" />
-      Nova Nota Fiscal
-    </Button>
-  </DialogTrigger>
-  ...
+        <Dialog open={openModalCadastro} onOpenChange={setOpenModalCadastro}>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              className="rounded-full border-slate-300 text-slate-800 font-medium hover:bg-slate-50 px-3 py-1.5 text-xs flex items-center gap-1.5 shadow-xs"
+            >
+              <PlusCircle className="w-3.5 h-3.5 text-slate-700" />
+              Nova Nota Fiscal
+            </Button>
+          </DialogTrigger>
           <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800">
             <DialogHeader>
               <DialogTitle className="text-lg font-bold">
@@ -416,7 +414,6 @@ function NotasFiscaisPage() {
                 </div>
               </div>
 
-              {/* <--- 6. CAMPO CL ADICIONADO AO MODAL DE CADASTRO ---> */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label htmlFor="equipamento">Equipamento / Identificação</Label>
@@ -681,7 +678,7 @@ function NotasFiscaisPage() {
               <th className="py-2 px-1.5 w-[9%]">Número NF</th>
               <th className="py-2 px-1.5 w-[20%]">Fornecedor</th>
               <th className="py-2 px-1.5 w-[16%]">Equipamento</th>
-              <th className="py-2 px-1.5 w-[10%]">CL</th> {/* <--- 7. COLUNA CL ADICIONADA À TABELA */}
+              <th className="py-2 px-1.5 w-[10%]">CL</th>
               <th className="py-2 px-1.5 w-[10%]">Emissão</th>
               <th className="py-2 px-1.5 w-[12%]">Valor Total</th>
               <th className="py-2 px-1.5 w-[15%]">Parcelas / Venc.</th>
@@ -715,7 +712,7 @@ function NotasFiscaisPage() {
                     {item.equipamento !== "—" ? `🚗 ${item.equipamento}` : "—"}
                   </td>
                   <td className="py-2 px-1.5 font-medium text-slate-600 truncate" title={item.cl}>
-                    {item.cl} {/* <--- EXIBE O VALOR DO CL */}
+                    {item.cl}
                   </td>
                   <td className="py-2 px-1.5 truncate">
                     {formatDate(item.emissao)}
@@ -774,7 +771,6 @@ function NotasFiscaisPage() {
                 </div>
               </div>
 
-              {/* <--- 8. CL ADICIONADO AO MODAL DE DETALHES ---> */}
               <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                 <div>
                   <span className="text-xs text-slate-400 block font-medium">
