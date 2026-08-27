@@ -8,10 +8,10 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Botão Salvar / Primário - Azul sólido com texto/ícone branco
+        // Altere aqui a cor de fundo (bg-...) e a cor do texto (text-...) padrão do sistema
         default:
-          "!bg-blue-600 !text-white shadow hover:!bg-blue-700 active:!bg-blue-800",
-        // Botões Excluir / Limpar / Deletar - Vermelho sólido com texto/ícone branco
+          "!bg-blue-700 !text-black shadow hover:!bg-blue-600 active:!bg-blue-800",
+        
         destructive:
           "!bg-red-600 !text-white shadow-sm hover:!bg-red-700 active:!bg-red-800",
         outline:
