@@ -73,9 +73,9 @@
     font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
   }
   header, nav {
-    background-color: #ffffff !important;
-    border-bottom: 1px solid #e2e8f0;
-  }
+  background-color: #33859c !important;
+  border-bottom: 1px solid #256b7f;
+}
 }
 
 /* ==========================================================================
