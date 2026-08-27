@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { PlusCircle, Users, Truck } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/admin")({
+export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
