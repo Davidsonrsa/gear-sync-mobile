@@ -36,11 +36,11 @@ function AuthenticatedLayout() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header 
-        className="fixed top-0 left-0 right-0 z-50 shadow-md w-full"
-        style={{ backgroundColor: "#33859c" }}
+        className="fixed top-0 left-0 right-0 z-50 shadow-lg w-full"
+        style={{ backgroundColor: "#33859c !important" as any, background: "#33859c" }}
       >
         <div 
-          className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-4 w-full"
+          className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4 w-full"
           style={{ backgroundColor: "#33859c" }}
         >
           
@@ -48,15 +48,15 @@ function AuthenticatedLayout() {
             <img 
               src={LOGO_URL} 
               alt="GIF Logo" 
-              className="h-11 w-11 rounded-lg object-cover bg-white p-0.5 shadow-sm shrink-0" 
+              className="h-10 w-10 rounded-lg object-cover bg-white p-0.5 shadow" 
             />
-            <div className="flex flex-col justify-center">
-              <h1 className="text-sm md:text-base font-extrabold tracking-tight text-black leading-tight">
+            <div>
+              <h1 className="text-sm md:text-base font-bold tracking-tight text-black leading-tight">
                 GIF - Gestão Integrada de Frotas
               </h1>
-              <p className="text-[11px] text-black/90 flex items-center gap-1.5 mt-0.5">
-                <span className="font-bold text-black">{fullName || "Usuário"}</span>
-                <Badge variant="outline" className="text-[9px] border-black/40 text-black bg-white/40 px-1 py-0 font-bold">
+              <p className="text-[11px] text-black/90 flex items-center gap-1.5">
+                <span className="font-semibold text-black">{fullName || "Usuário"}</span>
+                <Badge variant="outline" className="text-[9px] border-black/40 text-black bg-white/40 px-1 py-0">
                   {isAdmin ? "Admin" : "Colaborador"}
                 </Badge>
               </p>
@@ -68,7 +68,7 @@ function AuthenticatedLayout() {
               <Link
                 key={to}
                 to={to}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap text-black hover:bg-black/10 transition-colors [&.active]:bg-white [&.active]:text-black [&.active]:shadow-sm"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap text-black hover:bg-black/10 transition-colors [&.active]:bg-white [&.active]:text-black [&.active]:shadow"
               >
                 <Icon className="w-3.5 h-3.5 text-black" />
                 <span>{label}</span>
@@ -81,7 +81,7 @@ function AuthenticatedLayout() {
               size="sm" 
               variant="ghost" 
               onClick={handleLogout} 
-              className="text-black hover:bg-black/10 hover:text-black gap-1.5 border border-black/20 text-xs h-8 px-2.5 font-bold bg-transparent"
+              className="text-black hover:bg-black/10 hover:text-black gap-1.5 border border-black/20 text-xs h-8 px-2.5 font-bold"
             >
               <LogOut className="w-3.5 h-3.5 text-black" />
               <span className="hidden sm:inline">Sair</span>
