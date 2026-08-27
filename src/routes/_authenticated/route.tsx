@@ -37,11 +37,10 @@ function AuthenticatedLayout() {
     <div className="min-h-screen bg-slate-50">
       <header 
         className="fixed top-0 left-0 right-0 z-50 text-white shadow-lg w-full"
-        style={{ backgroundColor: "#11386f" }}
+        style={{ backgroundColor: "#33859c" }}
       >
         <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
           
-          {/* Lado Esquerdo: Logo e Título */}
           <div className="flex items-center space-x-3 shrink-0">
             <img 
               src={LOGO_URL} 
@@ -52,22 +51,21 @@ function AuthenticatedLayout() {
               <h1 className="text-sm md:text-base font-bold tracking-tight text-white leading-tight">
                 GIF - Gestão Integrada de Frotas
               </h1>
-              <p className="text-[11px] text-slate-200 flex items-center gap-1.5">
+              <p className="text-[11px] text-slate-100 flex items-center gap-1.5">
                 <span className="font-medium text-white">{fullName || "Usuário"}</span>
-                <Badge variant="outline" className="text-[9px] border-slate-400 text-white bg-black/30 px-1 py-0">
+                <Badge variant="outline" className="text-[9px] border-white/40 text-white bg-black/20 px-1 py-0">
                   {isAdmin ? "Admin" : "Colaborador"}
                 </Badge>
               </p>
             </div>
           </div>
 
-          {/* Centro: Menu de navegação fixo e alinhado */}
           <nav className="flex items-center gap-1 overflow-x-auto py-1">
             {navItems.map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
                 to={to}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap text-slate-100 hover:bg-white/20 hover:text-white transition-colors [&.active]:bg-white [&.active]:text-[#11386f] [&.active]:shadow"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap text-white hover:bg-white/20 transition-colors [&.active]:bg-white [&.active]:text-[#33859c] [&.active]:shadow"
               >
                 <Icon className="w-3.5 h-3.5" />
                 <span>{label}</span>
@@ -75,7 +73,6 @@ function AuthenticatedLayout() {
             ))}
           </nav>
 
-          {/* Lado Direito: Botão Sair */}
           <div className="shrink-0">
             <Button 
               size="sm" 
