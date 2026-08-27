@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Truck, DollarSign, FileText, Settings, LogOut } from "lucide-react";
 
+// Substitua pelo caminho ou URL da sua logo antiga original
 const LOGO_URL = "/__l5e/assets-v1/c991d251-7ee8-44d3-b8b2-4094df040c16/logo-sph.jpg";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -19,11 +20,11 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   const { isAdmin, fullName, notasFiscais } = useAuth();
-  const navigate = useNavigate();
+  const useNavigateInstance = useNavigate();
 
   async function handleLogout() {
     await supabase.auth.signOut();
-    navigate({ to: "/auth" });
+    useNavigateInstance({ to: "/auth" });
   }
 
   const navItems = [
@@ -39,42 +40,62 @@ function AuthenticatedLayout() {
   ].filter((i) => i.show);
 
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-3 md:px-6 py-2.5 flex items-center gap-3">
-          <img src={LOGO_URL} alt="SPH Tecnologia" className="h-9 w-9 rounded-md object-cover" />
-          <div className="flex-1 min-w-0">
-            <h1 className="text-base md:text-lg font-bold text-black truncate">
-              Controle de Horímetros
-            </h1>
-            <p className="text-[11px] text-muted-foreground truncate">
-              {fullName || "Usuário"}{" "}
-              <Badge variant={isAdmin ? "default" : "secondary"} className="ml-1 text-[10px]">
-                {isAdmin ? "Admin" : "Colaborador"}
-              </Badge>
-            </p>
+    <div className="min-h-screen pt-2">
+      {/* Barra Fixa com Tonalidade Azul Solida */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-blue-600 text-white shadow-md">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          
+          {/* Esquerda: Logo Maior e Título Atualizado */}
+          <div className="flex items-center space-x-3">
+            <img 
+              src={LOGO_URL} 
+              alt="GIF Logo" 
+              className="h-12 w-12 rounded-md object-contain bg-white p-0.5 shadow" 
+            />
+            <div>
+              <h1 className="text-base md:text-lg font-bold tracking-wide text-white">
+                GIF - Gestão Integrada de Frotas
+              </h1>
+              <p className="text-xs text-blue-100 flex items-center gap-1.5">
+                <span>{fullName || "Usuário"}</span>
+                <Badge variant="outline" className="text-[10px] border-blue-300 text-white px-1.5 py-0">
+                  {isAdmin ? "Admin" : "Colaborador"}
+                </Badge>
+              </p>
+            </div>
           </div>
-          <Button size="sm" variant="ghost" onClick={handleLogout} className="gap-1.5">
+
+          {/* Direita: Botão Sair */}
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            onClick={handleLogout} 
+            className="text-white hover:bg-blue-700 hover:text-white gap-1.5"
+          >
             <LogOut className="w-4 h-4" />
             <span className="hidden sm:inline">Sair</span>
           </Button>
         </div>
 
-        <nav className="max-w-7xl mx-auto px-3 md:px-6 pb-2 flex gap-1.5 overflow-x-auto">
-          {navItems.map(({ to, label, icon: Icon }) => (
-            <Link
-              key={to}
-              to={to}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap text-slate-600 hover:bg-slate-100 transition-colors [&.active]:bg-blue-600 [&.active]:text-white"
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {label}
-            </Link>
-          ))}
-        </nav>
+        {/* Barra de Navegação Interna Alinhada */}
+        <div className="bg-blue-700/50 border-t border-blue-500/40">
+          <nav className="max-w-7xl mx-auto px-4 py-1.5 flex gap-2 overflow-x-auto">
+            {navItems.map(({ to, label, icon: Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap text-blue-100 hover:bg-blue-600 hover:text-white transition-colors [&.active]:bg-white [&.active]:text-blue-900 shadow-sm"
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {label}
+              </Link>
+            ))}
+          </nav>
+        </div>
       </header>
 
-      <main>
+      {/* Espaçamento para o conteúdo não ficar debaixo da barra fixa */}
+      <main className="pt-28">
         <Outlet />
       </main>
     </div>
