@@ -8,13 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   Search,
   PlusCircle,
   FileSpreadsheet,
@@ -26,7 +19,15 @@ import {
   Truck,
   FileText,
   MapPin,
+  Trash2,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/notas-fiscais/")({
   component: NotasFiscaisPage,
@@ -49,7 +50,7 @@ function NotasFiscaisPage() {
   const [openModalCadastro, setOpenModalCadastro] = useState(false);
   const [openModalDetalhes, setOpenModalDetalhes] = useState(false);
   const [notaSelecionada, setNotaSelecionada] = useState<NotaFiscalItem | null>(null);
-
+  
   const [notasList, setNotasList] = useState<NotaFiscalItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -74,6 +75,27 @@ function NotasFiscaisPage() {
   const [venc04, setVenc04] = useState("");
   const [venc05, setVenc05] = useState("");
   const [observacao, setObservacao] = useState("");
+
+  const handleDeletarNota = async (id: string, numeroNf: string) => {
+    if (!confirm(`Tem certeza que deseja excluir a nota fiscal #${numeroNf}?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("notas_fiscais")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast.success("Nota fiscal excluída com sucesso!");
+      setOpenModalDetalhes(false);
+      fetchNotas();
+    } catch (err: any) {
+      toast.error("Erro ao excluir nota: " + (err.message || "Erro desconhecido"));
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -100,7 +122,6 @@ function NotasFiscaisPage() {
         valor: row["Valor Total"] ? Number(row["Valor Total"]) : 0,
         observacao: row["Descrição"] || row["observacao"] || null,
       }));
-
 
       const { error } = await supabase.from("notas_fiscais").insert(formattedData);
 
@@ -875,13 +896,32 @@ function NotasFiscaisPage() {
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                <span className="text-xs text-slate-400 flex items-center gap-1 font-medium">
-                  <FileText className="w-3.5 h-3.5 text-slate-500" />
+                <span className="text-xs text-slate-400 block font-medium">
                   Observações
                 </span>
-                <p className="text-xs text-slate-700 dark:text-slate-300 mt-1 whitespace-pre-wrap">
+                <span className="font-medium text-slate-700 dark:text-slate-200 mt-0.5 block text-xs">
                   {notaSelecionada.observacao}
-                </p>
+                </span>
+              </div>
+
+              <div className="pt-2 flex justify-between items-center">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDeletarNota(notaSelecionada.id, notaSelecionada.numero_nf)}
+                  className="flex items-center gap-1.5 text-xs"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Excluir Nota
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setOpenModalDetalhes(false)}
+                >
+                  Fechar
+                </Button>
               </div>
             </div>
           )}
