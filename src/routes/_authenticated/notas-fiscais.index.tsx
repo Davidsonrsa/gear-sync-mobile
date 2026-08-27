@@ -908,27 +908,26 @@ function NotasFiscaisPage() {
                   {notaSelecionada.observacao}
                 </span>
               </div>
+<div className="flex justify-between items-center pt-4">
+  {/* Botão Excluir */}
+  <Button
+    variant="destructive" // Se quiser manter vermelho, remova esta linha. Para azul, use a classe abaixo:
+    onClick={() => handleDeletarNota(notaSelecionada.id, notaSelecionada.numero_nf)}
+    className="bg-blue-600 hover:bg-blue-700 text-white font-medium flex items-center gap-1.5"
+  >
+    <Trash2 className="w-4 h-4" />
+    Excluir Nota
+  </Button>
 
-              <div className="pt-2 flex justify-between items-center">
-                {/* Botão Excluir com Fundo Vermelho e Ícone de Lixeira */}
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleDeletarNota(notaSelecionada.id, notaSelecionada.numero_nf)}
-                  className="bg-red-600 hover:bg-red-700 text-white font-medium flex items-center gap-1.5 text-xs shadow-xs"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Excluir Nota
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setOpenModalDetalhes(false)}
-                >
-                  Fechar
-                </Button>
-              </div>
+  {/* Botão Fechar */}
+  <Button
+    onClick={() => setOpenModalDetalhes(false)}
+    className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
+  >
+    Fechar
+  </Button>
+</div>
+              
             </div>
           )}
         </DialogContent>
