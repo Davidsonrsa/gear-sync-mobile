@@ -44,13 +44,11 @@ function AuthenticatedLayout() {
           style={{ backgroundColor: "#33859c" }}
         >
           
-          <div className="flex items-center space-x-3.5 shrink-0">
-            <img 
-  src={LOGO_URL} 
-  alt="GIF Logo" 
-  className="h-12 w-12 rounded-lg object-contain shadow-sm shrink-0 bg-white" 
-/>
-            <div className="flex flex-col justify-center">
+        <div className="flex items-center space-x-3.5 shrink-0">
+  <div className="h-12 w-12 rounded-lg bg-white flex items-center justify-center shadow-sm shrink-0 font-extrabold text-[#33859c] text-sm">
+    GIF
+  </div>
+  <div className="flex flex-col justify-center">
               <h1 className="text-sm md:text-base font-extrabold tracking-tight text-black leading-tight">
                 GIF - Gestão Integrada de Frotas
               </h1>
