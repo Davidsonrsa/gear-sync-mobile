@@ -43,13 +43,13 @@ function AuthPage() {
     <div className="min-h-[100dvh] flex flex-col bg-[#0d47a1] text-slate-900 justify-center items-center p-4">
       <Card className="w-full max-w-sm p-6 bg-white rounded-2xl shadow-2xl border-0">
         <div className="flex flex-col items-center gap-2 mb-6">
-          <div className="w-24 h-24 rounded-2xl bg-white p-2 shadow-md flex items-center justify-center overflow-hidden border border-slate-100">
-            <img
-              src="/logo SPX MAFRA JHM.png"
-              alt="SPH JHM Mafra"
-              className="w-full h-full object-contain"
-            />
-          </div>
+         <div className="w-24 h-24 rounded-2xl bg-white p-2 shadow-md flex items-center justify-center overflow-hidden border border-slate-100">
+  <img
+    src="/logo SPX MAFRA JHM.png"
+    alt="SPH JHM Mafra"
+    className="w-full h-full object-contain opacity-100 !opacity-100"
+  />
+</div>
           <h1 className="text-base font-bold text-center text-slate-900">GIF - Gestão Integrada de Frotas</h1>
           <p className="text-xs text-slate-500 text-center">
             Acesso restrito aos colaboradores
