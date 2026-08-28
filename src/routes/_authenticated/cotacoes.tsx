@@ -13,6 +13,7 @@ export const Route = createFileRoute("/_authenticated/cotacoes")({
 });
 
 export default function CotacoesIndex() {
+  const navigate = useNavigate();
   const [cotacoes, setCotacoes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
