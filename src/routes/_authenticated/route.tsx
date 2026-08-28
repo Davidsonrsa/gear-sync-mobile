@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Truck, DollarSign, FileText, Settings, LogOut } from "lucide-react";
 
-const LOGO_URL = "/__l5e/assets-v1/c991d251-7ee8-44d3-b8b2-4094df040c16/logo-sph.jpg";
+// Defina o caminho direto para o logo na pasta public do seu projeto
+const LOGO_URL = "/logo-sph.jpg"; 
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -46,10 +47,10 @@ function AuthenticatedLayout() {
           
           <div className="flex items-center space-x-3.5 shrink-0">
             <img 
-  src={LOGO_URL} 
-  alt="GIF Logo" 
-  className="h-12 w-12 rounded-lg object-contain shadow-sm shrink-0 bg-white" 
-/>
+              src={LOGO_URL} 
+              alt="GIF Logo" 
+              className="h-16 w-16 rounded-xl object-contain shadow-sm shrink-0 bg-white p-1"
+            />
             <div className="flex flex-col justify-center">
               <h1 className="text-sm md:text-base font-extrabold tracking-tight text-black leading-tight">
                 GIF - Gestão Integrada de Frotas
