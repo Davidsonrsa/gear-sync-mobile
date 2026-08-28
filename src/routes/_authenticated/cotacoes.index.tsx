@@ -13,14 +13,13 @@ import {
   Clock3,
   CheckCircle2,
   Send,
-  XCircle,
   Loader2,
   CalendarDays,
   PackageSearch,
 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/cotacoes/")({
+export const Route = createFileRoute("/_authenticated/cotacoes")({
   component: CotacoesPage,
 });
 
@@ -73,7 +72,6 @@ function CotacoesPage() {
       const lista = (data || []) as Cotacao[];
       setCotacoes(lista);
 
-      // Quantidade de fornecedores vinculados a cada cotação.
       const { data: fornecedores, error: fornecedoresError } =
         await supabase
           .from("cotacao_fornecedores")
@@ -380,7 +378,7 @@ function CotacoesPage() {
 
   const abrirCotacao = (id: string) => {
     navigate({
-      to: "/_authenticated/cotacoes/$id",
+      to: "/cotacoes/$id",
       params: {
         id,
       },
@@ -405,7 +403,7 @@ function CotacoesPage() {
         <Button
           onClick={() =>
             navigate({
-              to: "/_authenticated/cotacoes/nova",
+              to: "/cotacoes/nova",
             })
           }
           className="rounded-full bg-blue-600 hover:bg-blue-700 text-white font-medium px-4"
@@ -679,7 +677,7 @@ function CotacoesPage() {
                     <Button
                       onClick={() =>
                         navigate({
-                          to: "/_authenticated/cotacoes/nova",
+                          to: "/cotacoes/nova",
                         })
                       }
                       className="mt-4 bg-blue-600 hover:bg-blue-700"
