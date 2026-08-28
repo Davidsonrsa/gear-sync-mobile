@@ -75,3 +75,4 @@ export default function CotacoesIndex() {
     </div>
   );
 }
+alteraçao no campo de confirmação
