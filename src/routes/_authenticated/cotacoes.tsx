@@ -140,14 +140,12 @@ export default function CotacoesIndex() {
                   <td className="p-4 text-slate-600">{cotacao.patrimonio || "N/A"}</td>
                   <td className="p-4 text-slate-600">{cotacao.setor || "N/A"}</td>
                   <td className="p-4">
-                   <Button 
-  variant="ghost" 
-  size="sm" 
-  onClick={() => navigate({ to: `/cotacoes/$id`, params: { id: cotacao.id } })}
-  className="text-blue-600 hover:underline font-medium p-0 h-auto"
+               <a
+  href={`/cotacoes/${cotacao.id}`}
+  className="text-blue-600 hover:underline font-medium text-sm"
 >
   Ver Detalhes
-</Button>
+</a>
                   </td>
                 </tr>
               ))}
