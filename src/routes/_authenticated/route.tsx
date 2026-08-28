@@ -43,11 +43,11 @@ function AuthenticatedLayout() {
         >
           
         <div className="flex items-center space-x-3.5 shrink-0">
-          <img 
-            src="/logo%20SPX%20MAFRA%20JHM.png" 
-            alt="SPH JHM Mafra" 
-            className="h-12 w-12 rounded-lg object-contain shadow-sm shrink-0 bg-white opacity-100 !opacity-100" 
-          />
+         <img
+  src="/logo SPX MAFRA JHM.png"
+  alt="SPH JHM Mafra"
+  className="w-full h-full object-contain opacity-100 !opacity-100"
+/>
           <div className="flex flex-col justify-center">
               <h1 className="text-sm md:text-base font-extrabold tracking-tight text-black leading-tight">
                 GIF - Gestão Integrada de Frotas
