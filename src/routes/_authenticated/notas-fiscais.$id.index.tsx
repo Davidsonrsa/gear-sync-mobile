@@ -182,9 +182,9 @@ function NotaFiscalDetail() {
     <div className="px-3 py-6 md:px-6 max-w-md md:max-w-7xl mx-auto w-full">
       <div className="flex items-center gap-2 mb-6">
         <Button
-          variant="ghost"
           size="icon"
           onClick={() => navigate({ to: "/notas-fiscais" })}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
         >
           <ArrowLeft className="w-4 h-4" />
         </Button>
