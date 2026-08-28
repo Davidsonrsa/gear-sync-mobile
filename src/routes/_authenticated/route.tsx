@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Truck, DollarSign, FileText, Settings, LogOut } from "lucide-react";
 
+const LOGO_URL = "/__l5e/assets-v1/c991d251-7ee8-44d3-b8b2-4094df040c16/logo-sph.jpg";
+
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
@@ -43,12 +45,10 @@ function AuthenticatedLayout() {
         >
           
         <div className="flex items-center space-x-3.5 shrink-0">
-          <img 
-            src="/logo%20SPX%20MAFRA%20JHM.png" 
-            alt="SPH JHM Mafra" 
-            className="h-12 w-12 rounded-lg object-contain shadow-sm shrink-0 bg-white opacity-100 !opacity-100" 
-          />
-          <div className="flex flex-col justify-center">
+  <div className="h-12 w-12 rounded-lg bg-white flex items-center justify-center shadow-sm shrink-0 font-extrabold text-[#33859c] text-sm">
+    GIF
+  </div>
+  <div className="flex flex-col justify-center">
               <h1 className="text-sm md:text-base font-extrabold tracking-tight text-black leading-tight">
                 GIF - Gestão Integrada de Frotas
               </h1>
