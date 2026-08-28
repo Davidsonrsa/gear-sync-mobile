@@ -18,7 +18,7 @@ export default function CotacoesIndex() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Estados do formulário de nova cotação
+  // Estados do formulário
   const [numero, setNumero] = useState("");
   const [dataCotacao, setDataCotacao] = useState(new Date().toISOString().split("T")[0]);
   const [patrimonio, setPatrimonio] = useState("");
@@ -56,6 +56,13 @@ export default function CotacoesIndex() {
 
     try {
       setSaving(true);
+
+      // Pega o usuário logado atualmente
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) {
+        throw new Error("Usuário não autenticado.");
+      }
+
       const { error } = await supabase.from("cotacoes").insert([
         {
           numero,
@@ -63,6 +70,7 @@ export default function CotacoesIndex() {
           patrimonio,
           setor,
           observacoes,
+          solicitante_id: userData.user.id, // Envia o ID do usuário exigido pelo banco
         },
       ]);
 
@@ -71,13 +79,13 @@ export default function CotacoesIndex() {
       toast.success("Cotação cadastrada com sucesso!");
       setIsModalOpen(false);
       
-      // Limpar campos
+      // Limpa os campos
       setNumero("");
       setPatrimonio("");
       setSetor("");
       setObservacoes("");
       
-      // Recarregar listagem
+      // Recarrega a lista
       fetchCotacoes();
     } catch (error: any) {
       console.error("Erro ao salvar cotação:", error);
