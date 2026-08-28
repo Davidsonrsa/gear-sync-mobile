@@ -1,5 +1,10 @@
+import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client"; // ajuste o caminho do cliente se necessário
+import { supabase } from "@/integrations/supabase/client";
+
+export const Route = createFileRoute("/_authenticated/cotacoes")({
+  component: CotacoesIndex,
+});
 
 export default function CotacoesIndex() {
   const [cotacoes, setCotacoes] = useState<any[]>([]);
@@ -75,4 +80,3 @@ export default function CotacoesIndex() {
     </div>
   );
 }
-alteraçao no campo de confirmação
