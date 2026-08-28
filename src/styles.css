@@ -130,15 +130,6 @@ td button:has(svg) {
   justify-content: center !important;
 }
 
-/* 4. GARANTIR QUE TODOS OS ÍCONES SVG DENTRO DOS BOTÕES FIQUEM BRANCOS */
-button svg,
-button[type="submit"] svg,
-button[class*="destructive"] svg,
-td button svg {
-  color: #ffffff !important;
-  stroke: #ffffff !important;
-  fill: none !important;
-}
 
 @keyframes blink-red {
   0%, 100% { opacity: 1; }
