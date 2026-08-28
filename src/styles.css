@@ -141,9 +141,9 @@ td button:has(svg) {
 /* Ajustar tamanho e opacidade do logo no cabeçalho */
 header img,
 nav img {
-  width: 48px !important;  /* Ajuste a largura conforme preferir (ex: 48px, 56px) */
-  height: 48px !important; /* Ajuste a altura para acompanhar */
+  width: 52px !important;  /* Largura ajustada */
+  height: 52px !important; /* Altura ajustada */
   max-width: none !important;
-  opacity: 1 !important;     /* Remove o aspecto opaco/transparente */
-  object-contain: contain;
+  opacity: 1 !important;     /* Remove a opacidade/transparência */
+  object-fit: contain !important; /* Garante que a proporção do logo seja mantida */
 }
