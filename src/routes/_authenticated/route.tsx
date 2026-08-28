@@ -79,11 +79,10 @@ function AuthenticatedLayout() {
           <div className="shrink-0">
             <Button 
               size="sm" 
-              variant="ghost" 
               onClick={handleLogout} 
-              className="text-black hover:bg-black/10 hover:text-black gap-1.5 border border-black/25 text-xs h-8 px-2.5 font-bold bg-transparent"
+              className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5 text-xs h-8 px-2.5 font-bold"
             >
-              <LogOut className="w-4 h-4 text-black" />
+              <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">Sair</span>
             </Button>
           </div>

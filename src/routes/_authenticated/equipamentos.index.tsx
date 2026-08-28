@@ -136,8 +136,8 @@ function BotaoTacografo() {
 
   return (
     <>
-      <Button variant="outline" size="sm" className="h-9 relative bg-white gap-1.5" onClick={() => setOpen(true)}>
-        <Calendar className="w-4 h-4 text-slate-500" />
+      <Button size="sm" className="h-9 relative bg-blue-600 hover:bg-blue-700 text-white gap-1.5" onClick={() => setOpen(true)}>
+        <Calendar className="w-4 h-4" />
         <span>Tacógrafo</span>
         {tacografosVencidos.length > 0 ? (
           <span
@@ -325,8 +325,8 @@ function BotaoSeguro() {
 
   return (
     <>
-      <Button variant="outline" size="sm" className="h-9 relative bg-white gap-1.5" onClick={() => setOpen(true)}>
-        <ShieldCheck className="w-4 h-4 text-slate-500" />
+      <Button size="sm" className="h-9 relative bg-blue-600 hover:bg-blue-700 text-white gap-1.5" onClick={() => setOpen(true)}>
+        <ShieldCheck className="w-4 h-4" />
         <span>Seguro</span>
         {segurosVencidos.length > 0 ? (
           <span
