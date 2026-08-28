@@ -355,7 +355,7 @@ function NotaFiscalDetail() {
                 {canManage && (
                   <Button
                     onClick={() => setIsEditing(true)}
-                    className="gap-2"
+                    className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     <Save className="w-4 h-4" />
                     Editar
@@ -364,7 +364,7 @@ function NotaFiscalDetail() {
                 {isAdmin && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="destructive" className="gap-2">
+                      <Button className="gap-2 bg-red-600 hover:bg-red-700 text-white">
                         <Trash2 className="w-4 h-4" />
                         Deletar
                       </Button>
@@ -379,10 +379,12 @@ function NotaFiscalDetail() {
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel className="bg-white text-gray-700 border-gray-300 hover:bg-gray-100">
+                          Cancelar
+                        </AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => deleteMutation.mutate()}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          className="bg-red-600 text-white hover:bg-red-700"
                         >
                           Deletar
                         </AlertDialogAction>
@@ -398,18 +400,18 @@ function NotaFiscalDetail() {
                     updateMutation.mutate(formData);
                   }}
                   disabled={updateMutation.isPending}
-                  className="gap-2"
+                  className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <Save className="w-4 h-4" />
                   Salvar
                 </Button>
                 <Button
-                  variant="outline"
                   onClick={() => {
                     setFormData(nota);
                     setIsEditing(false);
                   }}
                   disabled={updateMutation.isPending}
+                  className="bg-white text-gray-700 border border-gray-300 hover:bg-gray-100"
                 >
                   Cancelar
                 </Button>
