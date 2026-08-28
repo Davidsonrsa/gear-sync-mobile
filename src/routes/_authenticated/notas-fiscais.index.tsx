@@ -926,6 +926,7 @@ function NotasFiscaisPage() {
     Fechar
   </Button>
 </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
