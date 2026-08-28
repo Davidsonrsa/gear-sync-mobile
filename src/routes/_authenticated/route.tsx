@@ -4,7 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Truck, DollarSign, FileText, Settings, LogOut } from "lucide-react";
+import {
+  Truck,
+  DollarSign,
+  FileText,
+  Settings,
+  LogOut,
+  ClipboardList,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -26,11 +33,12 @@ function AuthenticatedLayout() {
   }
 
   const navItems = [
-    { to: "/equipamentos", label: "Frota", icon: Truck },
-    { to: "/custos", label: "Custos", icon: DollarSign },
-    { to: "/notas-fiscais", label: "Notas Fiscais", icon: FileText },
-    { to: "/admin", label: "Admin", icon: Settings },
-  ];
+  { to: "/equipamentos", label: "Frota", icon: Truck },
+  { to: "/custos", label: "Custos", icon: DollarSign },
+  { to: "/cotacoes", label: "Cotações", icon: ClipboardList },
+  { to: "/notas-fiscais", label: "Notas Fiscais", icon: FileText },
+  { to: "/admin", label: "Admin", icon: Settings },
+];
 
   return (
     <div className="min-h-screen bg-slate-50">
