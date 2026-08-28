@@ -685,7 +685,7 @@ function EquipamentosList() {
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-center text-[10px]">
+                  <div className="flex justify-between items-center text-xs]">
                     <span className={overdue ? "text-red-700 font-semibold" : "text-slate-400"}>
                       Hr rodado: {hrRodado}h
                     </span>
