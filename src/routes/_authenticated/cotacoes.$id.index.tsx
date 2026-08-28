@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { ArrowLeft, Plus, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/cotacoes/$id")({
+export const Route = createFileRoute("/_authenticated/cotacoes/$id/")({
   component: CotacaoDetalhesPage,
 });
 
