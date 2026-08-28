@@ -138,12 +138,3 @@ td button:has(svg) {
 .blink-overdue {
   animation: blink-red 0.9s ease-in-out infinite;
 }
-/* Ajustar tamanho e opacidade do logo no cabeçalho */
-header img,
-nav img {
-  width: 52px !important;  /* Largura ajustada */
-  height: 52px !important; /* Altura ajustada */
-  max-width: none !important;
-  opacity: 1 !important;     /* Remove a opacidade/transparência */
-  object-fit: contain !important; /* Garante que a proporção do logo seja mantida */
-}
