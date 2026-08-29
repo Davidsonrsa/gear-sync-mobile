@@ -17,8 +17,8 @@
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   
-  /* Cores Base do Sistema */
-  --color-primary: #2563eb; /* Azul */
+  /* Cores Base do Sistema - Alterado --color-primary para Laranja */
+  --color-primary: #f97316; /* Laranja */
   --color-primary-foreground: #ffffff;
   --color-destructive: #dc2626; /* Vermelho */
   --color-destructive-foreground: #ffffff;
@@ -59,7 +59,7 @@
 
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #2563eb;
+  --ring: #f97316; /* Anel de foco atualizado para laranja */
 }
 
 @layer base {
@@ -72,22 +72,24 @@
     min-height: 100%;
     font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
   }
+  
+  /* Barra fixa / Header alterados para o Laranja */
   header, nav {
-  background-color: #33859c !important;
-  border-bottom: 1px solid #256b7f;
-}
+    background-color: #f97316 !important; 
+    border-bottom: 1px solid #c2410c;
+  }
 }
 
 /* ==========================================================================
    FORÇAR ESTILOS DE BOTÕES DE FORMA INVIOLÁVEL
    ========================================================================== */
 
-/* 1. BOTÕES PRINCIPAIS / SALVAR (Fundo Azul + Texto/Ícone Branco) */
+/* 1. BOTÕES PRINCIPAIS / SALVAR (Fundo Laranja + Texto/Ícone Branco) */
 button[type="submit"],
 button.bg-primary,
 button[class*="bg-primary"],
 button:not([class*="destructive"]):not([class*="outline"]):not([class*="ghost"]):not([class*="secondary"]) {
-  background-color: #2563eb !important; /* Azul marcante */
+  background-color: #f97316 !important; /* Laranja da imagem */
   color: #ffffff !important;
   font-weight: 600 !important;
 }
@@ -95,7 +97,7 @@ button:not([class*="destructive"]):not([class*="outline"]):not([class*="ghost"])
 button[type="submit"]:hover,
 button.bg-primary:hover,
 button[class*="bg-primary"]:hover {
-  background-color: #1d4ed8 !important;
+  background-color: #ea580c !important; /* Tom de laranja mais escuro para o hover */
 }
 
 /* 2. BOTÕES DE EXCLUIR / DELETAR / LIMPAR / LIXEIRA (Fundo Vermelho + Texto/Ícone Branco) */
@@ -105,7 +107,7 @@ button[class*="bg-destructive"],
 button:has(svg.lucide-trash),
 button:has(svg.lucide-trash-2),
 button:has(svg.lucide-eraser) {
-  background-color: #dc2626 !important; /* Vermelho forte */
+  background-color: #dc2626 !important; 
   color: #ffffff !important;
   font-weight: 600 !important;
   padding: 0.5rem 0.75rem !important;
@@ -118,7 +120,7 @@ button[class*="bg-destructive"]:hover {
   background-color: #b91c1c !important;
 }
 
-/* 3. LIXEIRAS ESPECÍFICAS DA TABELA DE CUSTOS (Imagem 3) */
+/* 3. LIXEIRAS ESPECÍFICAS DA TABELA DE CUSTOS */
 td button, 
 td button:has(svg) {
   background-color: #dc2626 !important;
@@ -129,7 +131,6 @@ td button:has(svg) {
   align-items: center !important;
   justify-content: center !important;
 }
-
 
 @keyframes blink-red {
   0%, 100% { opacity: 1; }
