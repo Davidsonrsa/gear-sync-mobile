@@ -89,21 +89,15 @@ function NotaFiscalDetail() {
 
   const updateMutation = useMutation({
     mutationFn: async (updates: Partial<NotaFiscal>) => {
-      const numNf = updates.nf || updates.numero_nf || null;
-      const equip = updates.identificacao || updates.equipamento || null;
-      const dtEmissao = updates.data || updates.emissao || null;
-      const desc = updates.descricao_produto || updates.observacao || null;
-      const val = updates.valor ?? updates.valor_total ?? null;
-
       const payload = {
-        nf: numNf,
+        nf: updates.nf || null,
         fornecedor: updates.fornecedor || null,
-        cl: updates.cl || null, // <--- CL INTEGRADO AO PAYLOAD DO SUPABASE
-        identificacao: equip,
-        data: dtEmissao,
-        descricao_produto: desc,
-        observacao: desc,
-        valor: val,
+        cl: updates.cl || null,
+        identificacao: updates.identificacao || null,
+        data: updates.data || null,
+        descricao_produto: updates.descricao_produto || updates.observacao || null,
+        observacao: updates.observacao || updates.descricao_produto || null,
+        valor: updates.valor ?? null,
         venc01: updates.venc01 || null,
         venc02: updates.venc02 || null,
         venc03: updates.venc03 || null,
