@@ -179,7 +179,7 @@ function NotaFiscalDetail() {
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <h1 className="text-2xl font-bold">
-          NF {nota.nf || nota.numero_nf}
+          NF {nota.nf}
         </h1>
       </div>
 
@@ -192,13 +192,12 @@ function NotaFiscalDetail() {
               <div>
                 <Label>Número da NF</Label>
                 <Input
-                  value={formData.nf || formData.numero_nf || ""}
+                  value={formData.nf || ""}
                   disabled={!isEditing}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
                       nf: e.target.value,
-                      numero_nf: e.target.value,
                     })
                   }
                   className="mt-1"
@@ -223,20 +222,18 @@ function NotaFiscalDetail() {
               <div>
                 <Label>Identificação / Equipamento</Label>
                 <Input
-                  value={formData.identificacao ?? formData.equipamento ?? ""}
+                  value={formData.identificacao ?? ""}
                   disabled={!isEditing}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
                       identificacao: e.target.value || null,
-                      equipamento: e.target.value || null,
                     })
                   }
                   className="mt-1"
                 />
               </div>
 
-              {/* <--- CAMPO CL DE EDICÃO E EXIBIÇÃO ---> */}
               <div>
                 <Label>CL (Centro de Lucro / Localidade)</Label>
                 <Input
@@ -257,13 +254,12 @@ function NotaFiscalDetail() {
                 <Label>Data de Emissão</Label>
                 <Input
                   type="date"
-                  value={dateToInput(formData.data || formData.emissao)}
+                  value={dateToInput(formData.data)}
                   disabled={!isEditing}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
                       data: inputToDate(e.target.value),
-                      emissao: inputToDate(e.target.value),
                     })
                   }
                   className="mt-1"
@@ -275,7 +271,7 @@ function NotaFiscalDetail() {
                 <Input
                   type="number"
                   step="0.01"
-                  value={formData.valor ?? formData.valor_total ?? ""}
+                  value={formData.valor ?? ""}
                   disabled={!isEditing}
                   onChange={(e) => {
                     const parsed = e.target.value
@@ -284,7 +280,6 @@ function NotaFiscalDetail() {
                     setFormData({
                       ...formData,
                       valor: parsed,
-                      valor_total: parsed,
                     });
                   }}
                   className="mt-1"
