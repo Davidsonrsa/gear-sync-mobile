@@ -32,7 +32,7 @@ type NotaFiscal = {
   data: string | null;
   nf: string;
   fornecedor: string | null;
-  cl: string | null; // <--- CAMPO CL ADICIONADO NA TIPAGEM
+  cl: string | null;
   descricao_produto: string | null;
   observacao: string | null;
   equipamento_id: string | null;
@@ -42,10 +42,6 @@ type NotaFiscal = {
   venc03: string | null;
   venc04: string | null;
   venc05: string | null;
-  numero_nf?: string | null;
-  equipamento?: string | null;
-  emissao?: string | null;
-  valor_total?: number | null;
 };
 
 function dateToInput(value: string | null | undefined) {
