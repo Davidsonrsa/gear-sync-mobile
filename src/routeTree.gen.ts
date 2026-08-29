@@ -16,6 +16,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedNotasFiscaisIndexRouteImport } from './routes/_authenticated/notas-fiscais.index'
 import { Route as AuthenticatedEquipamentosIndexRouteImport } from './routes/_authenticated/equipamentos.index'
 import { Route as AuthenticatedCustosIndexRouteImport } from './routes/_authenticated/custos.index'
+import { Route as AuthenticatedCotacoesIndexRouteImport } from './routes/_authenticated/cotacoes.index'
 import { Route as AuthenticatedEquipamentosIdRouteImport } from './routes/_authenticated/equipamentos.$id'
 import { Route as AuthenticatedNotasFiscaisIdIndexRouteImport } from './routes/_authenticated/notas-fiscais.$id.index'
 import { Route as AuthenticatedEquipamentosIdIndexRouteImport } from './routes/_authenticated/equipamentos.$id.index'
@@ -60,6 +61,12 @@ const AuthenticatedCustosIndexRoute =
     path: '/custos/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCotacoesIndexRoute =
+  AuthenticatedCotacoesIndexRouteImport.update({
+    id: '/cotacoes/',
+    path: '/cotacoes/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEquipamentosIdRoute =
   AuthenticatedEquipamentosIdRouteImport.update({
     id: '/equipamentos/$id',
@@ -102,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/equipamentos/$id': typeof AuthenticatedEquipamentosIdRouteWithChildren
+  '/cotacoes/': typeof AuthenticatedCotacoesIndexRoute
   '/custos/': typeof AuthenticatedCustosIndexRoute
   '/equipamentos/': typeof AuthenticatedEquipamentosIndexRoute
   '/notas-fiscais/': typeof AuthenticatedNotasFiscaisIndexRoute
@@ -115,6 +123,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/cotacoes': typeof AuthenticatedCotacoesIndexRoute
   '/custos': typeof AuthenticatedCustosIndexRoute
   '/equipamentos': typeof AuthenticatedEquipamentosIndexRoute
   '/notas-fiscais': typeof AuthenticatedNotasFiscaisIndexRoute
@@ -131,6 +140,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/equipamentos/$id': typeof AuthenticatedEquipamentosIdRouteWithChildren
+  '/_authenticated/cotacoes/': typeof AuthenticatedCotacoesIndexRoute
   '/_authenticated/custos/': typeof AuthenticatedCustosIndexRoute
   '/_authenticated/equipamentos/': typeof AuthenticatedEquipamentosIndexRoute
   '/_authenticated/notas-fiscais/': typeof AuthenticatedNotasFiscaisIndexRoute
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin'
     | '/equipamentos/$id'
+    | '/cotacoes/'
     | '/custos/'
     | '/equipamentos/'
     | '/notas-fiscais/'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/admin'
+    | '/cotacoes'
     | '/custos'
     | '/equipamentos'
     | '/notas-fiscais'
@@ -175,6 +187,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/admin'
     | '/_authenticated/equipamentos/$id'
+    | '/_authenticated/cotacoes/'
     | '/_authenticated/custos/'
     | '/_authenticated/equipamentos/'
     | '/_authenticated/notas-fiscais/'
@@ -240,6 +253,13 @@ declare module '@tanstack/react-router' {
       path: '/custos'
       fullPath: '/custos/'
       preLoaderRoute: typeof AuthenticatedCustosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cotacoes/': {
+      id: '/_authenticated/cotacoes/'
+      path: '/cotacoes'
+      fullPath: '/cotacoes/'
+      preLoaderRoute: typeof AuthenticatedCotacoesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/equipamentos/$id': {
@@ -326,6 +346,7 @@ const AuthenticatedEquipamentosIdRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedEquipamentosIdRoute: typeof AuthenticatedEquipamentosIdRouteWithChildren
+  AuthenticatedCotacoesIndexRoute: typeof AuthenticatedCotacoesIndexRoute
   AuthenticatedCustosIndexRoute: typeof AuthenticatedCustosIndexRoute
   AuthenticatedEquipamentosIndexRoute: typeof AuthenticatedEquipamentosIndexRoute
   AuthenticatedNotasFiscaisIndexRoute: typeof AuthenticatedNotasFiscaisIndexRoute
@@ -336,6 +357,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedEquipamentosIdRoute:
     AuthenticatedEquipamentosIdRouteWithChildren,
+  AuthenticatedCotacoesIndexRoute: AuthenticatedCotacoesIndexRoute,
   AuthenticatedCustosIndexRoute: AuthenticatedCustosIndexRoute,
   AuthenticatedEquipamentosIndexRoute: AuthenticatedEquipamentosIndexRoute,
   AuthenticatedNotasFiscaisIndexRoute: AuthenticatedNotasFiscaisIndexRoute,
