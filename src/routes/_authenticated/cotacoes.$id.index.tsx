@@ -321,13 +321,12 @@ export default function CotacaoDetalhesPage() {
     const melhorPorItem: Record<string, { fornecedorId: string; total: number } | null> = {};
     itens.forEach((it) => {
       const rs = respostas.filter((r) => r.cotacao_item_id === it.id && r.preco_unitario > 0);
-      melhorPorItem[it.id] = rs.length
-        ? rs.reduce((min, r) => (r.total_item < min.total_item ? r : min), rs[0]) &&
-          (() => {
-            const best = rs.reduce((min, r) => (r.total_item < min.total_item ? r : min), rs[0]);
-            return { fornecedorId: best.fornecedor_id, total: best.total_item };
-          })()
-        : null;
+      if (rs.length === 0) {
+        melhorPorItem[it.id] = null;
+      } else {
+        const best = rs.reduce((min, r) => (Number(r.total_item) < Number(min.total_item) ? r : min), rs[0]);
+        melhorPorItem[it.id] = { fornecedorId: best.fornecedor_id, total: Number(best.total_item) };
+      }
     });
 
     const totaisPorFornecedor = participantes.map((p) => {
