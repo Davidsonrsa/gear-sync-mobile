@@ -121,7 +121,7 @@ export default function CotacaoDetalhesPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-[#f97316]" />
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     );
   }
@@ -160,7 +160,7 @@ export default function CotacaoDetalhesPage() {
         <h2 className="text-lg font-semibold text-slate-800">Itens / Peças Solicitadas</h2>
         <Button
           onClick={() => setIsModalOpen(true)}
-          className="bg-[#f97316] hover:bg-[#ea580c] text-white gap-2 font-semibold"
+          className="bg-blue-600 hover:bg-blue-700 text-white gap-2 font-semibold"
         >
           <Plus className="w-4 h-4" /> Adicionar Item
         </Button>
@@ -193,10 +193,9 @@ export default function CotacaoDetalhesPage() {
                   <td className="p-4 text-slate-600">{item.fornecedor || "—"}</td>
                   <td className="p-4 text-right">
                     <Button
-                      variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteItem(item.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="bg-red-600 hover:bg-red-700 text-white"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -276,7 +275,7 @@ export default function CotacaoDetalhesPage() {
               <Button
                 type="submit"
                 disabled={saving}
-                className="bg-[#f97316] hover:bg-[#ea580c] text-white font-semibold"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
               >
                 {saving ? "Salvando..." : "Adicionar Item"}
               </Button>
