@@ -77,8 +77,12 @@ export default function CotacaoDetalhesPage() {
           cotacao_id: id,
           descricao,
           quantidade: Number(quantidade) || 1,
-          valor_unitario: Number(valorUnitario) || 0,
-          fornecedor,
+          observacoes: [
+            valorUnitario ? `Valor unitário: R$ ${Number(valorUnitario).toFixed(2)}` : null,
+            fornecedor ? `Fornecedor: ${fornecedor}` : null,
+          ]
+            .filter(Boolean)
+            .join(" | ") || null,
         },
       ]);
 
