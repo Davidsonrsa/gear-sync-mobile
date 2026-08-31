@@ -181,7 +181,6 @@ function NotasFiscaisPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [busca, setBusca] = useState("");
 
-  // Campos do Formulário (Cadastro / Edição)
   const [numeroNf, setNumeroNf] = useState("");
   const [fornecedor, setFornecedor] = useState("");
   const [equipamento, setEquipamento] = useState("");
@@ -293,7 +292,6 @@ function NotasFiscaisPage() {
       };
 
       if (notaSelecionada) {
-        // Atualizar Nota Existente
         const { error } = await supabase
           .from("notas_fiscais")
           .update(payload)
@@ -303,7 +301,6 @@ function NotasFiscaisPage() {
         toast.success("Nota fiscal atualizada com sucesso!");
         setOpenModalEdicao(false);
       } else {
-        // Criar Nova Nota
         const { error } = await supabase.from("notas_fiscais").insert([payload]);
         if (error) throw error;
         toast.success("Nota fiscal cadastrada com sucesso!");
@@ -341,7 +338,8 @@ function NotasFiscaisPage() {
         data: parseExcelDate(getExcelValue(row, ["Emissão", "Data", "data"])),
         valor: parseExcelValue(getExcelValue(row, ["Valor Total", "Valor", "valor"])),
         descricao_produto: parseText(getExcelValue(row, ["Descrição", "Produto", "descricao"])) || null,
-        observacao: parseText(getExcelValue(row, ["Observação", "obs", "observacao"])) || null,
+        // Adicionadas variações e erros de digitação comuns como "obersvação"
+        observacao: parseText(getExcelValue(row, ["obersvação", "observação", "observacao", "obs"])) || null,
         venc01: parseExcelDate(getExcelValue(row, ["Venc. 01", "Venc01", "venc01"])),
         venc02: parseExcelDate(getExcelValue(row, ["Venc. 02", "Venc02", "venc02"])),
         venc03: parseExcelDate(getExcelValue(row, ["Venc. 03", "Venc03", "venc03"])),
@@ -395,7 +393,6 @@ function NotasFiscaisPage() {
             {importing ? `Importando (${importProgress}/${importTotal})` : "Importar Excel"}
           </Button>
 
-          {/* Botão Nova Nota Fiscal */}
           <Dialog open={openModalCadastro} onOpenChange={(open) => { setOpenModalCadastro(open); if (!open) limparFormulario(); }}>
             <DialogTrigger asChild>
               <Button variant="outline" className="rounded-full text-xs">
@@ -445,7 +442,6 @@ function NotasFiscaisPage() {
         </div>
       </div>
 
-      {/* Tabela de Notas Fiscais */}
       <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
@@ -483,7 +479,6 @@ function NotasFiscaisPage() {
                     <td className="p-3 text-right font-medium">{formatBRL(nota.valor)}</td>
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-1.5">
-                        {/* Botão Editar (substitui o visualizar) */}
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-600 hover:bg-blue-50" onClick={() => abrirEdicao(nota)}>
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
@@ -500,7 +495,6 @@ function NotasFiscaisPage() {
         </div>
       </div>
 
-      {/* Modal de Edição */}
       <Dialog open={openModalEdicao} onOpenChange={(open) => { setOpenModalEdicao(open); if (!open) limparFormulario(); }}>
         <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Editar Nota Fiscal #{numeroNf}</DialogTitle></DialogHeader>
