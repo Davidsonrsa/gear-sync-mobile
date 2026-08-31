@@ -338,7 +338,6 @@ function NotasFiscaisPage() {
         data: parseExcelDate(getExcelValue(row, ["Emissão", "Data", "data"])),
         valor: parseExcelValue(getExcelValue(row, ["Valor Total", "Valor", "valor"])),
         descricao_produto: parseText(getExcelValue(row, ["Descrição", "Produto", "descricao"])) || null,
-        // Adicionadas variações e erros de digitação comuns como "obersvação"
         observacao: parseText(getExcelValue(row, ["obersvação", "observação", "observacao", "obs"])) || null,
         venc01: parseExcelDate(getExcelValue(row, ["Venc. 01", "Venc01", "venc01"])),
         venc02: parseExcelDate(getExcelValue(row, ["Venc. 02", "Venc02", "venc02"])),
@@ -375,6 +374,7 @@ function NotasFiscaisPage() {
       nota.nf.toLowerCase().includes(termo) ||
       nota.fornecedor.toLowerCase().includes(termo) ||
       nota.identificacao.toLowerCase().includes(termo) ||
+      nota.cl.toLowerCase().includes(termo) ||
       nota.observacao.toLowerCase().includes(termo)
     );
   });
@@ -450,6 +450,7 @@ function NotasFiscaisPage() {
                 <th className="p-3">NF</th>
                 <th className="p-3">Fornecedor</th>
                 <th className="p-3">Equipamento</th>
+                <th className="p-3">CL</th>
                 <th className="p-3">Emissão</th>
                 <th className="p-3">Vencimentos</th>
                 <th className="p-3">Observação</th>
@@ -459,15 +460,16 @@ function NotasFiscaisPage() {
             </thead>
             <tbody className="divide-y divide-slate-200">
               {loading ? (
-                <tr><td colSpan={8} className="p-6 text-center text-slate-500"><Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" /> Carregando...</td></tr>
+                <tr><td colSpan={9} className="p-6 text-center text-slate-500"><Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" /> Carregando...</td></tr>
               ) : notasFiltradas.length === 0 ? (
-                <tr><td colSpan={8} className="p-6 text-center text-slate-500">Nenhuma nota encontrada.</td></tr>
+                <tr><td colSpan={9} className="p-6 text-center text-slate-500">Nenhuma nota encontrada.</td></tr>
               ) : (
                 notasFiltradas.map((nota) => (
                   <tr key={nota.id} className="hover:bg-slate-50/50">
                     <td className="p-3 font-medium">{nota.nf}</td>
                     <td className="p-3">{nota.fornecedor}</td>
                     <td className="p-3">{nota.identificacao}</td>
+                    <td className="p-3">{nota.cl}</td>
                     <td className="p-3">{formatDate(nota.data)}</td>
                     <td className="p-3 text-[11px] text-slate-600">
                       {[nota.venc01, nota.venc02, nota.venc03, nota.venc04, nota.venc05]
