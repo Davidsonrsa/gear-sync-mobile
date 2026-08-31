@@ -360,7 +360,7 @@ function NotasFiscaisPage() {
           identificacao: equipamento || null,
           equipamento: equipamento || null,
           cl: cl || null,
-          emissao: emissao || null,
+          data: emissao || null,
           valor_total: parseFloat(valorTotal) || 0,
           venc_01: venc01 || null,
           venc_02: venc02 || null,
