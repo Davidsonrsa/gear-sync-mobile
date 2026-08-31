@@ -27,7 +27,7 @@ const COLUMN_ALIASES: Record<string, string> = {
   valortotal: "valor",
   valorgeral: "valor",
   observacao: "observacao",
-  obersvacao: "observacao",
+  obersvacao: "observacao", // Cobre o erro de digitação da planilha
   observacoes: "observacao",
   venc01: "venc01",
   vencimento1: "venc01",
