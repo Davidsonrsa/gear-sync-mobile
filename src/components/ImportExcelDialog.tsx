@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Upload, X, FileSpreadsheet } from "lucide-react";
 
-// Mapeamento tolerante de colunas (aceita variações e erros de digitação do Excel)
+// Mapeamento tolerante de colunas (incluindo variações e o erro de digitação do Excel "obersvaçao")
 const COLUMN_ALIASES: Record<string, string> = {
   nf: "nf",
   numeronf: "nf",
@@ -19,7 +19,7 @@ const COLUMN_ALIASES: Record<string, string> = {
   valor: "valor",
   valortotal: "valor",
   observacao: "observacao",
-  obersvacao: "observacao", // Tratamento para o erro de digitação do Excel ("obersvaçao")
+  obersvacao: "observacao",
   observacoes: "observacao",
   venc01: "venc01",
   venc02: "venc02",
@@ -124,6 +124,16 @@ function parseExcelValue(value: unknown): number | null {
   return Number.isFinite(number) ? number : null;
 }
 
+function parseNfValue(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? String(Math.trunc(value)) : "";
+  }
+  const text = String(value).trim();
+  if (!text || text.toLowerCase() === "nan" || text.toLowerCase() === "undefined") return "";
+  return text;
+}
+
 function normalizeData(data: Record<string, unknown>[]): ImportData[] {
   return data
     .map((row) => {
@@ -138,7 +148,7 @@ function normalizeData(data: Record<string, unknown>[]): ImportData[] {
       });
 
       return {
-        nf: String(mappedRow.nf ?? "").trim(),
+        nf: parseNfValue(mappedRow.nf),
         data: parseExcelDate(mappedRow.data),
         fornecedor: mappedRow.fornecedor ? String(mappedRow.fornecedor).trim() : null,
         identificacao: mappedRow.identificacao ? String(mappedRow.identificacao).trim() : null,
