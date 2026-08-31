@@ -355,7 +355,7 @@ function NotasFiscaisPage() {
     try {
       const { error } = await supabase.from("notas_fiscais").insert([
         {
-          numero_nf: numeroNf,
+          nf: numeroNf,
           fornecedor: fornecedor,
           identificacao: equipamento || null,
           equipamento: equipamento || null,
