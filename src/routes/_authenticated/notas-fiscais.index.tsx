@@ -893,17 +893,17 @@ function NotasFiscaisPage() {
                   <span className="text-xs text-slate-400 block font-medium">
                     Parcelas e Vencimentos
                   </span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-100 block mt-0.5 text-xs">
+                  <span className="font-semibold text-slate-800 dark:text-slate-100 text-xs mt-0.5 block">
                     {notaSelecionada.parcelas}
                   </span>
                 </div>
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                <span className="text-xs text-slate-400 block font-medium mb-1">
+                <span className="text-xs text-slate-400 block font-medium">
                   Observações / Descrição
                 </span>
-                <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                <p className="text-xs text-slate-700 dark:text-slate-300 mt-1 whitespace-pre-wrap">
                   {notaSelecionada.observacao}
                 </p>
               </div>
@@ -912,12 +912,11 @@ function NotasFiscaisPage() {
                 <Button
                   variant="destructive"
                   size="sm"
-                  className="h-8 text-xs flex items-center gap-1"
                   onClick={() => handleDeletarNota(notaSelecionada.id, notaSelecionada.numero_nf)}
+                  className="h-8 text-xs flex items-center gap-1"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Excluir Nota
                 </Button>
-
                 <Button
                   variant="outline"
                   size="sm"
