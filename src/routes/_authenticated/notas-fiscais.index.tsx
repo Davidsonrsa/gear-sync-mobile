@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +46,6 @@ export interface NotaFiscalItem {
 }
 
 function NotasFiscaisPage() {
-  const navigate = useNavigate();
   const [openModalCadastro, setOpenModalCadastro] = useState(false);
   const [openModalDetalhes, setOpenModalDetalhes] = useState(false);
   const [notaSelecionada, setNotaSelecionada] = useState<NotaFiscalItem | null>(null);
@@ -148,204 +147,94 @@ function NotasFiscaisPage() {
     if (!dateStr || dateStr === "—") return "";
     try {
       const cleanDate = String(dateStr).split("T")[0];
-      const [year, month, day] = cleanDate.split("-");
-      if (year && month && day) return `${day}/${month}/${year}`;
+      const parts = cleanDate.split("-");
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
       return String(dateStr);
     } catch {
       return String(dateStr);
     }
   };
 
-  const extractNumeroNF = (item: any): string => {
-    const raw =
-      item.numero_nf ??
-      item.numero_nota ??
-      item.numero ??
-      item.num_nf ??
-      item.nota_fiscal ??
-      item.nota ??
-      item.nf ??
-      item.num_documento ??
-      item.documento;
-
-    if (raw === null || raw === undefined || raw === "") return "—";
-    return String(raw).trim();
-  };
-
-  const extractFornecedor = (item: any): string => {
-    if (typeof item.fornecedor === "object" && item.fornecedor !== null) {
-      return item.fornecedor.nome || item.fornecedor.razao_social || "—";
-    }
-    return (
-      item.fornecedor ||
-      item.razao_social ||
-      item.nome_fornecedor ||
-      item.empresa ||
-      "—"
+  // Funções de extração simplificadas e seguras
+  const parseItem = (item: any): NotaFiscalItem => {
+    const numero_nf = String(
+      item.numero_nf ?? item.nf ?? item.numero ?? item.numero_nota ?? "—"
     );
-  };
 
-  const extractEquipamento = (item: any): string => {
+    let fornecedorNome = "—";
+    if (typeof item.fornecedores === "object" && item.fornecedores !== null) {
+      fornecedorNome = item.fornecedores.nome || item.fornecedores.razao_social || "—";
+    } else if (typeof item.fornecedor === "string") {
+      fornecedorNome = item.fornecedor;
+    }
+
+    let equipamentoNome = "—";
     if (typeof item.equipamentos === "object" && item.equipamentos !== null) {
-      return (
-        item.equipamentos.identificacao ||
-        item.equipamentos.nome ||
-        item.equipamentos.descricao ||
-        item.equipamentos.tag ||
-        item.equipamentos.codigo ||
-        item.equipamentos.placa ||
-        "—"
-      );
-    }
-    if (typeof item.equipamento === "object" && item.equipamento !== null) {
-      return (
-        item.equipamento.identificacao ||
-        item.equipamento.nome ||
-        item.equipamento.descricao ||
-        item.equipamento.tag ||
-        item.equipamento.codigo ||
-        item.equipamento.placa ||
-        "—"
-      );
-    }
-    return (
-      item.identificacao ||
-      item.identificacao_equipamento ||
-      item.cod_identificacao ||
-      item.equipamento ||
-      item.equipamentos ||
-      item.cod_equipamento ||
-      item.nome_equipamento ||
-      item.descricao_equipamento ||
-      item.veiculo ||
-      item.frota ||
-      item.tag ||
-      item.maquina ||
-      item.placa ||
-      "—"
-    );
-  };
-
-  const extractCL = (item: any): string => {
-    return (
-      item.cl ||
-      item.centro_custo ||
-      item.centro_lucro ||
-      item.localidade ||
-      "—"
-    );
-  };
-
-  const extractEmissao = (item: any): string => {
-    return (
-      item.emissao ||
-      item.data_emissao ||
-      item.data_nota ||
-      item.dt_emissao ||
-      item.created_at ||
-      "—"
-    );
-  };
-
-  const extractParcelasEVencimento = (item: any): string => {
-    const vencimentosList: string[] = [];
-
-    const possibleVencs = [
-      item["venc_01"] || item["venc.01"] || item["venc01"] || item["vencimento_1"] || item["venc1"] || item["data_vencimento_1"],
-      item["venc_02"] || item["venc.02"] || item["venc02"] || item["vencimento_2"] || item["venc2"] || item["data_vencimento_2"],
-      item["venc_03"] || item["venc.03"] || item["venc03"] || item["vencimento_3"] || item["venc3"] || item["data_vencimento_3"],
-      item["venc_04"] || item["venc.04"] || item["venc04"] || item["vencimento_4"] || item["venc4"] || item["data_vencimento_4"],
-      item["venc_05"] || item["venc.05"] || item["venc05"] || item["vencimento_5"] || item["venc5"] || item["data_vencimento_5"],
-    ];
-
-    possibleVencs.forEach((venc, index) => {
-      if (venc) {
-        const formatted = formatDate(venc);
-        if (formatted) {
-          vencimentosList.push(`${index + 1}ª: ${formatted}`);
-        }
-      }
-    });
-
-    if (vencimentosList.length > 0) {
-      return vencimentosList.join(" | ");
+      equipamentoNome = item.equipamentos.identificacao || item.equipamentos.nome || "—";
+    } else if (typeof item.equipamento === "string") {
+      equipamentoNome = item.equipamento;
+    } else if (typeof item.identificacao === "string") {
+      equipamentoNome = item.identificacao;
     }
 
-    const singleVenc =
-      item.vencimento ||
-      item.data_vencimento ||
-      item.dt_vencimento ||
-      item.vencimentos;
+    const cl = String(item.cl ?? item.centro_custo ?? "—");
+    const emissao = String(item.emissao ?? item.data ?? item.created_at ?? "—");
+    const valor_total = Number(item.valor_total ?? item.valor ?? 0);
+    const observacao = String(item.observacao ?? item.descricao ?? "—");
 
-    const rawParcelas = item.parcelas || item.parcela || item.qtd_parcelas;
+    // Montar vencimentos de forma limpa
+    const vencs = [
+      item.venc_01, item.venc_02, item.venc_03, item.venc_04, item.venc_05
+    ].filter(Boolean);
 
-    if (singleVenc && rawParcelas) {
-      return `${rawParcelas}x (${formatDate(singleVenc)})`;
+    let parcelasStr = "—";
+    if (vencs.length > 0) {
+      parcelasStr = vencs.map((v, i) => `${i + 1}ª: ${formatDate(v)}`).join(" | ");
+    } else if (item.vencimento) {
+      parcelasStr = formatDate(item.vencimento);
     }
-    if (singleVenc) {
-      return `1ª: ${formatDate(singleVenc)}`;
-    }
-    if (rawParcelas) {
-      return `${rawParcelas} Parcela(s)`;
-    }
 
-    return "—";
-  };
-
-  const extractObservacao = (item: any): string => {
-    return (
-      item.observacao ||
-      item.observacoes ||
-      item.obs ||
-      item.descricao ||
-      item.detalhes ||
-      "—"
-    );
+    return {
+      id: String(item.id),
+      numero_nf,
+      fornecedor: fornecedorNome,
+      equipamento: equipamentoNome,
+      cl,
+      emissao,
+      valor_total,
+      parcelas: parcelasStr,
+      observacao,
+    };
   };
 
   const fetchNotas = async () => {
     setLoading(true);
     try {
+      // Busca segura sem junções complexas que possam quebrar caso a foreign key falhe
       const { data, error } = await supabase
         .from("notas_fiscais")
-        .select("*, equipamentos(*), fornecedores(*)")
+        .select("*")
         .order("created_at", { ascending: false });
 
-      let finalData: any[] | null = data as any[] | null;
+      if (error) throw error;
 
-      if (error) {
-        const { data: fallbackData } = await supabase
-          .from("notas_fiscais")
-          .select("*")
-          .order("created_at", { ascending: false });
-        finalData = fallbackData as any[] | null;
-      }
-
-      if (finalData && finalData.length > 0) {
-        const mappedData: NotaFiscalItem[] = finalData.map((item: any) => ({
-          id: String(item.id),
-          numero_nf: extractNumeroNF(item),
-          fornecedor: extractFornecedor(item),
-          equipamento: extractEquipamento(item),
-          cl: extractCL(item),
-          emissao: extractEmissao(item),
-          valor_total: Number(
-            item.valor_total || item.valor || item.valor_nota || item.val_total || 0
-          ),
-          parcelas: extractParcelasEVencimento(item),
-          observacao: extractObservacao(item),
-        }));
-        setNotasList(mappedData);
+      if (data) {
+        const mapped = data.map(parseItem);
+        setNotasList(mapped);
       } else {
         setNotasList([]);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro ao carregar notas:", err);
+      toast.error("Erro ao carregar notas fiscais.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Executa apenas uma vez na montagem da página
   useEffect(() => {
     fetchNotas();
   }, []);
@@ -358,11 +247,13 @@ function NotasFiscaisPage() {
       const { error } = await supabase.from("notas_fiscais").insert([
         {
           nf: numeroNf,
+          numero_nf: numeroNf,
           fornecedor: fornecedor,
           identificacao: equipamento || null,
           equipamento: equipamento || null,
           cl: cl || null,
           data: emissao || null,
+          emissao: emissao || null,
           valor_total: parseFloat(valorTotal) || 0,
           venc_01: venc01 || null,
           venc_02: venc02 || null,
@@ -736,7 +627,6 @@ function NotasFiscaisPage() {
           Limpar
         </button>
 
-        {/* Input de arquivo invisível */}
         <input
           type="file"
           ref={fileInputRef}
