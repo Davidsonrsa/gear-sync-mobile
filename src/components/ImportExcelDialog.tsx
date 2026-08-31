@@ -251,7 +251,10 @@ export function ImportExcelDialog({
 
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, { defval: null });
-
+if (json.length > 0) {
+  console.log("Colunas encontradas no Excel:", Object.keys(json[0]));
+  console.log("Primeira linha crua:", json[0]);
+}
         if (json.length === 0) {
           toast.error("Nenhum registro encontrado na planilha.");
           return;
