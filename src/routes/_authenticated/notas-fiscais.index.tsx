@@ -12,13 +12,7 @@ import {
   PlusCircle,
   FileSpreadsheet,
   Eye,
-  Filter,
   Loader2,
-  Calendar,
-  Building2,
-  Truck,
-  FileText,
-  MapPin,
   Trash2,
 } from "lucide-react";
 import {
@@ -290,6 +284,10 @@ function parseNumeroNF(value: unknown): string {
     return "";
   }
 
+  if (value instanceof Date) {
+    return "";
+  }
+
   if (typeof value === "number") {
     if (Number.isInteger(value)) {
       return String(value);
@@ -298,7 +296,12 @@ function parseNumeroNF(value: unknown): string {
     return String(value).replace(/\.0+$/, "");
   }
 
-  return String(value).trim();
+  const str = String(value).trim();
+  if (str.includes("GMT") || str.includes("Sun ") || str.includes("Mon ") || str.includes("Tue ") || str.includes("Wed ") || str.includes("Thu ") || str.includes("Fri ") || str.includes("Sat ")) {
+    return "";
+  }
+
+  return str;
 }
 
 function getExcelValue(
@@ -1383,10 +1386,10 @@ ${error.message}`,
 
       {/* TABELA DE NOTAS FISCAIS COM ROLAGEM E LARGURAS MÍNIMAS */}
       <div className="w-full overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-xs">
-        <table className="w-full min-w-[1350px] border-collapse text-sm">
+        <table className="w-full min-w-[1300px] border-collapse text-sm">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50 text-slate-700 text-xs">
-              <th className="w-[85px] px-3 py-3 text-left font-semibold">Número NF</th>
+              <th className="w-[75px] px-2 py-3 text-left font-semibold">Número NF</th>
               <th className="min-w-[220px] px-4 py-3 text-left font-semibold">Fornecedor</th>
               <th className="min-w-[160px] px-4 py-3 text-left font-semibold">Equipamento</th>
               <th className="w-[70px] px-3 py-3 text-center font-semibold">CL</th>
@@ -1414,7 +1417,9 @@ ${error.message}`,
             ) : (
               notasFiltradas.map((nota) => (
                 <tr key={nota.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="px-3 py-3 font-medium text-slate-900 truncate">{nota.nf}</td>
+                  <td className="px-2 py-3 font-medium text-slate-950 truncate max-w-[75px]" title={nota.nf}>
+                    {nota.nf}
+                  </td>
                   <td className="px-4 py-3 font-medium text-slate-900 truncate max-w-[250px]" title={nota.fornecedor}>
                     {nota.fornecedor}
                   </td>
