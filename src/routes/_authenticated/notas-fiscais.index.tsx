@@ -297,7 +297,16 @@ function parseNumeroNF(value: unknown): string {
   }
 
   const str = String(value).trim();
-  if (str.includes("GMT") || str.includes("Sun ") || str.includes("Mon ") || str.includes("Tue ") || str.includes("Wed ") || str.includes("Thu ") || str.includes("Fri ") || str.includes("Sat ")) {
+  if (
+    str.includes("GMT") ||
+    str.includes("Sun ") ||
+    str.includes("Mon ") ||
+    str.includes("Tue ") ||
+    str.includes("Wed ") ||
+    str.includes("Thu ") ||
+    str.includes("Fri ") ||
+    str.includes("Sat ")
+  ) {
     return "";
   }
 
@@ -356,153 +365,89 @@ function formatDate(dateStr: unknown): string {
 ============================================================================ */
 
 function NotasFiscaisPage() {
-  const [openModalCadastro, setOpenModalCadastro] =
-    useState(false);
+  const [openModalCadastro, setOpenModalCadastro] = useState(false);
+  const [openModalDetalhes, setOpenModalDetalhes] = useState(false);
+  const [notaSelecionada, setNotaSelecionada] = useState<NotaFiscalItem | null>(null);
+  const [notasList, setNotasList] = useState<NotaFiscalItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+  const [importTotal, setImportTotal] = useState(0);
 
-  const [openModalDetalhes, setOpenModalDetalhes] =
-    useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [notaSelecionada, setNotaSelecionada] =
-    useState<NotaFiscalItem | null>(null);
+  const [busca, setBusca] = useState("");
+  const [dataInicio, setDataInicio] = useState("");
+  const [dataFim, setDataFim] = useState("");
 
-  const [notasList, setNotasList] =
-    useState<NotaFiscalItem[]>([]);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [submitting, setSubmitting] =
-    useState(false);
-
-  const [importing, setImporting] =
-    useState(false);
-
-  const [importProgress, setImportProgress] =
-    useState(0);
-
-  const [importTotal, setImportTotal] =
-    useState(0);
-
-  const fileInputRef =
-    useRef<HTMLInputElement>(null);
-
-  const [busca, setBusca] =
-    useState("");
-
-  const [dataInicio, setDataInicio] =
-    useState("");
-
-  const [dataFim, setDataFim] =
-    useState("");
-
-  const [numeroNf, setNumeroNf] =
-    useState("");
-
-  const [fornecedor, setFornecedor] =
-    useState("");
-
-  const [equipamento, setEquipamento] =
-    useState("");
-
-  const [cl, setCl] =
-    useState("");
-
-  const [emissao, setEmissao] =
-    useState("");
-
-  const [valorTotal, setValorTotal] =
-    useState("");
-
-  const [descricaoProduto, setDescricaoProduto] =
-    useState("");
-
-  const [venc01, setVenc01] =
-    useState("");
-
-  const [venc02, setVenc02] =
-    useState("");
-
-  const [venc03, setVenc03] =
-    useState("");
-
-  const [venc04, setVenc04] =
-    useState("");
-
-  const [venc05, setVenc05] =
-    useState("");
-
-  const [observacao, setObservacao] =
-    useState("");
+  const [numeroNf, setNumeroNf] = useState("");
+  const [fornecedor, setFornecedor] = useState("");
+  const [equipamento, setEquipamento] = useState("");
+  const [cl, setCl] = useState("");
+  const [emissao, setEmissao] = useState("");
+  const [valorTotal, setValorTotal] = useState("");
+  const [descricaoProduto, setDescricaoProduto] = useState("");
+  const [venc01, setVenc01] = useState("");
+  const [venc02, setVenc02] = useState("");
+  const [venc03, setVenc03] = useState("");
+  const [venc04, setVenc04] = useState("");
+  const [venc05, setVenc05] = useState("");
+  const [observacao, setObservacao] = useState("");
 
   const fetchNotas = async () => {
     setLoading(true);
 
     try {
-      const { data, error } =
-        await supabase
-          .from("notas_fiscais")
-          .select(
-            `
-              id,
-              nf,
-              fornecedor,
-              identificacao,
-              cl,
-              data,
-              valor,
-              descricao_produto,
-              observacao,
-              venc01,
-              venc02,
-              venc03,
-              venc04,
-              venc05
-            `,
-          )
-          .order("created_at", {
-            ascending: false,
-          });
+      const { data, error } = await supabase
+        .from("notas_fiscais")
+        .select(
+          `
+            id,
+            nf,
+            fornecedor,
+            identificacao,
+            cl,
+            data,
+            valor,
+            descricao_produto,
+            observacao,
+            venc01,
+            venc02,
+            venc03,
+            venc04,
+            venc05
+          `,
+        )
+        .order("created_at", {
+          ascending: false,
+        });
 
       if (error) {
         throw error;
       }
 
-      const mapped: NotaFiscalItem[] =
-        (data ?? []).map((item: any) => ({
-          id: String(item.id ?? ""),
-          nf: String(item.nf ?? "—"),
-          fornecedor: String(
-            item.fornecedor ?? "—",
-          ),
-          identificacao: String(
-            item.identificacao ?? "—",
-          ),
-          cl: String(item.cl ?? "—"),
-          data: String(item.data ?? "—"),
-          valor: Number(item.valor ?? 0),
-          descricao_produto: String(
-            item.descricao_produto ?? "—",
-          ),
-          observacao: String(
-            item.observacao ?? "—",
-          ),
-          venc01: item.venc01 ?? null,
-          venc02: item.venc02 ?? null,
-          venc03: item.venc03 ?? null,
-          venc04: item.venc04 ?? null,
-          venc05: item.venc05 ?? null,
-        }));
+      const mapped: NotaFiscalItem[] = (data ?? []).map((item: any) => ({
+        id: String(item.id ?? ""),
+        nf: String(item.nf ?? "—"),
+        fornecedor: String(item.fornecedor ?? "—"),
+        identificacao: String(item.identificacao ?? "—"),
+        cl: String(item.cl ?? "—"),
+        data: String(item.data ?? "—"),
+        valor: Number(item.valor ?? 0),
+        descricao_produto: String(item.descricao_produto ?? "—"),
+        observacao: String(item.observacao ?? "—"),
+        venc01: item.venc01 ?? null,
+        venc02: item.venc02 ?? null,
+        venc03: item.venc03 ?? null,
+        venc04: item.venc04 ?? null,
+        venc05: item.venc05 ?? null,
+      }));
 
       setNotasList(mapped);
     } catch (error: any) {
-      console.error(
-        "Erro ao carregar notas:",
-        error,
-      );
-
-      toast.error(
-        "Erro ao carregar notas fiscais.",
-      );
+      console.error("Erro ao carregar notas:", error);
+      toast.error("Erro ao carregar notas fiscais.");
     } finally {
       setLoading(false);
     }
@@ -512,58 +457,33 @@ function NotasFiscaisPage() {
     fetchNotas();
   }, []);
 
-  const handleDeletarNota = async (
-    id: string,
-    numeroNF: string,
-  ) => {
-    if (
-      !window.confirm(
-        `Tem certeza que deseja excluir a nota fiscal #${numeroNF}?`,
-      )
-    ) {
+  const handleDeletarNota = async (id: string, numeroNF: string) => {
+    if (!window.confirm(`Tem certeza que deseja excluir a nota fiscal #${numeroNF}?`)) {
       return;
     }
 
     try {
-      const { error } =
-        await supabase
-          .from("notas_fiscais")
-          .delete()
-          .eq("id", id);
+      const { error } = await supabase
+        .from("notas_fiscais")
+        .delete()
+        .eq("id", id);
 
       if (error) {
         throw error;
       }
 
-      toast.success(
-        "Nota fiscal excluída com sucesso!",
-      );
-
+      toast.success("Nota fiscal excluída com sucesso!");
       setOpenModalDetalhes(false);
-
       await fetchNotas();
     } catch (error: any) {
-      console.error(
-        "Erro ao excluir:",
-        error,
-      );
-
-      toast.error(
-        "Erro ao excluir nota: " +
-          (error?.message ||
-            "Erro desconhecido"),
-      );
+      console.error("Erro ao excluir:", error);
+      toast.error("Erro ao excluir nota: " + (error?.message || "Erro desconhecido"));
     }
   };
 
-  const handleFileUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     setImporting(true);
     setImportProgress(0);
@@ -571,76 +491,37 @@ function NotasFiscaisPage() {
 
     try {
       const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { cellDates: true });
 
-      const workbook = XLSX.read(data, {
-        cellDates: true,
-      });
-
-      if (
-        !workbook.SheetNames ||
-        workbook.SheetNames.length === 0
-      ) {
-        throw new Error(
-          "Nenhuma planilha encontrada no arquivo.",
-        );
+      if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+        throw new Error("Nenhuma planilha encontrada no arquivo.");
       }
 
-      const firstSheetName =
-        workbook.SheetNames[0];
-
-      const worksheet =
-        workbook.Sheets[firstSheetName];
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
 
       if (!worksheet) {
-        throw new Error(
-          "Não foi possível abrir a primeira planilha.",
-        );
+        throw new Error("Não foi possível abrir a primeira planilha.");
       }
 
-      const jsonData =
-        XLSX.utils.sheet_to_json<
-          Record<string, unknown>
-        >(worksheet, {
-          defval: null,
-          raw: true,
-        });
+      const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, {
+        defval: null,
+        raw: true,
+      });
 
-      if (
-        !jsonData ||
-        jsonData.length === 0
-      ) {
-        throw new Error(
-          "O arquivo está vazio ou a primeira planilha não possui registros.",
-        );
+      if (!jsonData || jsonData.length === 0) {
+        throw new Error("O arquivo está vazio ou a primeira planilha não possui registros.");
       }
 
-      const headers =
-        Object.keys(jsonData[0] ?? {});
+      const headers = Object.keys(jsonData[0] ?? {});
+      const normalizedHeaders = headers.map(normalizeHeader);
 
-      const normalizedHeaders =
-        headers.map(normalizeHeader);
-
-      const hasNF =
-        normalizedHeaders.some(
-          (header) =>
-            [
-              "numeronf",
-              "numerodanota",
-              "nf",
-              "numeronota",
-              "notafiscal",
-            ].includes(header),
-        );
+      const hasNF = normalizedHeaders.some((header) =>
+        ["numeronf", "numerodanota", "nf", "numeronota", "notafiscal"].includes(header),
+      );
 
       if (!hasNF) {
-        throw new Error(
-          `A coluna "Número NF" não foi encontrada.
-
-Colunas encontradas:
-${headers.join(", ")}
-
-A planilha precisa possuir uma coluna de NF.`,
-        );
+        throw new Error(`A coluna "Número NF" não foi encontrada.`);
       }
 
       const formattedData: Array<{
@@ -661,11 +542,7 @@ A planilha precisa possuir uma coluna de NF.`,
 
       let linhasIgnoradas = 0;
 
-      for (
-        let index = 0;
-        index < jsonData.length;
-        index++
-      ) {
+      for (let index = 0; index < jsonData.length; index++) {
         const row = jsonData[index];
 
         const nf = parseNumeroNF(
@@ -686,348 +563,105 @@ A planilha precisa possuir uma coluna de NF.`,
           continue;
         }
 
-        const dataEmissao =
-          parseExcelDate(
-            getExcelValue(row, [
-              "Emissão",
-              "Data de Emissão",
-              "Data Emissão",
-              "Data",
-              "data",
-              "emissao",
-            ]),
-          );
+        const dataEmissao = parseExcelDate(
+          getExcelValue(row, ["Emissão", "Data de Emissão", "Data Emissão", "Data", "data", "emissao"]),
+        );
 
-        const fornecedorValue =
-          getExcelValue(row, [
-            "Fornecedor",
-            "fornecedor",
-          ]);
-
-        const identificacaoValue =
-          getExcelValue(row, [
-            "Equipamento",
-            "Equipamento / Identificação",
-            "Identificação",
-            "Identificacao",
-            "identificacao",
-          ]);
-
-        const clValue =
-          getExcelValue(row, [
-            "CL",
-            "Centro de Custo",
-            "Centro de Lucro",
-            "Localidade",
-            "cl",
-          ]);
-
-        const valorValue =
-          getExcelValue(row, [
-            "Valor Total",
-            "Valor",
-            "valor_total",
-            "valor",
-          ]);
-
-        const descricaoValue =
-          getExcelValue(row, [
-            "Descrição do Produto",
-            "Descricao do Produto",
-            "Descrição Produto",
-            "Descricao Produto",
-            "Produto",
-            "Descrição",
-            "descricao_produto",
-            "descricao",
-          ]);
-
-        const observacaoValue =
-          getExcelValue(row, [
-            "Observação",
-            "Observacao",
-            "Observações",
-            "Observacoes",
-            "observacao",
-            "obs",
-          ]);
-
-        const venc01Value =
-          getExcelValue(row, [
-            "Venc. 01",
-            "Venc01",
-            "Venc 01",
-            "Vencimento 01",
-            "Vencimento 1",
-            "1ª Parcela",
-            "1 Parcela",
-            "venc01",
-            "venc_01",
-            "venc1",
-          ]);
-
-        const venc02Value =
-          getExcelValue(row, [
-            "Venc. 02",
-            "Venc02",
-            "Venc 02",
-            "Vencimento 02",
-            "Vencimento 2",
-            "2ª Parcela",
-            "2 Parcela",
-            "venc02",
-            "venc_02",
-            "venc2",
-          ]);
-
-        const venc03Value =
-          getExcelValue(row, [
-            "Venc. 03",
-            "Venc03",
-            "Venc 03",
-            "Vencimento 03",
-            "Vencimento 3",
-            "3ª Parcela",
-            "3 Parcela",
-            "venc03",
-            "venc_03",
-            "venc3",
-          ]);
-
-        const venc04Value =
-          getExcelValue(row, [
-            "Venc. 04",
-            "Venc04",
-            "Venc 04",
-            "Vencimento 04",
-            "Vencimento 4",
-            "4ª Parcela",
-            "4 Parcela",
-            "venc04",
-            "venc_04",
-            "venc4",
-          ]);
-
-        const venc05Value =
-          getExcelValue(row, [
-            "Venc. 05",
-            "Venc05",
-            "Venc 05",
-            "Vencimento 05",
-            "Vencimento 5",
-            "5ª Parcela",
-            "5 Parcela",
-            "venc05",
-            "venc_05",
-            "venc5",
-          ]);
+        const fornecedorValue = getExcelValue(row, ["Fornecedor", "fornecedor"]);
+        const identificacaoValue = getExcelValue(row, ["Equipamento", "Equipamento / Identificação", "Identificação", "Identificacao", "identificacao"]);
+        const clValue = getExcelValue(row, ["CL", "Centro de Custo", "Centro de Lucro", "Localidade", "cl"]);
+        const valorValue = getExcelValue(row, ["Valor Total", "Valor", "valor_total", "valor"]);
+        const descricaoValue = getExcelValue(row, ["Descrição do Produto", "Descricao do Produto", "Descrição Produto", "Descricao Produto", "Produto", "Descrição", "descricao_produto", "descricao"]);
+        const observacaoValue = getExcelValue(row, ["Observação", "Observacao", "Observações", "Observacoes", "observacao", "obs"]);
+        const venc01Value = getExcelValue(row, ["Venc. 01", "Venc01", "Venc 01", "Vencimento 01", "Vencimento 1", "1ª Parcela", "1 Parcela", "venc01", "venc_01", "venc1"]);
+        const venc02Value = getExcelValue(row, ["Venc. 02", "Venc02", "Venc 02", "Vencimento 02", "Vencimento 2", "2ª Parcela", "2 Parcela", "venc02", "venc_02", "venc2"]);
+        const venc03Value = getExcelValue(row, ["Venc. 03", "Venc03", "Venc 03", "Vencimento 03", "Vencimento 3", "3ª Parcela", "3 Parcela", "venc03", "venc_03", "venc3"]);
+        const venc04Value = getExcelValue(row, ["Venc. 04", "Venc04", "Venc 04", "Vencimento 04", "Vencimento 4", "4ª Parcela", "4 Parcela", "venc04", "venc_04", "venc4"]);
+        const venc05Value = getExcelValue(row, ["Venc. 05", "Venc05", "Venc 05", "Vencimento 05", "Vencimento 5", "5ª Parcela", "5 Parcela", "venc05", "venc_05", "venc5"]);
 
         formattedData.push({
           nf,
-
-          fornecedor:
-            parseText(fornecedorValue) ||
-            null,
-
-          identificacao:
-            parseText(identificacaoValue) ||
-            null,
-
-          cl:
-            parseText(clValue) ||
-            null,
-
+          fornecedor: parseText(fornecedorValue) || null,
+          identificacao: parseText(identificacaoValue) || null,
+          cl: parseText(clValue) || null,
           data: dataEmissao,
-
-          valor:
-            parseExcelValue(valorValue),
-
-          descricao_produto:
-            parseText(descricaoValue) ||
-            null,
-
-          observacao:
-            parseText(observacaoValue) ||
-            null,
-
-          venc01:
-            parseExcelDate(venc01Value),
-
-          venc02:
-            parseExcelDate(venc02Value),
-
-          venc03:
-            parseExcelDate(venc03Value),
-
-          venc04:
-            parseExcelDate(venc04Value),
-
-          venc05:
-            parseExcelDate(venc05Value),
+          valor: parseExcelValue(valorValue),
+          descricao_produto: parseText(descricaoValue) || null,
+          observacao: parseText(observacaoValue) || null,
+          venc01: parseExcelDate(venc01Value),
+          venc02: parseExcelDate(venc02Value),
+          venc03: parseExcelDate(venc03Value),
+          venc04: parseExcelDate(venc04Value),
+          venc05: parseExcelDate(venc05Value),
         });
       }
 
-      if (
-        formattedData.length === 0
-      ) {
-        throw new Error(
-          "Nenhuma linha com Número NF válido foi encontrada.",
-        );
+      if (formattedData.length === 0) {
+        throw new Error("Nenhuma linha com Número NF válido foi encontrada.");
       }
 
-      setImportTotal(
-        formattedData.length,
-      );
-
+      setImportTotal(formattedData.length);
       let importedCount = 0;
 
-      for (
-        let start = 0;
-        start < formattedData.length;
-        start += IMPORT_BATCH_SIZE
-      ) {
-        const batch =
-          formattedData.slice(
-            start,
-            start + IMPORT_BATCH_SIZE,
-          );
-
-        const { error } =
-          await supabase
-            .from("notas_fiscais")
-            .insert(batch);
+      for (let start = 0; start < formattedData.length; start += IMPORT_BATCH_SIZE) {
+        const batch = formattedData.slice(start, start + IMPORT_BATCH_SIZE);
+        const { error } = await supabase.from("notas_fiscais").insert(batch);
 
         if (error) {
-          throw new Error(
-            `Erro no lote iniciado no registro ${
-              start + 1
-            }.
-
-Registros deste lote: ${
-              batch.length
-            }
-
-Registros já importados antes do erro: ${
-              importedCount
-            }
-
-Mensagem do Supabase:
-${error.message}`,
-          );
+          throw new Error(`Erro no lote iniciado no registro ${start + 1}: ${error.message}`);
         }
 
         importedCount += batch.length;
-
-        setImportProgress(
-          importedCount,
-        );
-
-        await new Promise<void>(
-          (resolve) =>
-            setTimeout(resolve, 0),
-        );
+        setImportProgress(importedCount);
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
       }
 
-      toast.success(
-        `${importedCount} notas fiscais importadas com sucesso!`,
-      );
-
+      toast.success(`${importedCount} notas fiscais importadas com sucesso!`);
       if (linhasIgnoradas > 0) {
-        toast.info(
-          `${linhasIgnoradas} linha(s) sem Número NF foram ignoradas.`,
-        );
+        toast.info(`${linhasIgnoradas} linha(s) sem Número NF foram ignoradas.`);
       }
 
       await fetchNotas();
     } catch (error: any) {
-      console.error(
-        "Erro completo na importação:",
-        error,
-      );
-
-      toast.error(
-        "Erro ao importar Excel: " +
-          (error?.message ||
-            "Erro desconhecido"),
-        {
-          duration: 10000,
-        },
-      );
+      console.error("Erro completo na importação:", error);
+      toast.error("Erro ao importar Excel: " + (error?.message || "Erro desconhecido"));
     } finally {
       setImporting(false);
-
       setImportProgress(0);
       setImportTotal(0);
-
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
     }
   };
 
-  const handleSalvarNota = async (
-    e: React.FormEvent,
-  ) => {
+  const handleSalvarNota = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setSubmitting(true);
 
     try {
       const payload = {
         nf: numeroNf.trim(),
-
-        fornecedor:
-          fornecedor.trim() || null,
-
-        identificacao:
-          equipamento.trim() || null,
-
+        fornecedor: fornecedor.trim() || null,
+        identificacao: equipamento.trim() || null,
         cl: cl.trim() || null,
-
         data: emissao || null,
-
-        valor:
-          parseExcelValue(valorTotal),
-
-        descricao_produto:
-          descricaoProduto.trim() ||
-          null,
-
-        venc01:
-          venc01 || null,
-
-        venc02:
-          venc02 || null,
-
-        venc03:
-          venc03 || null,
-
-        venc04:
-          venc04 || null,
-
-        venc05:
-          venc05 || null,
-
-        observacao:
-          observacao.trim() ||
-          null,
+        valor: parseExcelValue(valorTotal),
+        descricao_produto: descricaoProduto.trim() || null,
+        venc01: venc01 || null,
+        venc02: venc02 || null,
+        venc03: venc03 || null,
+        venc04: venc04 || null,
+        venc05: venc05 || null,
+        observacao: observacao.trim() || null,
       };
 
-      const { error } =
-        await supabase
-          .from("notas_fiscais")
-          .insert([payload]);
+      const { error } = await supabase.from("notas_fiscais").insert([payload]);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      toast.success(
-        "Nota fiscal cadastrada com sucesso!",
-      );
-
+      toast.success("Nota fiscal cadastrada com sucesso!");
       await fetchNotas();
-
       setOpenModalCadastro(false);
 
       setNumeroNf("");
@@ -1044,94 +678,42 @@ ${error.message}`,
       setVenc05("");
       setObservacao("");
     } catch (error: any) {
-      console.error(
-        "Erro ao salvar nota:",
-        error,
-      );
-
-      toast.error(
-        "Erro ao salvar nota: " +
-          (error?.message ||
-            "Verifique a conexão"),
-      );
+      console.error("Erro ao salvar nota:", error);
+      toast.error("Erro ao salvar nota: " + (error?.message || "Verifique a conexão"));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleAbrirDetalhes = (
-    nota: NotaFiscalItem,
-  ) => {
+  const handleAbrirDetalhes = (nota: NotaFiscalItem) => {
     setNotaSelecionada(nota);
     setOpenModalDetalhes(true);
   };
 
-  const notasFiltradas =
-    notasList.filter((nota) => {
-      const termo =
-        busca.trim().toLowerCase();
+  const notasFiltradas = notasList.filter((nota) => {
+    const termo = busca.trim().toLowerCase();
+    const matchBusca =
+      !termo ||
+      nota.nf.toLowerCase().includes(termo) ||
+      nota.fornecedor.toLowerCase().includes(termo) ||
+      nota.identificacao.toLowerCase().includes(termo) ||
+      nota.cl.toLowerCase().includes(termo) ||
+      nota.descricao_produto.toLowerCase().includes(termo) ||
+      nota.observacao.toLowerCase().includes(termo);
 
-      const matchBusca =
-        !termo ||
-        nota.nf
-          .toLowerCase()
-          .includes(termo) ||
-        nota.fornecedor
-          .toLowerCase()
-          .includes(termo) ||
-        nota.identificacao
-          .toLowerCase()
-          .includes(termo) ||
-        nota.cl
-          .toLowerCase()
-          .includes(termo) ||
-        nota.descricao_produto
-          .toLowerCase()
-          .includes(termo) ||
-        nota.observacao
-          .toLowerCase()
-          .includes(termo);
+    let matchData = true;
+    if (dataInicio && nota.data !== "—") {
+      matchData = matchData && nota.data.split("T")[0] >= dataInicio;
+    }
+    if (dataFim && nota.data !== "—") {
+      matchData = matchData && nota.data.split("T")[0] <= dataFim;
+    }
 
-      let matchData = true;
+    return matchBusca && matchData;
+  });
 
-      if (
-        dataInicio &&
-        nota.data !== "—"
-      ) {
-        matchData =
-          matchData &&
-          nota.data.split("T")[0] >=
-            dataInicio;
-      }
-
-      if (
-        dataFim &&
-        nota.data !== "—"
-      ) {
-        matchData =
-          matchData &&
-          nota.data.split("T")[0] <=
-            dataFim;
-      }
-
-      return (
-        matchBusca &&
-        matchData
-      );
-    });
-
-  const totalAcumulado =
-    notasFiltradas.reduce(
-      (acc, item) =>
-        acc + item.valor,
-      0,
-    );
-
-  const mediaPorNota =
-    notasFiltradas.length > 0
-      ? totalAcumulado /
-        notasFiltradas.length
-      : 0;
+  const totalAcumulado = notasFiltradas.reduce((acc, item) => acc + item.valor, 0);
+  const mediaPorNota = notasFiltradas.length > 0 ? totalAcumulado / notasFiltradas.length : 0;
 
   return (
     <div className="p-2 md:p-4 w-full max-w-full space-y-3">
@@ -1140,10 +722,8 @@ ${error.message}`,
           <h1 className="text-xl font-bold tracking-tight text-slate-900">
             Controle de Notas Fiscais
           </h1>
-
           <p className="text-xs text-slate-500">
-            Consulte, gerencie e acompanhe os
-            vencimentos fiscais registrados.
+            Consulte, gerencie e acompanhe os vencimentos fiscais registrados.
           </p>
         </div>
 
@@ -1170,12 +750,7 @@ ${error.message}`,
             {importing ? `Importando (${importProgress}/${importTotal})` : "Importar Excel"}
           </Button>
 
-          <Dialog
-            open={openModalCadastro}
-            onOpenChange={
-              setOpenModalCadastro
-            }
-          >
+          <Dialog open={openModalCadastro} onOpenChange={setOpenModalCadastro}>
             <DialogTrigger asChild>
               <Button
                 variant="outline"
@@ -1193,43 +768,25 @@ ${error.message}`,
                 </DialogTitle>
               </DialogHeader>
 
-              <form
-                onSubmit={handleSalvarNota}
-                className="space-y-4 pt-2"
-              >
+              <form onSubmit={handleSalvarNota} className="space-y-4 pt-2">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label htmlFor="numNf">
-                      Número da NF
-                    </Label>
-
+                    <Label htmlFor="numNf">Número da NF</Label>
                     <Input
                       id="numNf"
                       placeholder="Ex: 54582"
                       value={numeroNf}
-                      onChange={(e) =>
-                        setNumeroNf(
-                          e.target.value,
-                        )
-                      }
+                      onChange={(e) => setNumeroNf(e.target.value)}
                       required
                     />
                   </div>
-
                   <div className="space-y-1">
-                    <Label htmlFor="fornecedor">
-                      Fornecedor
-                    </Label>
-
+                    <Label htmlFor="fornecedor">Fornecedor</Label>
                     <Input
                       id="fornecedor"
                       placeholder="Ex: ENGEPEÇAS"
                       value={fornecedor}
-                      onChange={(e) =>
-                        setFornecedor(
-                          e.target.value,
-                        )
-                      }
+                      onChange={(e) => setFornecedor(e.target.value)}
                       required
                     />
                   </div>
@@ -1324,11 +881,7 @@ ${error.message}`,
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setOpenModalCadastro(false)}
-                  >
+                  <Button type="button" variant="outline" onClick={() => setOpenModalCadastro(false)}>
                     Cancelar
                   </Button>
                   <Button type="submit" disabled={submitting}>
@@ -1353,204 +906,162 @@ ${error.message}`,
             onChange={(e) => setBusca(e.target.value)}
           />
         </div>
-
         <div className="flex items-center gap-2 w-full md:w-auto">
-          <div className="flex items-center gap-1 text-xs text-slate-500">
-            <span>De:</span>
-            <Input
-              type="date"
-              className="h-9 text-xs"
-              value={dataInicio}
-              onChange={(e) => setDataInicio(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center gap-1 text-xs text-slate-500">
-            <span>Até:</span>
-            <Input
-              type="date"
-              className="h-9 text-xs"
-              value={dataFim}
-              onChange={(e) => setDataFim(e.target.value)}
-            />
-          </div>
+          <Input
+            type="date"
+            className="text-xs h-9"
+            value={dataInicio}
+            onChange={(e) => setDataInicio(e.target.value)}
+          />
+          <span className="text-xs text-slate-400">até</span>
+          <Input
+            type="date"
+            className="text-xs h-9"
+            value={dataFim}
+            onChange={(e) => setDataFim(e.target.value)}
+          />
         </div>
       </div>
 
-      {/* KPIS */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-xs">
-          <span className="text-xs text-slate-500">Total de Notas</span>
-          <p className="text-lg font-bold text-slate-800">{notasFiltradas.length}</p>
-        </div>
-        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-xs">
-          <span className="text-xs text-slate-500">Valor Acumulado</span>
-          <p className="text-lg font-bold text-slate-800">{formatBRL(totalAcumulado)}</p>
-        </div>
-        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-xs">
-          <span className="text-xs text-slate-500">Média por Nota</span>
-          <p className="text-lg font-bold text-slate-800">{formatBRL(mediaPorNota)}</p>
-        </div>
-        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-xs">
-          <span className="text-xs text-slate-500">Status</span>
-          <p className="text-lg font-bold text-emerald-600">Sincronizado</p>
-        </div>
-      </div>
-
-      {/* TABELA DE NOTAS FISCAIS COM VENCIMENTOS E DESCRIÇÃO */}
-      <div className="w-full overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-xs">
-        <table className="w-full min-w-[1550px] border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50 text-slate-700 text-xs">
-              <th className="w-[75px] px-2 py-3 text-left font-semibold">Número NF</th>
-              <th className="min-w-[200px] px-4 py-3 text-left font-semibold">Fornecedor</th>
-              <th className="min-w-[140px] px-4 py-3 text-left font-semibold">Equipamento</th>
-              <th className="w-[60px] px-2 py-3 text-center font-semibold">CL</th>
-              <th className="w-[95px] px-2 py-3 text-left font-semibold">Emissão</th>
-              <th className="w-[110px] px-3 py-3 text-right font-semibold">Valor</th>
-              <th className="min-w-[180px] px-3 py-3 text-left font-semibold">Descrição do Produto</th>
-              <th className="w-[90px] px-2 py-3 text-left font-semibold">Venc. 01</th>
-              <th className="w-[90px] px-2 py-3 text-left font-semibold">Venc. 02</th>
-              <th className="w-[90px] px-2 py-3 text-left font-semibold">Venc. 03</th>
-              <th className="min-w-[150px] px-3 py-3 text-left font-semibold">Observação</th>
-              <th className="w-[80px] px-2 py-3 text-center font-semibold">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200 text-xs text-slate-700">
-            {loading ? (
+      {/* TABELA DE DADOS */}
+      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-xs">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-semibold">
               <tr>
-                <td colSpan={12} className="text-center py-8 text-slate-500">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-slate-400" />
-                  Carregando notas fiscais...
-                </td>
+                <th className="p-3">NF</th>
+                <th className="p-3">Fornecedor</th>
+                <th className="p-3">Equipamento</th>
+                <th className="p-3">CL</th>
+                <th className="p-3">Emissão</th>
+                <th className="p-3 text-right">Valor</th>
+                <th className="p-3 text-center">Ações</th>
               </tr>
-            ) : notasFiltradas.length === 0 ? (
-              <tr>
-                <td colSpan={12} className="text-center py-8 text-slate-500">
-                  Nenhuma nota fiscal encontrada.
-                </td>
-              </tr>
-            ) : (
-              notasFiltradas.map((nota) => (
-                <tr key={nota.id} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="px-2 py-3 font-medium text-slate-950 truncate max-w-[75px]" title={nota.nf}>
-                    {nota.nf}
-                  </td>
-                  <td className="px-4 py-3 font-medium text-slate-900 truncate max-w-[200px]" title={nota.fornecedor}>
-                    {nota.fornecedor}
-                  </td>
-                  <td className="px-4 py-3 truncate max-w-[140px]" title={nota.identificacao}>
-                    {nota.identificacao}
-                  </td>
-                  <td className="px-2 py-3 text-center">{nota.cl}</td>
-                  <td className="px-2 py-3">{formatDate(nota.data)}</td>
-                  <td className="px-3 py-3 text-right font-medium">{formatBRL(nota.valor)}</td>
-                  <td className="px-3 py-3 truncate max-w-[180px]" title={nota.descricao_produto}>
-                    {nota.descricao_produto && nota.descricao_produto !== "—" ? nota.descricao_produto : "—"}
-                  </td>
-                  <td className="px-2 py-3">{formatDate(nota.venc01)}</td>
-                  <td className="px-2 py-3">{formatDate(nota.venc02)}</td>
-                  <td className="px-2 py-3">{formatDate(nota.venc03)}</td>
-                  <td className="px-3 py-3 text-slate-600 truncate max-w-[150px]" title={nota.observacao}>
-                    {nota.observacao && nota.observacao !== "—" ? nota.observacao : "—"}
-                  </td>
-                  <td className="px-2 py-3 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-slate-600 hover:text-slate-900"
-                        onClick={() => handleAbrirDetalhes(nota)}
-                        title="Ver Detalhes"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-red-500 hover:text-red-700"
-                        onClick={() => handleDeletarNota(nota.id, nota.nf)}
-                        title="Excluir Nota"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="p-6 text-center text-slate-500">
+                    <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-slate-400" />
+                    Carregando notas fiscais...
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : notasFiltradas.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-6 text-center text-slate-500">
+                    Nenhuma nota fiscal encontrada.
+                  </td>
+                </tr>
+              ) : (
+                notasFiltradas.map((nota) => (
+                  <tr key={nota.id} className="hover:bg-slate-50/50">
+                    <td className="p-3 font-medium text-slate-900">{nota.nf}</td>
+                    <td className="p-3 text-slate-700">{nota.fornecedor}</td>
+                    <td className="p-3 text-slate-700">{nota.identificacao}</td>
+                    <td className="p-3 text-slate-700">{nota.cl}</td>
+                    <td className="p-3 text-slate-700">{formatDate(nota.data)}</td>
+                    <td className="p-3 text-right font-medium text-slate-900">
+                      {formatBRL(nota.valor)}
+                    </td>
+                    <td className="p-3 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-slate-600 hover:text-slate-900"
+                          onClick={() => handleAbrirDetalhes(nota)}
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => handleDeletarNota(nota.id, nota.nf)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* MODAL DETALHES */}
+      {/* MODAL DE DETALHES */}
       <Dialog open={openModalDetalhes} onOpenChange={setOpenModalDetalhes}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-xl border border-slate-200">
+        <DialogContent className="sm:max-w-lg rounded-2xl bg-white shadow-xl border border-slate-200">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold">
+            <DialogTitle className="text-base font-bold">
               Detalhes da Nota Fiscal #{notaSelecionada?.nf}
             </DialogTitle>
           </DialogHeader>
           {notaSelecionada && (
             <div className="space-y-3 text-xs text-slate-700 pt-2">
-              <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
+              <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                 <div>
-                  <span className="text-slate-400 block">Fornecedor</span>
-                  <span className="font-medium text-slate-900">{notaSelecionada.fornecedor}</span>
+                  <span className="font-semibold text-slate-500 block">Fornecedor:</span>
+                  {notaSelecionada.fornecedor}
                 </div>
                 <div>
-                  <span className="text-slate-400 block">Valor Total</span>
-                  <span className="font-medium text-slate-900">{formatBRL(notaSelecionada.valor)}</span>
+                  <span className="font-semibold text-slate-500 block">Valor Total:</span>
+                  <span className="font-bold text-slate-900">{formatBRL(notaSelecionada.valor)}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block">Equipamento</span>
-                  <span className="font-medium text-slate-900">{notaSelecionada.identificacao}</span>
+                  <span className="font-semibold text-slate-500 block">Equipamento:</span>
+                  {notaSelecionada.identificacao}
                 </div>
                 <div>
-                  <span className="text-slate-400 block">CL</span>
-                  <span className="font-medium text-slate-900">{notaSelecionada.cl}</span>
+                  <span className="font-semibold text-slate-500 block">Centro de Custo (CL):</span>
+                  {notaSelecionada.cl}
                 </div>
                 <div>
-                  <span className="text-slate-400 block">Emissão</span>
-                  <span className="font-medium text-slate-900">{formatDate(notaSelecionada.data)}</span>
+                  <span className="font-semibold text-slate-500 block">Data de Emissão:</span>
+                  {formatDate(notaSelecionada.data)}
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <span className="font-semibold text-slate-900">Vencimentos (Parcelas):</span>
-                <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
-                  <div><span className="text-slate-400">01:</span> {formatDate(notaSelecionada.venc01) || "—"}</div>
-                  <div><span className="text-slate-400">02:</span> {formatDate(notaSelecionada.venc02) || "—"}</div>
-                  <div><span className="text-slate-400">03:</span> {formatDate(notaSelecionada.venc03) || "—"}</div>
-                  <div><span className="text-slate-400">04:</span> {formatDate(notaSelecionada.venc04) || "—"}</div>
-                  <div><span className="text-slate-400">05:</span> {formatDate(notaSelecionada.venc05) || "—"}</div>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <span className="font-semibold text-slate-900">Descrição do Produto:</span>
-                <p className="p-2 bg-slate-50 rounded-lg border border-slate-100 text-slate-600">
+              <div>
+                <span className="font-semibold text-slate-500 block mb-1">Descrição do Produto:</span>
+                <p className="bg-slate-50 p-2 rounded-lg border border-slate-100 whitespace-pre-wrap">
                   {notaSelecionada.descricao_produto}
                 </p>
               </div>
 
-              <div className="space-y-1">
-                <span className="font-semibold text-slate-900">Observação:</span>
-                <p className="p-2 bg-slate-50 rounded-lg border border-slate-100 text-slate-600">
-                  {notaSelecionada.observacao}
-                </p>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                  <span className="font-semibold text-slate-500 block text-[10px]">Venc 01</span>
+                  {formatDate(notaSelecionada.venc01) || "—"}
+                </div>
+                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                  <span className="font-semibold text-slate-500 block text-[10px]">Venc 02</span>
+                  {formatDate(notaSelecionada.venc02) || "—"}
+                </div>
+                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                  <span className="font-semibold text-slate-500 block text-[10px]">Venc 03</span>
+                  {formatDate(notaSelecionada.venc03) || "—"}
+                </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleDeletarNota(notaSelecionada.id, notaSelecionada.nf)}
-                >
-                  Excluir Nota
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setOpenModalDetalhes(false)}>
-                  Fechar
-                </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                  <span className="font-semibold text-slate-500 block text-[10px]">Venc 04</span>
+                  {formatDate(notaSelecionada.venc04) || "—"}
+                </div>
+                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                  <span className="font-semibold text-slate-500 block text-[10px]">Venc 05</span>
+                  {formatDate(notaSelecionada.venc05) || "—"}
+                </div>
+              </div>
+
+              <div>
+                <span className="font-semibold text-slate-500 block mb-1">Observações:</span>
+                <p className="bg-slate-50 p-2 rounded-lg border border-slate-100 whitespace-pre-wrap">
+                  {notaSelecionada.observacao}
+                </p>
               </div>
             </div>
           )}
