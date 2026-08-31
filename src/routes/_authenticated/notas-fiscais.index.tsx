@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/notas-fiscais/")({
 });
 
 /* ============================================================================
-   TIPOS
+    TIPOS
 ============================================================================ */
 
 interface NotaFiscalItem {
@@ -55,33 +55,15 @@ interface NotaFiscalItem {
 }
 
 /* ============================================================================
-   CONSTANTES
+    CONSTANTES
 ============================================================================ */
 
-/*
- * Importação em lotes.
- *
- * 200 é propositalmente conservador para evitar:
- * - travamento do navegador;
- * - requisições muito grandes;
- * - timeout no Supabase;
- * - erro ao importar milhares de registros de uma vez.
- */
 const IMPORT_BATCH_SIZE = 200;
 
 /* ============================================================================
-   HELPERS
+    HELPERS
 ============================================================================ */
 
-/**
- * Normaliza nomes de colunas do Excel.
- *
- * Exemplo:
- * "Número NF"       -> "numeronf"
- * "NÚMERO NF"       -> "numeronf"
- * "Número da NF"    -> "numerodanF" normalizado
- * "Data de Emissão" -> "datadeemissao"
- */
 function normalizeHeader(value: unknown): string {
   return String(value ?? "")
     .normalize("NFD")
@@ -90,9 +72,6 @@ function normalizeHeader(value: unknown): string {
     .replace(/[^a-z0-9]/g, "");
 }
 
-/**
- * Verifica se uma data é válida.
- */
 function isValidDate(
   year: number,
   month: number,
@@ -126,23 +105,11 @@ function isValidDate(
   );
 }
 
-/**
- * Converte valores de data vindos do Excel para YYYY-MM-DD.
- *
- * Aceita:
- * - Date
- * - número serial do Excel
- * - YYYY-MM-DD
- * - DD/MM/YYYY
- * - DD/MM/YY
- * - textos com horário
- */
 function parseExcelDate(value: unknown): string | null {
   if (value === null || value === undefined || value === "") {
     return null;
   }
 
-  /* Date */
   if (value instanceof Date) {
     if (Number.isNaN(value.getTime())) {
       return null;
@@ -160,7 +127,6 @@ function parseExcelDate(value: unknown): string | null {
       : null;
   }
 
-  /* Número serial do Excel */
   if (typeof value === "number" && Number.isFinite(value)) {
     const excelEpoch = new Date(1899, 11, 30);
 
@@ -191,13 +157,8 @@ function parseExcelDate(value: unknown): string | null {
     return null;
   }
 
-  /*
-   * Remove horário quando vier algo como:
-   * 31/08/2026 00:00:00
-   */
   text = text.split(" ")[0];
 
-  /* Número serial armazenado como texto */
   if (/^\d+$/.test(text)) {
     const number = Number(text);
 
@@ -220,7 +181,6 @@ function parseExcelDate(value: unknown): string | null {
       : null;
   }
 
-  /* YYYY-MM-DD */
   let match = text.match(
     /^(\d{4})-(\d{1,2})-(\d{1,2})$/,
   );
@@ -240,7 +200,6 @@ function parseExcelDate(value: unknown): string | null {
       : null;
   }
 
-  /* DD/MM/YYYY ou DD/MM/YY */
   match = text.match(
     /^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/,
   );
@@ -275,16 +234,6 @@ function parseExcelDate(value: unknown): string | null {
   return null;
 }
 
-/**
- * Converte valores monetários.
- *
- * Aceita:
- * 1234.56
- * "1234.56"
- * "1.234,56"
- * "R$ 1.234,56"
- * "R$ 500,00"
- */
 function parseExcelValue(value: unknown): number {
   if (
     value === null ||
@@ -308,10 +257,6 @@ function parseExcelValue(value: unknown): number {
     return 0;
   }
 
-  /*
-   * Formato brasileiro:
-   * 1.234,56
-   */
   if (text.includes(",") && text.includes(".")) {
     text = text
       .replace(/\./g, "")
@@ -325,9 +270,6 @@ function parseExcelValue(value: unknown): number {
   return Number.isFinite(number) ? number : 0;
 }
 
-/**
- * Converte qualquer valor para texto.
- */
 function parseText(value: unknown): string {
   if (
     value === null ||
@@ -339,9 +281,6 @@ function parseText(value: unknown): string {
   return String(value).trim();
 }
 
-/**
- * Converte NF sem transformar valores numéricos em "123.00".
- */
 function parseNumeroNF(value: unknown): string {
   if (
     value === null ||
@@ -362,9 +301,6 @@ function parseNumeroNF(value: unknown): string {
   return String(value).trim();
 }
 
-/**
- * Procura um valor em uma linha do Excel usando vários nomes possíveis.
- */
 function getExcelValue(
   row: Record<string, unknown>,
   aliases: string[],
@@ -382,9 +318,6 @@ function getExcelValue(
   return null;
 }
 
-/**
- * Formata moeda.
- */
 function formatBRL(value: number): string {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -392,9 +325,6 @@ function formatBRL(value: number): string {
   }).format(value || 0);
 }
 
-/**
- * Formata data YYYY-MM-DD para DD/MM/YYYY.
- */
 function formatDate(dateStr: unknown): string {
   if (
     !dateStr ||
@@ -419,14 +349,10 @@ function formatDate(dateStr: unknown): string {
 }
 
 /* ============================================================================
-   COMPONENTE
+    COMPONENTE
 ============================================================================ */
 
 function NotasFiscaisPage() {
-  /* --------------------------------------------------------------------------
-     MODAIS
-  -------------------------------------------------------------------------- */
-
   const [openModalCadastro, setOpenModalCadastro] =
     useState(false);
 
@@ -436,10 +362,6 @@ function NotasFiscaisPage() {
   const [notaSelecionada, setNotaSelecionada] =
     useState<NotaFiscalItem | null>(null);
 
-  /* --------------------------------------------------------------------------
-     DADOS
-  -------------------------------------------------------------------------- */
-
   const [notasList, setNotasList] =
     useState<NotaFiscalItem[]>([]);
 
@@ -448,10 +370,6 @@ function NotasFiscaisPage() {
 
   const [submitting, setSubmitting] =
     useState(false);
-
-  /* --------------------------------------------------------------------------
-     IMPORTAÇÃO
-  -------------------------------------------------------------------------- */
 
   const [importing, setImporting] =
     useState(false);
@@ -465,10 +383,6 @@ function NotasFiscaisPage() {
   const fileInputRef =
     useRef<HTMLInputElement>(null);
 
-  /* --------------------------------------------------------------------------
-     FILTROS
-  -------------------------------------------------------------------------- */
-
   const [busca, setBusca] =
     useState("");
 
@@ -477,10 +391,6 @@ function NotasFiscaisPage() {
 
   const [dataFim, setDataFim] =
     useState("");
-
-  /* --------------------------------------------------------------------------
-     FORMULÁRIO
-  -------------------------------------------------------------------------- */
 
   const [numeroNf, setNumeroNf] =
     useState("");
@@ -520,10 +430,6 @@ function NotasFiscaisPage() {
 
   const [observacao, setObservacao] =
     useState("");
-
-  /* ==========================================================================
-     BUSCAR NOTAS
-  ========================================================================== */
 
   const fetchNotas = async () => {
     setLoading(true);
@@ -603,10 +509,6 @@ function NotasFiscaisPage() {
     fetchNotas();
   }, []);
 
-  /* ==========================================================================
-     EXCLUIR NOTA
-  ========================================================================== */
-
   const handleDeletarNota = async (
     id: string,
     numeroNF: string,
@@ -651,10 +553,6 @@ function NotasFiscaisPage() {
     }
   };
 
-  /* ==========================================================================
-     IMPORTAÇÃO DO EXCEL
-  ========================================================================== */
-
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -669,16 +567,8 @@ function NotasFiscaisPage() {
     setImportTotal(0);
 
     try {
-      /* ----------------------------------------------------------------------
-         1. Ler arquivo
-      ---------------------------------------------------------------------- */
-
       const data = await file.arrayBuffer();
 
-      /*
-       * cellDates=true:
-       * quando possível, o XLSX entrega datas como Date.
-       */
       const workbook = XLSX.read(data, {
         cellDates: true,
       });
@@ -704,10 +594,6 @@ function NotasFiscaisPage() {
         );
       }
 
-      /* ----------------------------------------------------------------------
-         2. Transformar planilha em JSON
-      ---------------------------------------------------------------------- */
-
       const jsonData =
         XLSX.utils.sheet_to_json<
           Record<string, unknown>
@@ -724,10 +610,6 @@ function NotasFiscaisPage() {
           "O arquivo está vazio ou a primeira planilha não possui registros.",
         );
       }
-
-      /* ----------------------------------------------------------------------
-         3. Identificar colunas
-      ---------------------------------------------------------------------- */
 
       const headers =
         Object.keys(jsonData[0] ?? {});
@@ -757,10 +639,6 @@ ${headers.join(", ")}
 A planilha precisa possuir uma coluna de NF.`,
         );
       }
-
-      /* ----------------------------------------------------------------------
-         4. Transformar linhas
-      ---------------------------------------------------------------------- */
 
       const formattedData: Array<{
         nf: string;
@@ -800,10 +678,6 @@ A planilha precisa possuir uma coluna de NF.`,
           ]),
         );
 
-        /*
-         * Linhas sem NF são consideradas linhas vazias,
-         * rodapés ou informações fora da tabela.
-         */
         if (!nf) {
           linhasIgnoradas++;
           continue;
@@ -978,10 +852,6 @@ A planilha precisa possuir uma coluna de NF.`,
         });
       }
 
-      /* ----------------------------------------------------------------------
-         5. Validar resultado
-      ---------------------------------------------------------------------- */
-
       if (
         formattedData.length === 0
       ) {
@@ -993,26 +863,6 @@ A planilha precisa possuir uma coluna de NF.`,
       setImportTotal(
         formattedData.length,
       );
-
-      /*
-       * Informação útil no console para conferência.
-       */
-      console.log(
-        "Importação preparada:",
-        {
-          arquivo: file.name,
-          planilha: firstSheetName,
-          linhasLidas: jsonData.length,
-          registrosValidos:
-            formattedData.length,
-          linhasIgnoradas,
-          colunas: headers,
-        },
-      );
-
-      /* ----------------------------------------------------------------------
-         6. IMPORTAÇÃO EM LOTES
-      ---------------------------------------------------------------------- */
 
       let importedCount = 0;
 
@@ -1026,24 +876,6 @@ A planilha precisa possuir uma coluna de NF.`,
             start,
             start + IMPORT_BATCH_SIZE,
           );
-
-        /*
-         * IMPORTANTE:
-         *
-         * Somente usamos colunas que existem na tabela
-         * public.notas_fiscais.
-         *
-         * Não usamos:
-         * numero_nf
-         * equipamento
-         * emissao
-         * valor_total
-         * venc_01
-         * venc_02
-         * venc_03
-         * venc_04
-         * venc_05
-         */
 
         const { error } =
           await supabase
@@ -1075,19 +907,11 @@ ${error.message}`,
           importedCount,
         );
 
-        /*
-         * Libera o ciclo de renderização do navegador
-         * antes de continuar com o próximo lote.
-         */
         await new Promise<void>(
           (resolve) =>
             setTimeout(resolve, 0),
         );
       }
-
-      /* ----------------------------------------------------------------------
-         7. FINALIZAÇÃO
-      ---------------------------------------------------------------------- */
 
       toast.success(
         `${importedCount} notas fiscais importadas com sucesso!`,
@@ -1125,10 +949,6 @@ ${error.message}`,
       }
     }
   };
-
-  /* ==========================================================================
-     SALVAR NOTA MANUAL
-  ========================================================================== */
 
   const handleSalvarNota = async (
     e: React.FormEvent,
@@ -1195,7 +1015,6 @@ ${error.message}`,
 
       setOpenModalCadastro(false);
 
-      /* Limpar formulário */
       setNumeroNf("");
       setFornecedor("");
       setEquipamento("");
@@ -1225,20 +1044,12 @@ ${error.message}`,
     }
   };
 
-  /* ==========================================================================
-     DETALHES
-  ========================================================================== */
-
   const handleAbrirDetalhes = (
     nota: NotaFiscalItem,
   ) => {
     setNotaSelecionada(nota);
     setOpenModalDetalhes(true);
   };
-
-  /* ==========================================================================
-     FILTROS
-  ========================================================================== */
 
   const notasFiltradas =
     notasList.filter((nota) => {
@@ -1294,10 +1105,6 @@ ${error.message}`,
       );
     });
 
-  /* ==========================================================================
-     KPIs
-  ========================================================================== */
-
   const totalAcumulado =
     notasFiltradas.reduce(
       (acc, item) =>
@@ -1311,16 +1118,8 @@ ${error.message}`,
         notasFiltradas.length
       : 0;
 
-  /* ==========================================================================
-     RENDER
-  ========================================================================== */
-
   return (
     <div className="p-2 md:p-4 w-full max-w-full space-y-3">
-      {/* =====================================================================
-          CABEÇALHO
-      ====================================================================== */}
-
       <div className="flex flex-row items-center justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900">
@@ -1333,987 +1132,388 @@ ${error.message}`,
           </p>
         </div>
 
-        <Dialog
-          open={openModalCadastro}
-          onOpenChange={
-            setOpenModalCadastro
-          }
-        >
-          <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              className="rounded-full border-slate-300 text-slate-800 font-medium hover:bg-slate-50 px-3 py-1.5 text-xs flex items-center gap-1.5 shadow-xs"
-            >
-              <PlusCircle className="w-3.5 h-3.5 text-slate-700" />
-
-              Nova Nota Fiscal
-            </Button>
-          </DialogTrigger>
-
-          <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-bold">
-                Cadastrar Nova Nota Fiscal
-              </DialogTitle>
-            </DialogHeader>
-
-            <form
-              onSubmit={handleSalvarNota}
-              className="space-y-4 pt-2"
-            >
-              {/* NF / FORNECEDOR */}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label htmlFor="numNf">
-                    Número da NF
-                  </Label>
-
-                  <Input
-                    id="numNf"
-                    placeholder="Ex: 54582"
-                    value={numeroNf}
-                    onChange={(e) =>
-                      setNumeroNf(
-                        e.target.value,
-                      )
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="fornecedor">
-                    Fornecedor
-                  </Label>
-
-                  <Input
-                    id="fornecedor"
-                    placeholder="Ex: ENGEPEÇAS"
-                    value={fornecedor}
-                    onChange={(e) =>
-                      setFornecedor(
-                        e.target.value,
-                      )
-                    }
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* EQUIPAMENTO / CL */}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label htmlFor="equipamento">
-                    Equipamento / Identificação
-                  </Label>
-
-                  <Input
-                    id="equipamento"
-                    placeholder="Ex: CAT 320 / CAMINHÃO 01"
-                    value={equipamento}
-                    onChange={(e) =>
-                      setEquipamento(
-                        e.target.value,
-                      )
-                    }
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="cl">
-                    CL (Centro de Custo / Localidade)
-                  </Label>
-
-                  <Input
-                    id="cl"
-                    placeholder="Ex: CL-01 / BH"
-                    value={cl}
-                    onChange={(e) =>
-                      setCl(
-                        e.target.value,
-                      )
-                    }
-                  />
-                </div>
-              </div>
-
-              {/* DATA / VALOR */}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label htmlFor="emissao">
-                    Data de Emissão
-                  </Label>
-
-                  <Input
-                    id="emissao"
-                    type="date"
-                    value={emissao}
-                    onChange={(e) =>
-                      setEmissao(
-                        e.target.value,
-                      )
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="valor">
-                    Valor Total (R$)
-                  </Label>
-
-                  <Input
-                    id="valor"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0,00"
-                    value={valorTotal}
-                    onChange={(e) =>
-                      setValorTotal(
-                        e.target.value,
-                      )
-                    }
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* DESCRIÇÃO DO PRODUTO */}
-
-              <div className="space-y-1">
-                <Label htmlFor="descricaoProduto">
-                  Descrição do Produto / Serviço
-                </Label>
-
-                <Textarea
-                  id="descricaoProduto"
-                  placeholder="Ex: Filtro hidráulico, óleo, peça, serviço de manutenção..."
-                  value={descricaoProduto}
-                  onChange={(e) =>
-                    setDescricaoProduto(
-                      e.target.value,
-                    )
-                  }
-                  className="resize-none h-16"
-                />
-              </div>
-
-              {/* VENCIMENTOS */}
-
-              <div className="border-t border-slate-200 pt-3 space-y-2">
-                <Label className="font-bold text-slate-700 block">
-                  Vencimentos das Parcelas
-                </Label>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <Label
-                      htmlFor="venc01"
-                      className="text-xs"
-                    >
-                      Vencimento 1ª Parcela
-                    </Label>
-
-                    <Input
-                      id="venc01"
-                      type="date"
-                      value={venc01}
-                      onChange={(e) =>
-                        setVenc01(
-                          e.target.value,
-                        )
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label
-                      htmlFor="venc02"
-                      className="text-xs"
-                    >
-                      Vencimento 2ª Parcela
-                    </Label>
-
-                    <Input
-                      id="venc02"
-                      type="date"
-                      value={venc02}
-                      onChange={(e) =>
-                        setVenc02(
-                          e.target.value,
-                        )
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label
-                      htmlFor="venc03"
-                      className="text-xs"
-                    >
-                      Vencimento 3ª Parcela
-                    </Label>
-
-                    <Input
-                      id="venc03"
-                      type="date"
-                      value={venc03}
-                      onChange={(e) =>
-                        setVenc03(
-                          e.target.value,
-                        )
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label
-                      htmlFor="venc04"
-                      className="text-xs"
-                    >
-                      Vencimento 4ª Parcela
-                    </Label>
-
-                    <Input
-                      id="venc04"
-                      type="date"
-                      value={venc04}
-                      onChange={(e) =>
-                        setVenc04(
-                          e.target.value,
-                        )
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label
-                      htmlFor="venc05"
-                      className="text-xs"
-                    >
-                      Vencimento 5ª Parcela
-                    </Label>
-
-                    <Input
-                      id="venc05"
-                      type="date"
-                      value={venc05}
-                      onChange={(e) =>
-                        setVenc05(
-                          e.target.value,
-                        )
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* OBSERVAÇÃO */}
-
-              <div className="space-y-1">
-                <Label htmlFor="observacao">
-                  Observações
-                </Label>
-
-                <Textarea
-                  id="observacao"
-                  placeholder="Observações adicionais..."
-                  value={observacao}
-                  onChange={(e) =>
-                    setObservacao(
-                      e.target.value,
-                    )
-                  }
-                  className="resize-none h-20"
-                />
-              </div>
-
-              {/* BOTÕES */}
-
-              <div className="pt-3 flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() =>
-                    setOpenModalCadastro(
-                      false,
-                    )
-                  }
-                >
-                  Cancelar
-                </Button>
-
-                <Button
-                  type="submit"
-                  disabled={submitting}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
-                >
-                  {submitting && (
-                    <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                  )}
-
-                  {submitting
-                    ? "Salvando..."
-                    : "Salvar NF"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* =====================================================================
-          KPIs
-      ====================================================================== */}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {/* TOTAL */}
-
-        <div className="bg-white rounded-xl border border-slate-300 p-3 flex items-center gap-3 shadow-xs">
-          <div className="text-lg font-serif font-bold text-slate-800 pl-1">
-            $
-          </div>
-
-          <div>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-              VALOR TOTAL ACUMULADO
-            </p>
-
-            <p className="text-xl font-bold text-slate-900">
-              {formatBRL(
-                totalAcumulado,
-              )}
-            </p>
-          </div>
-        </div>
-
-        {/* REGISTROS */}
-
-        <div className="bg-white rounded-xl border border-slate-300 p-3 flex items-center gap-3 shadow-xs">
-          <div className="p-1 text-slate-800">
-            <FileText className="w-5 h-5" />
-          </div>
-
-          <div>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-              NOTAS EXIBIDAS
-            </p>
-
-            <p className="text-xl font-bold text-slate-900">
-              {notasFiltradas.length}{" "}
-              <span className="text-xs font-normal text-slate-500">
-                registro(s)
-              </span>
-            </p>
-          </div>
-        </div>
-
-        {/* MÉDIA */}
-
-        <div className="bg-white rounded-xl border border-slate-300 p-3 flex items-center gap-3 shadow-xs">
-          <div className="p-1 text-slate-800">
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.8"
-                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-              />
-            </svg>
-          </div>
-
-          <div>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-              MÉDIA POR NOTA
-            </p>
-
-            <p className="text-xl font-bold text-slate-900">
-              {formatBRL(
-                mediaPorNota,
-              )}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* =====================================================================
-          BUSCA / FILTROS / EXCEL
-      ====================================================================== */}
-
-      <div className="bg-white rounded-xl border border-slate-300 p-2 flex flex-wrap items-center gap-2 shadow-xs">
-        {/* BUSCA */}
-
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
-
+        <div className="flex items-center gap-2">
           <input
-            type="text"
-            placeholder="Buscar por NF, fornecedor, equipamento, CL..."
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            accept=".xlsx, .xls, .csv"
+            className="hidden"
+          />
+
+          <Button
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+            className="rounded-full border-slate-300 text-slate-800 font-medium hover:bg-slate-50 px-3 py-1.5 text-xs flex items-center gap-1.5 shadow-xs"
+          >
+            {importing ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+            )}
+            {importing ? `Importando (${importProgress}/${importTotal})` : "Importar Excel"}
+          </Button>
+
+          <Dialog
+            open={openModalCadastro}
+            onOpenChange={
+              setOpenModalCadastro
+            }
+          >
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="rounded-full border-slate-300 text-slate-800 font-medium hover:bg-slate-50 px-3 py-1.5 text-xs flex items-center gap-1.5 shadow-xs"
+              >
+                <PlusCircle className="w-3.5 h-3.5 text-slate-700" />
+                Nova Nota Fiscal
+              </Button>
+            </DialogTrigger>
+
+            <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800">
+              <DialogHeader>
+                <DialogTitle className="text-lg font-bold">
+                  Cadastrar Nova Nota Fiscal
+                </DialogTitle>
+              </DialogHeader>
+
+              <form
+                onSubmit={handleSalvarNota}
+                className="space-y-4 pt-2"
+              >
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="numNf">
+                      Número da NF
+                    </Label>
+
+                    <Input
+                      id="numNf"
+                      placeholder="Ex: 54582"
+                      value={numeroNf}
+                      onChange={(e) =>
+                        setNumeroNf(
+                          e.target.value,
+                        )
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="fornecedor">
+                      Fornecedor
+                    </Label>
+
+                    <Input
+                      id="fornecedor"
+                      placeholder="Ex: ENGEPEÇAS"
+                      value={fornecedor}
+                      onChange={(e) =>
+                        setFornecedor(
+                          e.target.value,
+                        )
+                      }
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="equipamento">Equipamento</Label>
+                    <Input
+                      id="equipamento"
+                      placeholder="Ex: Escavadeira"
+                      value={equipamento}
+                      onChange={(e) => setEquipamento(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="cl">CL</Label>
+                    <Input
+                      id="cl"
+                      placeholder="Ex: CL-01"
+                      value={cl}
+                      onChange={(e) => setCl(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="emissao">Data de Emissão</Label>
+                    <Input
+                      id="emissao"
+                      type="date"
+                      value={emissao}
+                      onChange={(e) => setEmissao(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="valorTotal">Valor Total</Label>
+                    <Input
+                      id="valorTotal"
+                      placeholder="Ex: 1500.00"
+                      value={valorTotal}
+                      onChange={(e) => setValorTotal(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="descricaoProduto">Descrição do Produto</Label>
+                  <Textarea
+                    id="descricaoProduto"
+                    placeholder="Detalhes dos itens..."
+                    value={descricaoProduto}
+                    onChange={(e) => setDescricaoProduto(e.target.value)}
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Venc 01</Label>
+                    <Input type="date" value={venc01} onChange={(e) => setVenc01(e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Venc 02</Label>
+                    <Input type="date" value={venc02} onChange={(e) => setVenc02(e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Venc 03</Label>
+                    <Input type="date" value={venc03} onChange={(e) => setVenc03(e.target.value)} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Venc 04</Label>
+                    <Input type="date" value={venc04} onChange={(e) => setVenc04(e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Venc 05</Label>
+                    <Input type="date" value={venc05} onChange={(e) => setVenc05(e.target.value)} />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="observacao">Observação</Label>
+                  <Textarea
+                    id="observacao"
+                    placeholder="Observações adicionais..."
+                    value={observacao}
+                    onChange={(e) => setObservacao(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setOpenModalCadastro(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={submitting}>
+                    {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    Salvar Nota
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* FILTROS E BUSCA */}
+      <div className="flex flex-col md:flex-row gap-2 items-center justify-between bg-white p-3 rounded-lg border border-slate-200 shadow-xs">
+        <div className="relative w-full md:w-72">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+          <Input
+            placeholder="Buscar por NF, fornecedor..."
+            className="pl-8 text-xs h-9"
             value={busca}
-            onChange={(e) =>
-              setBusca(e.target.value)
-            }
-            className="w-full pl-8 pr-2 py-1 text-xs bg-transparent rounded-lg border-0 focus:outline-none text-slate-700 placeholder:text-slate-400"
+            onChange={(e) => setBusca(e.target.value)}
           />
         </div>
 
-        {/* DATA INICIAL */}
-
-        <div className="flex items-center gap-1.5 text-xs text-slate-600">
-          <span>Emissão:</span>
-
-          <input
-            type="date"
-            value={dataInicio}
-            onChange={(e) =>
-              setDataInicio(
-                e.target.value,
-              )
-            }
-            className="px-1.5 py-0.5 text-xs border border-slate-300 rounded focus:outline-none"
-          />
-
-          <span>até</span>
-
-          {/* DATA FINAL */}
-
-          <input
-            type="date"
-            value={dataFim}
-            onChange={(e) =>
-              setDataFim(
-                e.target.value,
-              )
-            }
-            className="px-1.5 py-0.5 text-xs border border-slate-300 rounded focus:outline-none"
-          />
-        </div>
-
-        {/* FILTRAR */}
-
-        <button
-          type="button"
-          onClick={() =>
-            fetchNotas()
-          }
-          className="px-2.5 py-1 rounded border border-slate-300 text-xs font-medium text-slate-800 flex items-center gap-1 hover:bg-slate-50"
-        >
-          <Filter className="w-3 h-3" />
-
-          Filtrar
-        </button>
-
-        {/* LIMPAR */}
-
-        <button
-          type="button"
-          onClick={() => {
-            setBusca("");
-            setDataInicio("");
-            setDataFim("");
-          }}
-          className="px-2 py-1 text-xs font-medium text-slate-600 hover:text-slate-900"
-        >
-          Limpar
-        </button>
-
-        {/* INPUT REAL DO ARQUIVO */}
-
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileUpload}
-          accept=".xlsx,.xls,.csv"
-          className="hidden"
-        />
-
-        {/* BOTÃO EXCEL */}
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() =>
-            fileInputRef.current?.click()
-          }
-          disabled={importing}
-          className="rounded-lg border-slate-300 text-xs font-medium text-slate-800 flex items-center gap-1.5 hover:bg-slate-50 ml-auto"
-        >
-          {importing ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-          )}
-
-          {importing
-            ? importTotal > 0
-              ? `Importando ${importProgress} / ${importTotal}`
-              : "Lendo Excel..."
-            : "Excel"}
-        </Button>
-      </div>
-
-      {/* =====================================================================
-          PROGRESSO DA IMPORTAÇÃO
-      ====================================================================== */}
-
-      {importing && (
-        <div className="bg-white rounded-xl border border-slate-300 p-3 shadow-xs">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs font-medium text-slate-700">
-              Importação em andamento
-            </span>
-
-            <span className="text-xs text-slate-500">
-              {importTotal > 0
-                ? `${importProgress} de ${importTotal}`
-                : "Preparando..."}
-            </span>
-          </div>
-
-          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-emerald-500 transition-all duration-300"
-              style={{
-                width:
-                  importTotal > 0
-                    ? `${Math.min(
-                        100,
-                        (importProgress /
-                          importTotal) *
-                          100,
-                      )}%`
-                    : "5%",
-              }}
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="flex items-center gap-1 text-xs text-slate-500">
+            <span>De:</span>
+            <Input
+              type="date"
+              className="h-9 text-xs"
+              value={dataInicio}
+              onChange={(e) => setDataInicio(e.target.value)}
             />
           </div>
-
-          <p className="text-[11px] text-slate-500 mt-1.5">
-            Aguarde. Os registros estão sendo
-            enviados ao banco em lotes de{" "}
-            {IMPORT_BATCH_SIZE}.
-          </p>
+          <div className="flex items-center gap-1 text-xs text-slate-500">
+            <span>Até:</span>
+            <Input
+              type="date"
+              className="h-9 text-xs"
+              value={dataFim}
+              onChange={(e) => setDataFim(e.target.value)}
+            />
+          </div>
         </div>
-      )}
+      </div>
 
-      {/* =====================================================================
-          TABELA
-      ====================================================================== */}
+      {/* KPIS */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-xs">
+          <span className="text-xs text-slate-500">Total de Notas</span>
+          <p className="text-lg font-bold text-slate-800">{notasFiltradas.length}</p>
+        </div>
+        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-xs">
+          <span className="text-xs text-slate-500">Valor Acumulado</span>
+          <p className="text-lg font-bold text-slate-800">{formatBRL(totalAcumulado)}</p>
+        </div>
+        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-xs">
+          <span className="text-xs text-slate-500">Média por Nota</span>
+          <p className="text-lg font-bold text-slate-800">{formatBRL(mediaPorNota)}</p>
+        </div>
+        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-xs">
+          <span className="text-xs text-slate-500">Status</span>
+          <p className="text-lg font-bold text-emerald-600">Sincronizado</p>
+        </div>
+      </div>
 
-      <div className="bg-white rounded-xl border border-slate-300 overflow-hidden shadow-xs w-full overflow-x-auto">
-        <table className="w-full text-xs text-left min-w-[1050px]">
-          <thead className="border-b border-slate-300 text-slate-800 font-bold bg-slate-50">
-            <tr>
-              <th className="py-2 px-1.5 w-[8%]">
-                Número NF
-              </th>
-
-              <th className="py-2 px-1.5 w-[17%]">
-                Fornecedor
-              </th>
-
-              <th className="py-2 px-1.5 w-[14%]">
-                Equipamento
-              </th>
-
-              <th className="py-2 px-1.5 w-[8%]">
-                CL
-              </th>
-
-              <th className="py-2 px-1.5 w-[9%]">
-                Emissão
-              </th>
-
-              <th className="py-2 px-1.5 w-[11%]">
-                Valor Total
-              </th>
-
-              <th className="py-2 px-1.5 w-[17%]">
-                Descrição
-              </th>
-
-              <th className="py-2 px-1.5 w-[11%]">
-                Parcelas / Venc.
-              </th>
-
-              <th className="py-2 px-1.5 w-[5%] text-center">
-                Ação
-              </th>
+      {/* TABELA DE NOTAS FISCAIS COM ROLAGEM E LARGURAS MÍNIMAS */}
+      <div className="w-full overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-xs">
+        <table className="w-full min-w-[1200px] border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-slate-200 bg-slate-50 text-slate-700 text-xs">
+              <th className="w-[100px] px-4 py-3 text-left font-semibold">Número NF</th>
+              <th className="min-w-[180px] px-4 py-3 text-left font-semibold">Fornecedor</th>
+              <th className="min-w-[180px] px-4 py-3 text-left font-semibold">Equipamento</th>
+              <th className="w-[80px] px-4 py-3 text-center font-semibold">CL</th>
+              <th className="w-[110px] px-4 py-3 text-left font-semibold">Emissão</th>
+              <th className="w-[130px] px-4 py-3 text-right font-semibold">Valor</th>
+              <th className="w-[110px] px-4 py-3 text-left font-semibold">Venc. 01</th>
+              <th className="w-[100px] px-4 py-3 text-center font-semibold">Ações</th>
             </tr>
           </thead>
-
-          <tbody className="divide-y divide-slate-200 text-slate-800">
+          <tbody className="divide-y divide-slate-200 text-xs text-slate-700">
             {loading ? (
               <tr>
-                <td
-                  colSpan={9}
-                  className="py-6 text-center text-slate-500"
-                >
-                  <Loader2 className="w-5 h-5 animate-spin mx-auto mb-1 text-slate-600" />
-
-                  Carregando dados...
+                <td colSpan={8} className="text-center py-8 text-slate-500">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-slate-400" />
+                  Carregando notas fiscais...
                 </td>
               </tr>
-            ) : notasFiltradas.length ===
-              0 ? (
+            ) : notasFiltradas.length === 0 ? (
               <tr>
-                <td
-                  colSpan={9}
-                  className="py-6 text-center text-slate-500"
-                >
-                  Nenhuma nota fiscal
-                  encontrada.
+                <td colSpan={8} className="text-center py-8 text-slate-500">
+                  Nenhuma nota fiscal encontrada.
                 </td>
               </tr>
             ) : (
-              notasFiltradas.map(
-                (item) => {
-                  const vencimentos = [
-                    item.venc01,
-                    item.venc02,
-                    item.venc03,
-                    item.venc04,
-                    item.venc05,
-                  ].filter(Boolean);
-
-                  const parcelas =
-                    vencimentos.length >
-                    0
-                      ? vencimentos
-                          .map(
-                            (
-                              venc,
-                              index,
-                            ) =>
-                              `${index + 1}ª: ${formatDate(
-                                venc,
-                              )}`,
-                          )
-                          .join(" | ")
-                      : "—";
-
-                  return (
-                    <tr
-                      key={item.id}
-                      className="hover:bg-slate-50/80"
-                    >
-                      {/* NF */}
-
-                      <td
-                        className="py-2 px-1.5 font-semibold truncate"
-                        title={item.nf}
+              notasFiltradas.map((nota) => (
+                <tr key={nota.id} className="hover:bg-slate-50/60 transition-colors">
+                  <td className="px-4 py-3 font-medium text-slate-900 truncate">{nota.nf}</td>
+                  <td className="px-4 py-3 truncate max-w-[200px]">{nota.fornecedor}</td>
+                  <td className="px-4 py-3 truncate max-w-[200px]">{nota.identificacao}</td>
+                  <td className="px-4 py-3 text-center">{nota.cl}</td>
+                  <td className="px-4 py-3">{formatDate(nota.data)}</td>
+                  <td className="px-4 py-3 text-right font-medium">{formatBRL(nota.valor)}</td>
+                  <td className="px-4 py-3">{formatDate(nota.venc01)}</td>
+                  <td className="px-4 py-3 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-slate-600 hover:text-slate-900"
+                        onClick={() => handleAbrirDetalhes(nota)}
                       >
-                        #{item.nf}
-                      </td>
-
-                      {/* FORNECEDOR */}
-
-                      <td
-                        className="py-2 px-1.5 font-semibold truncate"
-                        title={
-                          item.fornecedor
-                        }
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-red-500 hover:text-red-700"
+                        onClick={() => handleDeletarNota(nota.id, nota.nf)}
                       >
-                        <span className="mr-1">
-                          🏢
-                        </span>
-
-                        {item.fornecedor}
-                      </td>
-
-                      {/* EQUIPAMENTO */}
-
-                      <td
-                        className="py-2 px-1.5 truncate"
-                        title={
-                          item.identificacao
-                        }
-                      >
-                        {item.identificacao !==
-                        "—"
-                          ? `🚗 ${item.identificacao}`
-                          : "—"}
-                      </td>
-
-                      {/* CL */}
-
-                      <td
-                        className="py-2 px-1.5 font-medium text-slate-600 truncate"
-                        title={item.cl}
-                      >
-                        {item.cl}
-                      </td>
-
-                      {/* DATA */}
-
-                      <td className="py-2 px-1.5 truncate">
-                        {formatDate(
-                          item.data,
-                        )}
-                      </td>
-
-                      {/* VALOR */}
-
-                      <td className="py-2 px-1.5 font-bold truncate">
-                        {formatBRL(
-                          item.valor,
-                        )}
-                      </td>
-
-                      {/* DESCRIÇÃO */}
-
-                      <td
-                        className="py-2 px-1.5 truncate"
-                        title={
-                          item.descricao_produto
-                        }
-                      >
-                        {item.descricao_produto !==
-                        "—"
-                          ? item.descricao_produto
-                          : "—"}
-                      </td>
-
-                      {/* VENCIMENTOS */}
-
-                      <td
-                        className="py-2 px-1.5 truncate"
-                        title={parcelas}
-                      >
-                        {parcelas}
-                      </td>
-
-                      {/* AÇÃO */}
-
-                      <td className="py-2 px-1.5 text-center">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleAbrirDetalhes(
-                              item,
-                            )
-                          }
-                          className="inline-flex items-center gap-1 text-slate-800 font-medium hover:underline text-xs"
-                        >
-                          <Eye className="w-3 h-3" />
-
-                          Ver
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                },
-              )
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
       </div>
 
-      {/* =====================================================================
-          MODAL DE DETALHES
-      ====================================================================== */}
-
-      <Dialog
-        open={openModalDetalhes}
-        onOpenChange={
-          setOpenModalDetalhes
-        }
-      >
-        <DialogContent className="sm:max-w-md rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800">
+      {/* MODAL DETALHES */}
+      <Dialog open={openModalDetalhes} onOpenChange={setOpenModalDetalhes}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-xl border border-slate-200">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold flex items-center gap-2 text-slate-900 dark:text-slate-100">
-              <FileText className="w-5 h-5 text-slate-700 dark:text-slate-300" />
-
-              Detalhes da Nota #
-              {notaSelecionada?.nf}
+            <DialogTitle className="text-lg font-bold">
+              Detalhes da Nota Fiscal #{notaSelecionada?.nf}
             </DialogTitle>
           </DialogHeader>
-
           {notaSelecionada && (
-            <div className="space-y-3 pt-2 text-sm text-slate-700 dark:text-slate-300">
-              {/* FORNECEDOR / EQUIPAMENTO */}
-
-              <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="space-y-3 text-xs text-slate-700 pt-2">
+              <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
                 <div>
-                  <span className="text-xs text-slate-400 block font-medium">
-                    Fornecedor
-                  </span>
-
-                  <span className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1 mt-0.5">
-                    <Building2 className="w-3.5 h-3.5 text-slate-500" />
-
-                    {
-                      notaSelecionada.fornecedor
-                    }
-                  </span>
+                  <span className="text-slate-400 block">Fornecedor</span>
+                  <span className="font-medium text-slate-900">{notaSelecionada.fornecedor}</span>
                 </div>
-
                 <div>
-                  <span className="text-xs text-slate-400 block font-medium">
-                    Equipamento / Identificação
-                  </span>
-
-                  <span className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1 mt-0.5">
-                    <Truck className="w-3.5 h-3.5 text-slate-500" />
-
-                    {
-                      notaSelecionada.identificacao
-                    }
-                  </span>
+                  <span className="text-slate-400 block">Valor Total</span>
+                  <span className="font-medium text-slate-900">{formatBRL(notaSelecionada.valor)}</span>
                 </div>
-              </div>
-
-              {/* CL / DATA */}
-
-              <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                 <div>
-                  <span className="text-xs text-slate-400 block font-medium">
-                    CL (Centro de Custo / Localidade)
-                  </span>
-
-                  <span className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1 mt-0.5">
-                    <MapPin className="w-3.5 h-3.5 text-slate-500" />
-
-                    {notaSelecionada.cl}
-                  </span>
+                  <span className="text-slate-400 block">Equipamento</span>
+                  <span className="font-medium text-slate-900">{notaSelecionada.identificacao}</span>
                 </div>
-
                 <div>
-                  <span className="text-xs text-slate-400 block font-medium">
-                    Data de Emissão
-                  </span>
-
-                  <span className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1 mt-0.5">
-                    <Calendar className="w-3.5 h-3.5 text-slate-500" />
-
-                    {formatDate(
-                      notaSelecionada.data,
-                    )}
-                  </span>
+                  <span className="text-slate-400 block">CL</span>
+                  <span className="font-medium text-slate-900">{notaSelecionada.cl}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block">Emissão</span>
+                  <span className="font-medium text-slate-900">{formatDate(notaSelecionada.data)}</span>
                 </div>
               </div>
 
-              {/* VALOR */}
-
-              <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                <span className="text-xs text-slate-400 block font-medium">
-                  Valor Total
-                </span>
-
-                <span className="font-bold text-emerald-600 dark:text-emerald-400 text-base mt-0.5 block">
-                  {formatBRL(
-                    notaSelecionada.valor,
-                  )}
-                </span>
-              </div>
-
-              {/* DESCRIÇÃO */}
-
-              <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                <span className="text-xs text-slate-400 block font-medium">
-                  Descrição do Produto / Serviço
-                </span>
-
-                <span className="font-normal text-slate-800 dark:text-slate-100 mt-0.5 block whitespace-pre-wrap">
-                  {
-                    notaSelecionada.descricao_produto
-                  }
-                </span>
-              </div>
-
-              {/* VENCIMENTOS */}
-
-              <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                <span className="text-xs text-slate-400 block font-medium">
-                  Parcelas e Vencimentos
-                </span>
-
-                <div className="font-semibold text-slate-800 dark:text-slate-100 mt-1 space-y-1">
-                  {[
-                    notaSelecionada.venc01,
-                    notaSelecionada.venc02,
-                    notaSelecionada.venc03,
-                    notaSelecionada.venc04,
-                    notaSelecionada.venc05,
-                  ].map(
-                    (
-                      vencimento,
-                      index,
-                    ) =>
-                      vencimento ? (
-                        <div
-                          key={index}
-                        >
-                          {index + 1}ª parcela:{" "}
-                          {formatDate(
-                            vencimento,
-                          )}
-                        </div>
-                      ) : null,
-                  )}
-
-                  {![
-                    notaSelecionada.venc01,
-                    notaSelecionada.venc02,
-                    notaSelecionada.venc03,
-                    notaSelecionada.venc04,
-                    notaSelecionada.venc05,
-                  ].some(Boolean) && (
-                    <div>—</div>
-                  )}
+              <div className="space-y-1">
+                <span className="font-semibold text-slate-900">Vencimentos:</span>
+                <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                  <div><span className="text-slate-400">01:</span> {formatDate(notaSelecionada.venc01) || "—"}</div>
+                  <div><span className="text-slate-400">02:</span> {formatDate(notaSelecionada.venc02) || "—"}</div>
+                  <div><span className="text-slate-400">03:</span> {formatDate(notaSelecionada.venc03) || "—"}</div>
+                  <div><span className="text-slate-400">04:</span> {formatDate(notaSelecionada.venc04) || "—"}</div>
+                  <div><span className="text-slate-400">05:</span> {formatDate(notaSelecionada.venc05) || "—"}</div>
                 </div>
               </div>
 
-              {/* OBSERVAÇÕES */}
-
-              <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                <span className="text-xs text-slate-400 block font-medium">
-                  Observações
-                </span>
-
-                <span className="font-normal text-slate-800 dark:text-slate-100 mt-0.5 block whitespace-pre-wrap">
-                  {
-                    notaSelecionada.observacao
-                  }
-                </span>
+              <div className="space-y-1">
+                <span className="font-semibold text-slate-900">Descrição do Produto:</span>
+                <p className="p-2 bg-slate-50 rounded-lg border border-slate-100 text-slate-600">
+                  {notaSelecionada.descricao_produto}
+                </p>
               </div>
 
-              {/* BOTÕES */}
+              <div className="space-y-1">
+                <span className="font-semibold text-slate-900">Observação:</span>
+                <p className="p-2 bg-slate-50 rounded-lg border border-slate-100 text-slate-600">
+                  {notaSelecionada.observacao}
+                </p>
+              </div>
 
-              <div className="pt-2 flex justify-between items-center">
+              <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() =>
-                    handleDeletarNota(
-                      notaSelecionada.id,
-                      notaSelecionada.nf,
-                    )
-                  }
-                  className="flex items-center gap-1.5"
+                  onClick={() => handleDeletarNota(notaSelecionada.id, notaSelecionada.nf)}
                 >
-                  <Trash2 className="w-4 h-4" />
-
                   Excluir Nota
                 </Button>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setOpenModalDetalhes(
-                      false,
-                    )
-                  }
-                >
+                <Button variant="outline" size="sm" onClick={() => setOpenModalDetalhes(false)}>
                   Fechar
                 </Button>
               </div>
