@@ -596,7 +596,6 @@ function NotasFiscaisPage() {
                 >
                   Cancelar
                 </Button>
-                {/* Botão Salvar com fundo Azul */}
                 <Button 
                   type="submit" 
                   disabled={submitting}
@@ -892,40 +891,41 @@ function NotasFiscaisPage() {
                 </div>
                 <div>
                   <span className="text-xs text-slate-400 block font-medium">
-                    Parcelas / Vencimentos
+                    Parcelas e Vencimentos
                   </span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-100 mt-0.5 block">
+                  <span className="font-semibold text-slate-800 dark:text-slate-100 block mt-0.5 text-xs">
                     {notaSelecionada.parcelas}
                   </span>
                 </div>
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                <span className="text-xs text-slate-400 block font-medium">
-                  Observações
+                <span className="text-xs text-slate-400 block font-medium mb-1">
+                  Observações / Descrição
                 </span>
-                <span className="font-medium text-slate-700 dark:text-slate-200 mt-0.5 block text-xs">
+                <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
                   {notaSelecionada.observacao}
-                </span>
+                </p>
               </div>
-<div className="flex justify-between items-center pt-4">
-  {/* Botão Excluir */}
-  <Button
-    onClick={() => handleDeletarNota(notaSelecionada.id, notaSelecionada.numero_nf)}
-    className="bg-blue-600 hover:bg-blue-700 text-white font-medium flex items-center gap-1.5"
-  >
-    <Trash2 className="w-4 h-4" />
-    Excluir Nota
-  </Button>
 
-  {/* Botão Fechar */}
-  <Button
-    onClick={() => setOpenModalDetalhes(false)}
-    className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
-  >
-    Fechar
-  </Button>
-</div>
+              <div className="pt-3 flex justify-between items-center">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-8 text-xs flex items-center gap-1"
+                  onClick={() => handleDeletarNota(notaSelecionada.id, notaSelecionada.numero_nf)}
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Excluir Nota
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setOpenModalDetalhes(false)}
+                >
+                  Fechar
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
