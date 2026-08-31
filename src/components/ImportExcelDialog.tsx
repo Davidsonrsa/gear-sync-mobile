@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Upload, X, FileSpreadsheet } from "lucide-react";
 
-// Mapeamento de sinônimos/variações para aceitar erros comuns de digitação na planilha
+// Mapeamento tolerante de colunas (aceita variações e erros de digitação do Excel)
 const COLUMN_ALIASES: Record<string, string> = {
   nf: "nf",
+  numeronf: "nf",
   data: "data",
   emissao: "data",
   fornecedor: "fornecedor",
@@ -18,7 +19,7 @@ const COLUMN_ALIASES: Record<string, string> = {
   valor: "valor",
   valortotal: "valor",
   observacao: "observacao",
-  obersvacao: "observacao",
+  obersvacao: "observacao", // Tratamento para o erro de digitação do Excel ("obersvaçao")
   observacoes: "observacao",
   venc01: "venc01",
   venc02: "venc02",
@@ -27,7 +28,6 @@ const COLUMN_ALIASES: Record<string, string> = {
   venc05: "venc05",
 };
 
-const REQUIRED_FIELDS = ["nf", "data", "fornecedor", "valor"];
 const BATCH_SIZE = 500;
 
 interface ImportData {
@@ -54,12 +54,8 @@ function normalizeColumnName(value: unknown): string {
 }
 
 function isValidDate(year: number, month: number, day: number): boolean {
-  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
-    return false;
-  }
-  if (year < 1900 || year > 2200 || month < 1 || month > 12 || day < 1 || day > 31) {
-    return false;
-  }
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return false;
+  if (year < 1900 || year > 2200 || month < 1 || month > 12 || day < 1 || day > 31) return false;
   const date = new Date(year, month - 1, day);
   return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
 }
@@ -132,7 +128,7 @@ function normalizeData(data: Record<string, unknown>[]): ImportData[] {
   return data
     .map((row) => {
       const mappedRow: Record<string, unknown> = {};
-      
+
       Object.entries(row).forEach(([key, value]) => {
         const normalizedKey = normalizeColumnName(key);
         const mappedKey = COLUMN_ALIASES[normalizedKey];
@@ -155,7 +151,7 @@ function normalizeData(data: Record<string, unknown>[]): ImportData[] {
         venc05: parseExcelDate(mappedRow.venc05),
       };
     })
-    .filter((row) => row.nf.length > 0 && row.valor !== null);
+    .filter((row) => row.nf.length > 0);
 }
 
 function formatCurrency(value: number | null): string {
@@ -239,18 +235,9 @@ export function ImportExcelDialog({
           return;
         }
 
-        const columns = Object.keys(json[0]).map(normalizeColumnName);
-        const mappedColumns = columns.map((col) => COLUMN_ALIASES[col]).filter(Boolean);
-        const missingRequired = REQUIRED_FIELDS.filter((field) => !mappedColumns.includes(field));
-
-        if (missingRequired.length > 0) {
-          toast.error(`Colunas obrigatórias faltando: ${missingRequired.join(", ")}`);
-          return;
-        }
-
         const normalized = normalizeData(json);
         if (normalized.length === 0) {
-          toast.error("Nenhuma linha com NF e valor válidos encontrada.");
+          toast.error("Nenhuma linha com NF válida encontrada.");
           return;
         }
 
@@ -339,6 +326,7 @@ export function ImportExcelDialog({
                     <th className="whitespace-nowrap px-3 py-3 text-left font-semibold">NF</th>
                     <th className="whitespace-nowrap px-3 py-3 text-left font-semibold">Fornecedor</th>
                     <th className="px-3 py-3 text-left font-semibold">Observação</th>
+                    <th className="whitespace-nowrap px-3 py-3 text-left font-semibold">Identificação</th>
                     <th className="whitespace-nowrap px-3 py-3 text-right font-semibold">Valor</th>
                     <th className="whitespace-nowrap px-3 py-3 text-left font-semibold">Venc. 01</th>
                     <th className="whitespace-nowrap px-3 py-3 text-left font-semibold">Venc. 02</th>
@@ -352,6 +340,7 @@ export function ImportExcelDialog({
                       <td className="whitespace-nowrap px-3 py-2 font-medium">{row.nf}</td>
                       <td className="px-3 py-2">{row.fornecedor ?? "—"}</td>
                       <td className="max-w-[320px] px-3 py-2"><div className="truncate">{row.observacao ?? "—"}</div></td>
+                      <td className="px-3 py-2">{row.identificacao ?? "—"}</td>
                       <td className="whitespace-nowrap px-3 py-2 text-right">{formatCurrency(row.valor)}</td>
                       <td className="whitespace-nowrap px-3 py-2">{row.venc01 ?? "—"}</td>
                       <td className="whitespace-nowrap px-3 py-2">{row.venc02 ?? "—"}</td>
@@ -366,7 +355,7 @@ export function ImportExcelDialog({
               <button type="button" disabled={importMutation.isPending} onClick={closePreview} className="inline-flex h-11 min-w-[110px] items-center justify-center rounded-md border border-gray-300 bg-white px-5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-100 disabled:opacity-50">
                 Cancelar
               </button>
-              <button type="button" disabled={importMutation.isPending || previewData.length === 0} onClick={() => importMap.mutate(previewData)} className="inline-flex h-11 min-w-[190px] items-center justify-center rounded-md bg-blue-600 px-6 text-sm font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50">
+              <button type="button" disabled={importMutation.isPending || previewData.length === 0} onClick={() => importMutation.mutate(previewData)} className="inline-flex h-11 min-w-[190px] items-center justify-center rounded-md bg-blue-600 px-6 text-sm font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50">
                 {importMutation.isPending ? `Importando...` : `Importar ${previewData.length.toLocaleString("pt-BR")} notas`}
               </button>
             </div>
