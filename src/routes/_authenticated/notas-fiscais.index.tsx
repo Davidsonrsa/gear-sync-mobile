@@ -11,7 +11,7 @@ import {
   Search,
   PlusCircle,
   FileSpreadsheet,
-  Eye,
+  Pencil,
   Loader2,
   Trash2,
 } from "lucide-react";
@@ -169,7 +169,7 @@ function formatDate(dateStr: unknown): string {
 
 function NotasFiscaisPage() {
   const [openModalCadastro, setOpenModalCadastro] = useState(false);
-  const [openModalDetalhes, setOpenModalDetalhes] = useState(false);
+  const [openModalEdicao, setOpenModalEdicao] = useState(false);
   const [notaSelecionada, setNotaSelecionada] = useState<NotaFiscalItem | null>(null);
   const [notasList, setNotasList] = useState<NotaFiscalItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -179,11 +179,9 @@ function NotasFiscaisPage() {
   const [importTotal, setImportTotal] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const [busca, setBusca] = useState("");
-  const [dataInicio, setDataInicio] = useState("");
-  const [dataFim, setDataFim] = useState("");
 
+  // Campos do Formulário (Cadastro / Edição)
   const [numeroNf, setNumeroNf] = useState("");
   const [fornecedor, setFornecedor] = useState("");
   const [equipamento, setEquipamento] = useState("");
@@ -218,16 +216,15 @@ function NotasFiscaisPage() {
         valor: Number(item.valor ?? 0),
         descricao_produto: String(item.descricao_produto ?? "—"),
         observacao: String(item.observacao ?? "—"),
-        venc01: item.venc01 ?? null,
-        venc02: item.venc02 ?? null,
-        venc03: item.venc03 ?? null,
-        venc04: item.venc04 ?? null,
-        venc05: item.venc05 ?? null,
+        venc01: item.venc01 ? item.venc01.split("T")[0] : "",
+        venc02: item.venc02 ? item.venc02.split("T")[0] : "",
+        venc03: item.venc03 ? item.venc03.split("T")[0] : "",
+        venc04: item.venc04 ? item.venc04.split("T")[0] : "",
+        venc05: item.venc05 ? item.venc05.split("T")[0] : "",
       }));
 
       setNotasList(mapped);
     } catch (error: any) {
-      console.error("Erro ao carregar notas:", error);
       toast.error("Erro ao carregar notas fiscais.");
     } finally {
       setLoading(false);
@@ -244,10 +241,81 @@ function NotasFiscaisPage() {
       const { error } = await supabase.from("notas_fiscais").delete().eq("id", id);
       if (error) throw error;
       toast.success("Nota fiscal excluída com sucesso!");
-      setOpenModalDetalhes(false);
       await fetchNotas();
     } catch (error: any) {
-      toast.error("Erro ao excluir nota: " + (error?.message || "Erro desconhecido"));
+      toast.error("Erro ao excluir nota.");
+    }
+  };
+
+  const abrirEdicao = (nota: NotaFiscalItem) => {
+    setNotaSelecionada(nota);
+    setNumeroNf(nota.nf);
+    setFornecedor(nota.fornecedor === "—" ? "" : nota.fornecedor);
+    setEquipamento(nota.identificacao === "—" ? "" : nota.identificacao);
+    setCl(nota.cl === "—" ? "" : nota.cl);
+    setEmissao(nota.data && nota.data !== "—" ? nota.data.split("T")[0] : "");
+    setValorTotal(String(nota.valor || ""));
+    setDescricaoProduto(nota.descricao_produto === "—" ? "" : nota.descricao_produto);
+    setVenc01(nota.venc01 || "");
+    setVenc02(nota.venc02 || "");
+    setVenc03(nota.venc03 || "");
+    setVenc04(nota.venc04 || "");
+    setVenc05(nota.venc05 || "");
+    setObservacao(nota.observacao === "—" ? "" : nota.observacao);
+    setOpenModalEdicao(true);
+  };
+
+  const limparFormulario = () => {
+    setNumeroNf(""); setFornecedor(""); setEquipamento(""); setCl("");
+    setEmissao(""); setValorTotal(""); setDescricaoProduto("");
+    setVenc01(""); setVenc02(""); setVenc03(""); setVenc04(""); setVenc05(""); setObservacao("");
+    setNotaSelecionada(null);
+  };
+
+  const handleSalvarNota = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const payload = {
+        nf: numeroNf.trim(),
+        fornecedor: fornecedor.trim() || null,
+        identificacao: equipamento.trim() || null,
+        cl: cl.trim() || null,
+        data: emissao || null,
+        valor: parseExcelValue(valorTotal),
+        descricao_produto: descricaoProduto.trim() || null,
+        venc01: venc01 || null,
+        venc02: venc02 || null,
+        venc03: venc03 || null,
+        venc04: venc04 || null,
+        venc05: venc05 || null,
+        observacao: observacao.trim() || null,
+      };
+
+      if (notaSelecionada) {
+        // Atualizar Nota Existente
+        const { error } = await supabase
+          .from("notas_fiscais")
+          .update(payload)
+          .eq("id", notaSelecionada.id);
+
+        if (error) throw error;
+        toast.success("Nota fiscal atualizada com sucesso!");
+        setOpenModalEdicao(false);
+      } else {
+        // Criar Nova Nota
+        const { error } = await supabase.from("notas_fiscais").insert([payload]);
+        if (error) throw error;
+        toast.success("Nota fiscal cadastrada com sucesso!");
+        setOpenModalCadastro(false);
+      }
+
+      await fetchNotas();
+      limparFormulario();
+    } catch (error: any) {
+      toast.error("Erro ao salvar nota: " + (error?.message || "Erro desconhecido"));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -262,8 +330,7 @@ function NotasFiscaisPage() {
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { cellDates: true });
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, { defval: null, raw: true });
 
       const formattedData = jsonData.map((row) => ({
@@ -303,42 +370,6 @@ function NotasFiscaisPage() {
     }
   };
 
-  const handleSalvarNota = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      const payload = {
-        nf: numeroNf.trim(),
-        fornecedor: fornecedor.trim() || null,
-        identificacao: equipamento.trim() || null,
-        cl: cl.trim() || null,
-        data: emissao || null,
-        valor: parseExcelValue(valorTotal),
-        descricao_produto: descricaoProduto.trim() || null,
-        venc01: venc01 || null,
-        venc02: venc02 || null,
-        venc03: venc03 || null,
-        venc04: venc04 || null,
-        venc05: venc05 || null,
-        observacao: observacao.trim() || null,
-      };
-
-      const { error } = await supabase.from("notas_fiscais").insert([payload]);
-      if (error) throw error;
-
-      toast.success("Nota fiscal cadastrada com sucesso!");
-      await fetchNotas();
-      setOpenModalCadastro(false);
-      setNumeroNf(""); setFornecedor(""); setEquipamento(""); setCl("");
-      setEmissao(""); setValorTotal(""); setDescricaoProduto("");
-      setVenc01(""); setVenc02(""); setVenc03(""); setVenc04(""); setVenc05(""); setObservacao("");
-    } catch (error: any) {
-      toast.error("Erro ao salvar nota: " + (error?.message || "Verifique a conexão"));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const notasFiltradas = notasList.filter((nota) => {
     const termo = busca.trim().toLowerCase();
     return (
@@ -364,7 +395,8 @@ function NotasFiscaisPage() {
             {importing ? `Importando (${importProgress}/${importTotal})` : "Importar Excel"}
           </Button>
 
-          <Dialog open={openModalCadastro} onOpenChange={setOpenModalCadastro}>
+          {/* Botão Nova Nota Fiscal */}
+          <Dialog open={openModalCadastro} onOpenChange={(open) => { setOpenModalCadastro(open); if (!open) limparFormulario(); }}>
             <DialogTrigger asChild>
               <Button variant="outline" className="rounded-full text-xs">
                 <PlusCircle className="w-3.5 h-3.5" /> Nova Nota Fiscal
@@ -413,6 +445,7 @@ function NotasFiscaisPage() {
         </div>
       </div>
 
+      {/* Tabela de Notas Fiscais */}
       <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
@@ -450,10 +483,11 @@ function NotasFiscaisPage() {
                     <td className="p-3 text-right font-medium">{formatBRL(nota.valor)}</td>
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-1.5">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setNotaSelecionada(nota); setOpenModalDetalhes(true); }}>
-                          <Eye className="w-3.5 h-3.5" />
+                        {/* Botão Editar (substitui o visualizar) */}
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-600 hover:bg-blue-50" onClick={() => abrirEdicao(nota)}>
+                          <Pencil className="w-3.5 h-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-600" onClick={() => handleDeletarNota(nota.id, nota.nf)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-600 hover:bg-red-50" onClick={() => handleDeletarNota(nota.id, nota.nf)}>
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
@@ -465,6 +499,42 @@ function NotasFiscaisPage() {
           </table>
         </div>
       </div>
+
+      {/* Modal de Edição */}
+      <Dialog open={openModalEdicao} onOpenChange={(open) => { setOpenModalEdicao(open); if (!open) limparFormulario(); }}>
+        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Editar Nota Fiscal #{numeroNf}</DialogTitle></DialogHeader>
+          <form onSubmit={handleSalvarNota} className="space-y-4 pt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Número da NF</Label><Input value={numeroNf} onChange={(e) => setNumeroNf(e.target.value)} required /></div>
+              <div><Label>Fornecedor</Label><Input value={fornecedor} onChange={(e) => setFornecedor(e.target.value)} required /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Equipamento</Label><Input value={equipamento} onChange={(e) => setEquipamento(e.target.value)} /></div>
+              <div><Label>CL</Label><Input value={cl} onChange={(e) => setCl(e.target.value)} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Data de Emissão</Label><Input type="date" value={emissao} onChange={(e) => setEmissao(e.target.value)} /></div>
+              <div><Label>Valor Total</Label><Input value={valorTotal} onChange={(e) => setValorTotal(e.target.value)} /></div>
+            </div>
+            <div><Label>Descrição do Produto</Label><Textarea value={descricaoProduto} onChange={(e) => setDescricaoProduto(e.target.value)} /></div>
+            <div className="grid grid-cols-3 gap-2">
+              <div><Label className="text-xs">Venc 01</Label><Input type="date" value={venc01} onChange={(e) => setVenc01(e.target.value)} /></div>
+              <div><Label className="text-xs">Venc 02</Label><Input type="date" value={venc02} onChange={(e) => setVenc02(e.target.value)} /></div>
+              <div><Label className="text-xs">Venc 03</Label><Input type="date" value={venc03} onChange={(e) => setVenc03(e.target.value)} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div><Label className="text-xs">Venc 04</Label><Input type="date" value={venc04} onChange={(e) => setVenc04(e.target.value)} /></div>
+              <div><Label className="text-xs">Venc 05</Label><Input type="date" value={venc05} onChange={(e) => setVenc05(e.target.value)} /></div>
+            </div>
+            <div><Label>Observação</Label><Textarea value={observacao} onChange={(e) => setObservacao(e.target.value)} /></div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => { setOpenModalEdicao(false); limparFormulario(); }}>Cancelar</Button>
+              <Button type="submit" disabled={submitting}>Salvar Alterações</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
