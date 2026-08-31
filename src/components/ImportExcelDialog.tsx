@@ -8,26 +8,38 @@ import { toast } from "sonner";
 import { Upload, X, FileSpreadsheet } from "lucide-react";
 
 // Mapeamento tolerante de colunas (incluindo variações e o erro de digitação do Excel "obersvaçao")
+// Atualize o COLUMN_ALIASES com mais variações comuns de cabeçalhos
 const COLUMN_ALIASES: Record<string, string> = {
   nf: "nf",
   numeronf: "nf",
+  notafiscal: "nf",
+  nnf: "nf",
+  documento: "nf",
   data: "data",
   emissao: "data",
+  dataemissao: "data",
   fornecedor: "fornecedor",
+  empresa: "fornecedor",
   identificacao: "identificacao",
   cl: "identificacao",
+  equipamento: "identificacao",
   valor: "valor",
   valortotal: "valor",
+  valorgeral: "valor",
   observacao: "observacao",
   obersvacao: "observacao",
   observacoes: "observacao",
   venc01: "venc01",
+  vencimento1: "venc01",
   venc02: "venc02",
+  vencimento2: "venc02",
   venc03: "venc03",
+  vencimento3: "venc03",
   venc04: "venc04",
+  vencimento4: "venc04",
   venc05: "venc05",
+  vencimento5: "venc05",
 };
-
 const BATCH_SIZE = 500;
 
 interface ImportData {
