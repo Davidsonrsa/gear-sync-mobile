@@ -77,7 +77,7 @@ function NotasFiscaisPage() {
   const [observacao, setObservacao] = useState("");
 
   const handleDeletarNota = async (id: string, numeroNf: string) => {
-    if (!confirm(`Tem certeza que deseja excluir a nota fiscal #${numeroNf}?`)) {
+    if (!window.confirm(`Tem certeza que deseja excluir a nota fiscal #${numeroNf}?`)) {
       return;
     }
 
@@ -119,7 +119,7 @@ function NotasFiscaisPage() {
         identificacao: row["Equipamento"] || row["identificacao"] || null,
         cl: row["CL"] || row["cl"] || null,
         data: row["Emissão"] || row["data"] || null,
-        valor: row["Valor Total"] ? Number(row["Valor Total"]) : 0,
+        valor_total: row["Valor Total"] ? Number(row["Valor Total"]) : 0,
         observacao: row["Descrição"] || row["observacao"] || null,
       }));
 
@@ -336,6 +336,8 @@ function NotasFiscaisPage() {
           observacao: extractObservacao(item),
         }));
         setNotasList(mappedData);
+      } else {
+        setNotasList([]);
       }
     } catch (err) {
       console.error("Erro ao carregar notas:", err);
@@ -373,6 +375,7 @@ function NotasFiscaisPage() {
 
       if (error) throw error;
 
+      toast.success("Nota fiscal cadastrada com sucesso!");
       await fetchNotas();
       setOpenModalCadastro(false);
       setNumeroNf("");
@@ -388,7 +391,7 @@ function NotasFiscaisPage() {
       setVenc05("");
       setObservacao("");
     } catch (err: any) {
-      alert("Erro ao salvar nota: " + (err.message || "Verifique a conexão"));
+      toast.error("Erro ao salvar nota: " + (err.message || "Verifique a conexão"));
     } finally {
       setSubmitting(false);
     }
@@ -893,7 +896,7 @@ function NotasFiscaisPage() {
                   <span className="text-xs text-slate-400 block font-medium">
                     Parcelas e Vencimentos
                   </span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-100 text-xs mt-0.5 block">
+                  <span className="font-semibold text-slate-800 dark:text-slate-100 mt-0.5 block">
                     {notaSelecionada.parcelas}
                   </span>
                 </div>
@@ -901,21 +904,21 @@ function NotasFiscaisPage() {
 
               <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                 <span className="text-xs text-slate-400 block font-medium">
-                  Observações / Descrição
+                  Observações
                 </span>
-                <p className="text-xs text-slate-700 dark:text-slate-300 mt-1 whitespace-pre-wrap">
+                <span className="font-normal text-slate-800 dark:text-slate-100 mt-0.5 block whitespace-pre-wrap">
                   {notaSelecionada.observacao}
-                </p>
+                </span>
               </div>
 
-              <div className="pt-3 flex justify-between items-center">
+              <div className="pt-2 flex justify-between items-center">
                 <Button
                   variant="destructive"
                   size="sm"
                   onClick={() => handleDeletarNota(notaSelecionada.id, notaSelecionada.numero_nf)}
-                  className="h-8 text-xs flex items-center gap-1"
+                  className="flex items-center gap-1.5"
                 >
-                  <Trash2 className="w-3.5 h-3.5" /> Excluir Nota
+                  <Trash2 className="w-4 h-4" /> Excluir Nota
                 </Button>
                 <Button
                   variant="outline"
