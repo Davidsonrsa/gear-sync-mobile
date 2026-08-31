@@ -75,6 +75,7 @@ function isValidDate(year: number, month: number, day: number): boolean {
 function parseExcelDate(value: unknown): string | null {
   if (value === null || value === undefined || value === "") return null;
 
+  // Se já for um objeto Date válido
   if (value instanceof Date) {
     if (isNaN(value.getTime())) return null;
     const year = value.getFullYear();
@@ -83,22 +84,31 @@ function parseExcelDate(value: unknown): string | null {
     return isValidDate(year, month, day) ? `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}` : null;
   }
 
-  if (typeof value === "number") {
-    try {
-      const date = XLSX.SSF.parse_date_code(value);
-      if (!date) return null;
-      const year = Number(date.y);
-      const month = Number(date.m);
-      const day = Number(date.d);
-      return isValidDate(year, month, day) ? `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}` : null;
-    } catch {
-      return null;
-    }
+  // Se for um número de série do Excel (ex: 44053)
+  if (typeof value === "number" && Number.isFinite(value)) {
+    // Conversão direta baseada na época do Excel (1899-12-30)
+    const excelEpoch = new Date(1899, 11, 30);
+    const jsDate = new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
+    const year = jsDate.getFullYear();
+    const month = jsDate.getMonth() + 1;
+    const day = jsDate.getDate();
+    return isValidDate(year, month, day) ? `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}` : null;
   }
 
   if (typeof value !== "string") return null;
   const text = value.trim();
   if (!text) return null;
+
+  // Se a string contiver um número puro (ex: "44053")
+  if (/^\d+$/.test(text)) {
+    const num = Number(text);
+    const excelEpoch = new Date(1899, 11, 30);
+    const jsDate = new Date(excelEpoch.getTime() + num * 24 * 60 * 60 * 1000);
+    const year = jsDate.getFullYear();
+    const month = jsDate.getMonth() + 1;
+    const day = jsDate.getDate();
+    return isValidDate(year, month, day) ? `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}` : null;
+  }
 
   let match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (match) {
@@ -120,7 +130,6 @@ function parseExcelDate(value: unknown): string | null {
 
   return null;
 }
-
 function parseExcelValue(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
   if (typeof value === "number") return Number.isFinite(value) ? value : null;
