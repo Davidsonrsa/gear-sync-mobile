@@ -739,6 +739,7 @@ A planilha precisa possuir uma coluna de NF.`,
             "Produto",
             "Descrição",
             "descricao_produto",
+            "descricao",
           ]);
 
         const observacaoValue =
@@ -748,10 +749,12 @@ A planilha precisa possuir uma coluna de NF.`,
             "Observações",
             "Observacoes",
             "observacao",
+            "obs",
           ]);
 
         const venc01Value =
           getExcelValue(row, [
+            "Venc. 01",
             "Venc01",
             "Venc 01",
             "Vencimento 01",
@@ -760,10 +763,12 @@ A planilha precisa possuir uma coluna de NF.`,
             "1 Parcela",
             "venc01",
             "venc_01",
+            "venc1",
           ]);
 
         const venc02Value =
           getExcelValue(row, [
+            "Venc. 02",
             "Venc02",
             "Venc 02",
             "Vencimento 02",
@@ -772,10 +777,12 @@ A planilha precisa possuir uma coluna de NF.`,
             "2 Parcela",
             "venc02",
             "venc_02",
+            "venc2",
           ]);
 
         const venc03Value =
           getExcelValue(row, [
+            "Venc. 03",
             "Venc03",
             "Venc 03",
             "Vencimento 03",
@@ -784,10 +791,12 @@ A planilha precisa possuir uma coluna de NF.`,
             "3 Parcela",
             "venc03",
             "venc_03",
+            "venc3",
           ]);
 
         const venc04Value =
           getExcelValue(row, [
+            "Venc. 04",
             "Venc04",
             "Venc 04",
             "Vencimento 04",
@@ -796,10 +805,12 @@ A planilha precisa possuir uma coluna de NF.`,
             "4 Parcela",
             "venc04",
             "venc_04",
+            "venc4",
           ]);
 
         const venc05Value =
           getExcelValue(row, [
+            "Venc. 05",
             "Venc05",
             "Venc 05",
             "Vencimento 05",
@@ -808,6 +819,7 @@ A planilha precisa possuir uma coluna de NF.`,
             "5 Parcela",
             "venc05",
             "venc_05",
+            "venc5",
           ]);
 
         formattedData.push({
@@ -1384,33 +1396,36 @@ ${error.message}`,
         </div>
       </div>
 
-      {/* TABELA DE NOTAS FISCAIS COM ROLAGEM E LARGURAS MÍNIMAS */}
+      {/* TABELA DE NOTAS FISCAIS COM VENCIMENTOS E DESCRIÇÃO */}
       <div className="w-full overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-xs">
-        <table className="w-full min-w-[1300px] border-collapse text-sm">
+        <table className="w-full min-w-[1550px] border-collapse text-sm">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50 text-slate-700 text-xs">
               <th className="w-[75px] px-2 py-3 text-left font-semibold">Número NF</th>
-              <th className="min-w-[220px] px-4 py-3 text-left font-semibold">Fornecedor</th>
-              <th className="min-w-[160px] px-4 py-3 text-left font-semibold">Equipamento</th>
-              <th className="w-[70px] px-3 py-3 text-center font-semibold">CL</th>
-              <th className="w-[100px] px-3 py-3 text-left font-semibold">Emissão</th>
-              <th className="w-[120px] px-4 py-3 text-right font-semibold">Valor</th>
-              <th className="w-[100px] px-3 py-3 text-left font-semibold">Venc. 01</th>
-              <th className="min-w-[180px] px-4 py-3 text-left font-semibold">Observação</th>
-              <th className="w-[90px] px-3 py-3 text-center font-semibold">Ações</th>
+              <th className="min-w-[200px] px-4 py-3 text-left font-semibold">Fornecedor</th>
+              <th className="min-w-[140px] px-4 py-3 text-left font-semibold">Equipamento</th>
+              <th className="w-[60px] px-2 py-3 text-center font-semibold">CL</th>
+              <th className="w-[95px] px-2 py-3 text-left font-semibold">Emissão</th>
+              <th className="w-[110px] px-3 py-3 text-right font-semibold">Valor</th>
+              <th className="min-w-[180px] px-3 py-3 text-left font-semibold">Descrição do Produto</th>
+              <th className="w-[90px] px-2 py-3 text-left font-semibold">Venc. 01</th>
+              <th className="w-[90px] px-2 py-3 text-left font-semibold">Venc. 02</th>
+              <th className="w-[90px] px-2 py-3 text-left font-semibold">Venc. 03</th>
+              <th className="min-w-[150px] px-3 py-3 text-left font-semibold">Observação</th>
+              <th className="w-[80px] px-2 py-3 text-center font-semibold">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 text-xs text-slate-700">
             {loading ? (
               <tr>
-                <td colSpan={9} className="text-center py-8 text-slate-500">
+                <td colSpan={12} className="text-center py-8 text-slate-500">
                   <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-slate-400" />
                   Carregando notas fiscais...
                 </td>
               </tr>
             ) : notasFiltradas.length === 0 ? (
               <tr>
-                <td colSpan={9} className="text-center py-8 text-slate-500">
+                <td colSpan={12} className="text-center py-8 text-slate-500">
                   Nenhuma nota fiscal encontrada.
                 </td>
               </tr>
@@ -1420,20 +1435,25 @@ ${error.message}`,
                   <td className="px-2 py-3 font-medium text-slate-950 truncate max-w-[75px]" title={nota.nf}>
                     {nota.nf}
                   </td>
-                  <td className="px-4 py-3 font-medium text-slate-900 truncate max-w-[250px]" title={nota.fornecedor}>
+                  <td className="px-4 py-3 font-medium text-slate-900 truncate max-w-[200px]" title={nota.fornecedor}>
                     {nota.fornecedor}
                   </td>
-                  <td className="px-4 py-3 truncate max-w-[180px]" title={nota.identificacao}>
+                  <td className="px-4 py-3 truncate max-w-[140px]" title={nota.identificacao}>
                     {nota.identificacao}
                   </td>
-                  <td className="px-3 py-3 text-center">{nota.cl}</td>
-                  <td className="px-3 py-3">{formatDate(nota.data)}</td>
-                  <td className="px-4 py-3 text-right font-medium">{formatBRL(nota.valor)}</td>
-                  <td className="px-3 py-3">{formatDate(nota.venc01)}</td>
-                  <td className="px-4 py-3 text-slate-600 truncate max-w-[220px]" title={nota.observacao}>
+                  <td className="px-2 py-3 text-center">{nota.cl}</td>
+                  <td className="px-2 py-3">{formatDate(nota.data)}</td>
+                  <td className="px-3 py-3 text-right font-medium">{formatBRL(nota.valor)}</td>
+                  <td className="px-3 py-3 truncate max-w-[180px]" title={nota.descricao_produto}>
+                    {nota.descricao_produto && nota.descricao_produto !== "—" ? nota.descricao_produto : "—"}
+                  </td>
+                  <td className="px-2 py-3">{formatDate(nota.venc01)}</td>
+                  <td className="px-2 py-3">{formatDate(nota.venc02)}</td>
+                  <td className="px-2 py-3">{formatDate(nota.venc03)}</td>
+                  <td className="px-3 py-3 text-slate-600 truncate max-w-[150px]" title={nota.observacao}>
                     {nota.observacao && nota.observacao !== "—" ? nota.observacao : "—"}
                   </td>
-                  <td className="px-3 py-3 text-center">
+                  <td className="px-2 py-3 text-center">
                     <div className="flex items-center justify-center gap-1">
                       <Button
                         variant="ghost"
@@ -1496,7 +1516,7 @@ ${error.message}`,
               </div>
 
               <div className="space-y-1">
-                <span className="font-semibold text-slate-900">Vencimentos:</span>
+                <span className="font-semibold text-slate-900">Vencimentos (Parcelas):</span>
                 <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
                   <div><span className="text-slate-400">01:</span> {formatDate(notaSelecionada.venc01) || "—"}</div>
                   <div><span className="text-slate-400">02:</span> {formatDate(notaSelecionada.venc02) || "—"}</div>
