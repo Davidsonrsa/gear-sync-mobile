@@ -45,6 +45,105 @@ export interface NotaFiscalItem {
   observacao: string;
 }
 
+// ---------------------------------------------------------------------------
+// Helpers de conversão de dados vindos do Excel (datas seriais, valores BRL, etc.)
+// ---------------------------------------------------------------------------
+
+function isValidDate(year: number, month: number, day: number): boolean {
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return false;
+  if (year < 1900 || year > 2200 || month < 1 || month > 12 || day < 1 || day > 31) return false;
+  const date = new Date(year, month - 1, day);
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+}
+
+/**
+ * Converte qualquer valor de data vindo de uma planilha Excel (número serial,
+ * objeto Date, texto dd/mm/aaaa ou aaaa-mm-dd) para o formato aaaa-mm-dd
+ * exigido pelo Postgres. Retorna null se não conseguir interpretar o valor,
+ * evitando o erro "invalid input syntax for type date".
+ */
+function parseExcelDate(value: unknown): string | null {
+  if (value === null || value === undefined || value === "") return null;
+
+  if (value instanceof Date) {
+    if (isNaN(value.getTime())) return null;
+    const year = value.getFullYear();
+    const month = value.getMonth() + 1;
+    const day = value.getDate();
+    return isValidDate(year, month, day)
+      ? `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+      : null;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const excelEpoch = new Date(1899, 11, 30);
+    const jsDate = new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
+    const year = jsDate.getFullYear();
+    const month = jsDate.getMonth() + 1;
+    const day = jsDate.getDate();
+    return isValidDate(year, month, day)
+      ? `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+      : null;
+  }
+
+  if (typeof value !== "string") return null;
+  const text = value.trim();
+  if (!text) return null;
+
+  // Número puro em formato texto (ex: "44053")
+  if (/^\d+$/.test(text)) {
+    const num = Number(text);
+    const excelEpoch = new Date(1899, 11, 30);
+    const jsDate = new Date(excelEpoch.getTime() + num * 24 * 60 * 60 * 1000);
+    const year = jsDate.getFullYear();
+    const month = jsDate.getMonth() + 1;
+    const day = jsDate.getDate();
+    return isValidDate(year, month, day)
+      ? `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+      : null;
+  }
+
+  // aaaa-mm-dd
+  let match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (match) {
+    const [, y, m, d] = match;
+    return isValidDate(Number(y), Number(m), Number(d))
+      ? `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`
+      : null;
+  }
+
+  // dd/mm/aaaa ou dd/mm/aa
+  match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+  if (match) {
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    let year = match[3];
+    if (year.length === 2) year = Number(year) >= 50 ? `19${year}` : `20${year}`;
+    const yearNumber = Number(year);
+    return isValidDate(yearNumber, month, day)
+      ? `${yearNumber}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+      : null;
+  }
+
+  return null;
+}
+
+/** Converte valores monetários vindos do Excel (incluindo "R$ 1.234,56") para número. */
+function parseExcelValue(value: unknown): number {
+  if (value === null || value === undefined || value === "") return 0;
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+
+  let text = String(value).trim().replace(/R\$/gi, "").replace(/\s/g, "").replace(/\u00A0/g, "");
+  if (!text) return 0;
+
+  if (text.includes(",")) {
+    text = text.replace(/\./g, "").replace(",", ".");
+  }
+
+  const number = Number(text);
+  return Number.isFinite(number) ? number : 0;
+}
+
 function NotasFiscaisPage() {
   const [openModalCadastro, setOpenModalCadastro] = useState(false);
   const [openModalDetalhes, setOpenModalDetalhes] = useState(false);
@@ -103,24 +202,43 @@ function NotasFiscaisPage() {
     setImporting(true);
     try {
       const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
+      // cellDates: true faz o XLSX já entregar objetos Date quando possível
+      const workbook = XLSX.read(data, { cellDates: true });
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet);
+      const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: null });
 
       if (!jsonData || jsonData.length === 0) {
         toast.error("O arquivo está vazio ou em formato inválido.");
         return;
       }
 
-      const formattedData = jsonData.map((row) => ({
-        nf: String(row["Número NF"] || row["nf"] || row["numero_nf"] || ""),
-        fornecedor: row["Fornecedor"] || row["fornecedor"] || null,
-        identificacao: row["Equipamento"] || row["identificacao"] || null,
-        cl: row["CL"] || row["cl"] || null,
-        data: row["Emissão"] || row["data"] || null,
-        valor_total: row["Valor Total"] ? Number(row["Valor Total"]) : 0,
-        observacao: row["Descrição"] || row["observacao"] || null,
-      }));
+      const formattedData = jsonData
+        .map((row) => {
+          const nf = String(row["Número NF"] || row["nf"] || row["numero_nf"] || "").trim();
+          const emissao = parseExcelDate(
+            row["Emissão"] || row["data"] || row["Data"] || row["emissao"]
+          );
+
+          return {
+            nf,
+            numero_nf: nf,
+            fornecedor: row["Fornecedor"] || row["fornecedor"] || null,
+            identificacao: row["Equipamento"] || row["identificacao"] || null,
+            equipamento: row["Equipamento"] || row["identificacao"] || null,
+            cl: row["CL"] || row["cl"] || null,
+            data: emissao,
+            emissao: emissao,
+            valor_total: parseExcelValue(row["Valor Total"] ?? row["valor_total"] ?? row["valor"]),
+            observacao: row["Descrição"] || row["observacao"] || row["Observação"] || null,
+          };
+        })
+        // Descarta linhas sem Número NF (linhas em branco, rodapés de planilha, etc.)
+        .filter((row) => row.nf.length > 0);
+
+      if (formattedData.length === 0) {
+        toast.error("Nenhuma linha com Número NF válido encontrada no arquivo.");
+        return;
+      }
 
       const { error } = await supabase.from("notas_fiscais").insert(formattedData);
 
@@ -825,3 +943,4 @@ function NotasFiscaisPage() {
     </div>
   );
 }
+
