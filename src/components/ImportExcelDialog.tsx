@@ -7,20 +7,27 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Upload, X, FileSpreadsheet } from "lucide-react";
 
-const EXPECTED_COLUMNS = [
-  "nf",
-  "data",
-  "fornecedor",
-  "identificacao",
-  "valor",
-  "observacao",
-  "venc01",
-  "venc02",
-  "venc03",
-  "venc04",
-  "venc05",
-];
+// Mapeamento de sinônimos/variações para aceitar erros comuns de digitação na planilha
+const COLUMN_ALIASES: Record<string, string> = {
+  nf: "nf",
+  data: "data",
+  emissao: "data",
+  fornecedor: "fornecedor",
+  identificacao: "identificacao",
+  cl: "identificacao",
+  valor: "valor",
+  valortotal: "valor",
+  observacao: "observacao",
+  obersvacao: "observacao",
+  observacoes: "observacao",
+  venc01: "venc01",
+  venc02: "venc02",
+  venc03: "venc03",
+  venc04: "venc04",
+  venc05: "venc05",
+};
 
+const REQUIRED_FIELDS = ["nf", "data", "fornecedor", "valor"];
 const BATCH_SIZE = 500;
 
 interface ImportData {
@@ -124,26 +131,31 @@ function parseExcelValue(value: unknown): number | null {
 function normalizeData(data: Record<string, unknown>[]): ImportData[] {
   return data
     .map((row) => {
-      const normalizedRow: Record<string, unknown> = {};
+      const mappedRow: Record<string, unknown> = {};
+      
       Object.entries(row).forEach(([key, value]) => {
-        normalizedRow[normalizeColumnName(key)] = value;
+        const normalizedKey = normalizeColumnName(key);
+        const mappedKey = COLUMN_ALIASES[normalizedKey];
+        if (mappedKey && value !== null && value !== undefined && value !== "") {
+          mappedRow[mappedKey] = value;
+        }
       });
 
       return {
-        nf: String(normalizedRow.nf ?? "").trim(),
-        data: parseExcelDate(normalizedRow.data),
-        fornecedor: normalizedRow.fornecedor ? String(normalizedRow.fornecedor).trim() : null,
-        identificacao: normalizedRow.identificacao ? String(normalizedRow.identificacao).trim() : null,
-        valor: parseExcelValue(normalizedRow.valor),
-        observacao: normalizedRow.observacao ? String(normalizedRow.observacao).trim() : null,
-        venc01: parseExcelDate(normalizedRow.venc01),
-        venc02: parseExcelDate(normalizedRow.venc02),
-        venc03: parseExcelDate(normalizedRow.venc03),
-        venc04: parseExcelDate(normalizedRow.venc04),
-        venc05: parseExcelDate(normalizedRow.venc05),
+        nf: String(mappedRow.nf ?? "").trim(),
+        data: parseExcelDate(mappedRow.data),
+        fornecedor: mappedRow.fornecedor ? String(mappedRow.fornecedor).trim() : null,
+        identificacao: mappedRow.identificacao ? String(mappedRow.identificacao).trim() : null,
+        valor: parseExcelValue(mappedRow.valor),
+        observacao: mappedRow.observacao ? String(mappedRow.observacao).trim() : null,
+        venc01: parseExcelDate(mappedRow.venc01),
+        venc02: parseExcelDate(mappedRow.venc02),
+        venc03: parseExcelDate(mappedRow.venc03),
+        venc04: parseExcelDate(mappedRow.venc04),
+        venc05: parseExcelDate(mappedRow.venc05),
       };
     })
-    .filter((row) => row.nf.length > 0);
+    .filter((row) => row.nf.length > 0 && row.valor !== null);
 }
 
 function formatCurrency(value: number | null): string {
@@ -203,7 +215,6 @@ export function ImportExcelDialog({
     toast.info("Lendo a planilha...");
     const reader = new FileReader();
 
-    // Correção crítica: Uso de ArrayBuffer para evitar corrompimento de dados no XLSX
     reader.onload = (e) => {
       try {
         const buffer = e.target?.result;
@@ -229,16 +240,17 @@ export function ImportExcelDialog({
         }
 
         const columns = Object.keys(json[0]).map(normalizeColumnName);
-        const missingColumns = EXPECTED_COLUMNS.filter((column) => !columns.includes(column));
+        const mappedColumns = columns.map((col) => COLUMN_ALIASES[col]).filter(Boolean);
+        const missingRequired = REQUIRED_FIELDS.filter((field) => !mappedColumns.includes(field));
 
-        if (missingColumns.length > 0) {
-          toast.error(`Colunas faltando: ${missingColumns.join(", ")}`);
+        if (missingRequired.length > 0) {
+          toast.error(`Colunas obrigatórias faltando: ${missingRequired.join(", ")}`);
           return;
         }
 
         const normalized = normalizeData(json);
         if (normalized.length === 0) {
-          toast.error("Nenhuma linha com NF válida encontrada.");
+          toast.error("Nenhuma linha com NF e valor válidos encontrada.");
           return;
         }
 
@@ -327,7 +339,6 @@ export function ImportExcelDialog({
                     <th className="whitespace-nowrap px-3 py-3 text-left font-semibold">NF</th>
                     <th className="whitespace-nowrap px-3 py-3 text-left font-semibold">Fornecedor</th>
                     <th className="px-3 py-3 text-left font-semibold">Observação</th>
-                    <th className="whitespace-nowrap px-3 py-3 text-left font-semibold">Identificação</th>
                     <th className="whitespace-nowrap px-3 py-3 text-right font-semibold">Valor</th>
                     <th className="whitespace-nowrap px-3 py-3 text-left font-semibold">Venc. 01</th>
                     <th className="whitespace-nowrap px-3 py-3 text-left font-semibold">Venc. 02</th>
@@ -341,7 +352,6 @@ export function ImportExcelDialog({
                       <td className="whitespace-nowrap px-3 py-2 font-medium">{row.nf}</td>
                       <td className="px-3 py-2">{row.fornecedor ?? "—"}</td>
                       <td className="max-w-[320px] px-3 py-2"><div className="truncate">{row.observacao ?? "—"}</div></td>
-                      <td className="px-3 py-2">{row.identificacao ?? "—"}</td>
                       <td className="whitespace-nowrap px-3 py-2 text-right">{formatCurrency(row.valor)}</td>
                       <td className="whitespace-nowrap px-3 py-2">{row.venc01 ?? "—"}</td>
                       <td className="whitespace-nowrap px-3 py-2">{row.venc02 ?? "—"}</td>
@@ -356,7 +366,7 @@ export function ImportExcelDialog({
               <button type="button" disabled={importMutation.isPending} onClick={closePreview} className="inline-flex h-11 min-w-[110px] items-center justify-center rounded-md border border-gray-300 bg-white px-5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-100 disabled:opacity-50">
                 Cancelar
               </button>
-              <button type="button" disabled={importMutation.isPending || previewData.length === 0} onClick={() => importMutation.mutate(previewData)} className="inline-flex h-11 min-w-[190px] items-center justify-center rounded-md bg-blue-600 px-6 text-sm font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50">
+              <button type="button" disabled={importMutation.isPending || previewData.length === 0} onClick={() => importMap.mutate(previewData)} className="inline-flex h-11 min-w-[190px] items-center justify-center rounded-md bg-blue-600 px-6 text-sm font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50">
                 {importMutation.isPending ? `Importando...` : `Importar ${previewData.length.toLocaleString("pt-BR")} notas`}
               </button>
             </div>
