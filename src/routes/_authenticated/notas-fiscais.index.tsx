@@ -460,16 +460,16 @@ function NotasFiscaisPage() {
             </thead>
             <tbody className="divide-y divide-slate-200">
               {loading ? (
-                <tr><td colSpan={9} className="p-6 text-center text-slate-500"><Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" /> Carregando...</td></tr>
+                <tr><td colSpan={10} className="p-6 text-center text-slate-500"><Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" /> Carregando...</td></tr>
               ) : notasFiltradas.length === 0 ? (
-                <tr><td colSpan={9} className="p-6 text-center text-slate-500">Nenhuma nota encontrada.</td></tr>
+                <tr><td colSpan={10} className="p-6 text-center text-slate-500">Nenhuma nota encontrada.</td></tr>
               ) : (
                 notasFiltradas.map((nota) => (
                   <tr key={nota.id} className="hover:bg-slate-50/50">
                     <td className="p-3 font-medium">{nota.nf}</td>
                     <td className="p-3">{nota.fornecedor}</td>
                     <td className="p-3">{nota.identificacao}</td>
-                    <td className="p-3">{nota.cl}</td>
+                    <td className="p-3 font-semibold text-blue-600">{nota.cl || "—"}</td>
                     <td className="p-3">{formatDate(nota.data)}</td>
                     <td className="p-3 text-[11px] text-slate-600">
                       {[nota.venc01, nota.venc02, nota.venc03, nota.venc04, nota.venc05]
