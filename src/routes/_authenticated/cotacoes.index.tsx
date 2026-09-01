@@ -1,240 +1,423 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Plus,
+  Loader2,
+  Trash2,
+  Edit,
+  Eye,
+  Building2,
+  FileText,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/cotacoes/")({
-  component: CotacoesIndex,
+  component: CotacoesPage,
 });
 
-export default function CotacoesIndex() {
+const brl = (v: number) =>
+  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+export default function CotacoesPage() {
+  const navigate = useNavigate();
   const [cotacoes, setCotacoes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Estados do formulário
+  // Modais
+  const [isNovaCotacaoOpen, setIsNovaCotacaoOpen] = useState(false);
+  const [isNovoFornecedorOpen, setIsNovoFornecedorOpen] = useState(false);
+  const [isEditarCotacaoOpen, setIsEditarCotacaoOpen] = useState(false);
+  const [cotacaoEditando, setCotacaoEditando] = useState<any>(null);
+
+  // Form Nova Cotação
   const [numero, setNumero] = useState("");
-  const [dataCotacao, setDataCotacao] = useState(new Date().toISOString().split("T")[0]);
   const [patrimonio, setPatrimonio] = useState("");
-  const [setor, setSetor] = useState("");
+  const [setor, setSetor] = useState("MANUTENÇÃO");
   const [observacoes, setObservacoes] = useState("");
 
-  useEffect(() => {
-    fetchCotacoes();
-  }, []);
+  // Form Novo Fornecedor direto na tela de cotações
+  const [ razaoSocial, setRazaoSocial ] = useState("");
+  const [nomeFantasia, setNomeFantasia] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [telefone, setTelefone] = useState("");
+  const [email, setEmail] = useState("");
 
-  async function fetchCotacoes() {
+  const fetchCotacoes = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from("cotacoes")
-        .select("*")
+        .select("*, fornecedores(razao_social, nome_fantasia)")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       setCotacoes(data || []);
     } catch (error) {
       console.error("Erro ao buscar cotações:", error);
-      toast.error("Erro ao carregar cotações do sistema.");
+      toast.error("Erro ao carregar cotações.");
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
+  useEffect(() => {
+    fetchCotacoes();
+  }, [fetchCotacoes]);
+
+  // Criar Cotação
   async function handleCreateCotacao(e: React.FormEvent) {
     e.preventDefault();
-    if (!numero.trim()) {
-      toast.error("Informe o número da cotação.");
-      return;
-    }
-
+    if (!numero.trim()) return toast.error("Informe o número da cotação.");
     try {
       setSaving(true);
-
-      // Pega o usuário logado atualmente
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError || !userData.user) {
-        throw new Error("Usuário não autenticado.");
-      }
-
       const { error } = await supabase.from("cotacoes").insert([
         {
           numero,
-          data_cotacao: dataCotacao,
-          patrimonio,
-          setor,
-          observacoes,
-          solicitante_id: userData.user.id, // Envia o ID do usuário exigido pelo banco
+          patrimonio: patrimonio || null,
+          setor: setor || null,
+          observacoes: observacoes || null,
+          status: "rascunho",
+          data_cotacao: new Date().toISOString().split("T")[0],
         },
       ]);
-
       if (error) throw error;
-
-      toast.success("Cotação cadastrada com sucesso!");
-      setIsModalOpen(false);
-
-      // Limpa os campos
+      toast.success("Cotação criada com sucesso!");
+      setIsNovaCotacaoOpen(false);
       setNumero("");
       setPatrimonio("");
-      setSetor("");
       setObservacoes("");
-
-      // Recarrega a lista
       fetchCotacoes();
     } catch (error: any) {
-      console.error("Erro ao salvar cotação:", error);
-      toast.error(error.message || "Erro ao salvar cotação.");
+      toast.error(error.message || "Erro ao criar cotação.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // Cadastrar Fornecedor Direto
+  async function handleCadastrarFornecedor(e: React.FormEvent) {
+    e.preventDefault();
+    if (!razaoSocial.trim()) return toast.error("Informe a Razão Social.");
+    try {
+      setSaving(true);
+      const { error } = await supabase.from("fornecedores").insert([
+        {
+          razao_social: razaoSocial,
+          nome_fantasia: nomeFantasia || razaoSocial,
+          cnpj: cnpj || null,
+          telefone: telefone || null,
+          email: email || null,
+          ativo: true,
+        },
+      ]);
+      if (error) throw error;
+      toast.success("Fornecedor cadastrado com sucesso!");
+      setIsNovoFornecedorOpen(false);
+      setRazaoSocial("");
+      setNomeFantasia("");
+      setCnpj("");
+      setTelefone("");
+      setEmail("");
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao cadastrar fornecedor.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // Deletar Cotação
+  async function handleDeleteCotacao(id: string) {
+    if (!confirm("Tem certeza que deseja excluir esta cotação? Todos os itens e respostas vinculadas serão removidos.")) return;
+    try {
+      // Deleta dependências primeiro se necessário ou deixa o cascade agir
+      await supabase.from("cotacao_respostas").delete().eq("cotacao_id", id);
+      await supabase.from("cotacao_itens").delete().eq("cotacao_id", id);
+      await supabase.from("cotacao_fornecedores").delete().eq("cotacao_id", id);
+      const { error } = await supabase.from("cotacoes").delete().eq("id", id);
+
+      if (error) throw error;
+      toast.success("Cotação excluída com sucesso!");
+      fetchCotacoes();
+    } catch (error: any) {
+      toast.error("Erro ao excluir cotação: " + error.message);
+    }
+  }
+
+  // Atualizar Cotação
+  async function handleUpdateCotacao(e: React.FormEvent) {
+    e.preventDefault();
+    if (!cotacaoEditando) return;
+    try {
+      setSaving(true);
+      const { error } = await supabase
+        .from("cotacoes")
+        .update({
+          numero: cotacaoEditando.numero,
+          patrimonio: cotacaoEditando.patrimonio,
+          setor: cotacaoEditando.setor,
+          observacoes: cotacaoEditando.observacoes,
+        })
+        .eq("id", cotacaoEditando.id);
+
+      if (error) throw error;
+      toast.success("Cotação atualizada!");
+      setIsEditarCotacaoOpen(false);
+      setCotacaoEditando(null);
+      fetchCotacoes();
+    } catch (error: any) {
+      toast.error("Erro ao atualizar cotação.");
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
+      {/* Cabeçalho */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Gerenciamento de Cotações</h1>
-          <p className="text-sm text-slate-500">Acompanhe e registre cotações de peças e serviços da frota</p>
+          <h1 className="text-2xl font-bold text-black">Gerenciamento de Cotações</h1>
+          <p className="text-sm text-slate-600">Acompanhe e registre cotações de peças e serviços da frota</p>
         </div>
-        <Button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white gap-2 font-semibold"
-        >
-          <Plus className="w-4 h-4" /> Nova Cotação
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setIsNovoFornecedorOpen(true)}
+            variant="outline"
+            className="border-blue-600 text-blue-600 hover:bg-blue-50 gap-2"
+          >
+            <Building2 className="w-4 h-4" /> Cadastrar Fornecedor
+          </Button>
+          <Button
+            onClick={() => setIsNovaCotacaoOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+          >
+            <Plus className="w-4 h-4" /> Nova Cotação
+          </Button>
+        </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center items-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-        </div>
-      ) : cotacoes.length === 0 ? (
-        <div className="bg-white p-12 rounded-xl shadow-sm text-center border border-slate-200">
-          <p className="text-slate-500 font-medium">Nenhuma cotação cadastrada até o momento.</p>
-          <p className="text-xs text-slate-400 mt-1">Clique em "Nova Cotação" para começar.</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 text-xs uppercase tracking-wider">
-                <th className="p-4">Número</th>
-                <th className="p-4">Data</th>
-                <th className="p-4">Equipamento / Patrimônio</th>
-                <th className="p-4">Setor</th>
-                <th className="p-4">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cotacoes.map((cotacao) => (
-                <tr key={cotacao.id} className="border-b border-slate-100 hover:bg-slate-50 text-sm">
-                  <td className="p-4 font-semibold text-slate-800">{cotacao.numero || "N/A"}</td>
-                  <td className="p-4 text-slate-600">{cotacao.data_cotacao || "N/A"}</td>
-                  <td className="p-4 text-slate-600">{cotacao.patrimonio || "N/A"}</td>
-                  <td className="p-4 text-slate-600">{cotacao.setor || "N/A"}</td>
-                  <td className="p-4">
-                    <Link
-                      to="/cotacoes/$id"
-                      params={{ id: cotacao.id }}
-                      className="text-blue-600 hover:underline font-medium text-sm"
-                    >
-                      Ver Detalhes
-                    </Link>
-                  </td>
+      {/* Tabela de Cotações */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          </div>
+        ) : cotacoes.length === 0 ? (
+          <p className="p-8 text-center text-slate-500">Nenhuma cotação cadastrada.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-100 text-slate-700 text-xs uppercase">
+                <tr>
+                  <th className="p-3">Número</th>
+                  <th className="p-3">Data</th>
+                  <th className="p-3">Patrimônio / Equipamento</th>
+                  <th className="p-3">Setor</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3">Total / Vencedor</th>
+                  <th className="p-3 text-right">Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {cotacoes.map((c) => (
+                  <tr key={c.id} className="border-b border-slate-100 hover:bg-slate-50">
+                    <td className="p-3 font-semibold text-slate-800">{c.numero}</td>
+                    <td className="p-3 text-slate-600">{c.data_cotacao || "—"}</td>
+                    <td className="p-3 text-slate-600">{c.patrimonio || "—"}</td>
+                    <td className="p-3 text-slate-600">{c.setor || "—"}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded text-xs uppercase font-medium ${
+                        c.status === 'finalizada' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {c.status}
+                      </span>
+                    </td>
+                    <td className="p-3 text-slate-700">
+                      {c.total > 0 ? brl(c.total) : "Pendente"}
+                      {c.fornecedores && (
+                        <span className="block text-xs text-slate-500">
+                          Fornecedor: {c.fornecedores.nome_fantasia || c.fornecedores.razao_social}
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-3 text-right space-x-2 whitespace-nowrap">
+                      <Button
+                        size="sm"
+                        onClick={() => navigate({ to: `/cotacoes/${c.id}` })}
+                        className="bg-blue-600 hover:bg-blue-700 text-white gap-1"
+                      >
+                        <Eye className="w-4 h-4" /> Detalhes
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setCotacaoEditando(c);
+                          setIsEditarCotacaoOpen(true);
+                        }}
+                        className="gap-1 text-slate-700"
+                      >
+                        <Edit className="w-4 h-4" /> Editar
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleDeleteCotacao(c.id)}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
-      {/* Modal de Nova Cotação */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      {/* MODAL: NOVA COTAÇÃO */}
+      <Dialog open={isNovaCotacaoOpen} onOpenChange={setIsNovaCotacaoOpen}>
         <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-slate-800">Nova Cotação</DialogTitle>
+            <DialogTitle className="text-lg font-bold text-slate-800">Criar Nova Cotação</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateCotacao} className="space-y-4 mt-2">
             <div>
-              <Label htmlFor="numero" className="text-xs font-semibold text-slate-700">Número da Cotação *</Label>
-              <Input
-                id="numero"
-                value={numero}
-                onChange={(e) => setNumero(e.target.value)}
-                placeholder="Ex: COT-2026/001"
-                required
-                className="mt-1"
-              />
+              <Label className="text-xs font-semibold text-slate-700">Número da Cotação *</Label>
+              <Input value={numero} onChange={(e) => setNumero(e.target.value)} placeholder="Ex: 0006" required className="mt-1" />
             </div>
-
             <div>
-              <Label htmlFor="data" className="text-xs font-semibold text-slate-700">Data da Cotação</Label>
-              <Input
-                id="data"
-                type="date"
-                value={dataCotacao}
-                onChange={(e) => setDataCotacao(e.target.value)}
-                className="mt-1"
-              />
+              <Label className="text-xs font-semibold text-slate-700">Equipamento / Patrimônio</Label>
+              <Input value={patrimonio} onChange={(e) => setPatrimonio(e.target.value)} placeholder="Ex: RE20" className="mt-1" />
             </div>
-
             <div>
-              <Label htmlFor="patrimonio" className="text-xs font-semibold text-slate-700">Equipamento / Patrimônio</Label>
-              <Input
-                id="patrimonio"
-                value={patrimonio}
-                onChange={(e) => setPatrimonio(e.target.value)}
-                placeholder="Ex: Escavadeira CAT 320 (Patrimônio 123)"
-                className="mt-1"
-              />
+              <Label className="text-xs font-semibold text-slate-700">Setor</Label>
+              <Input value={setor} onChange={(e) => setSetor(e.target.value)} placeholder="MANUTENÇÃO" className="mt-1" />
             </div>
-
             <div>
-              <Label htmlFor="setor" className="text-xs font-semibold text-slate-700">Setor</Label>
-              <Input
-                id="setor"
-                value={setor}
-                onChange={(e) => setSetor(e.target.value)}
-                placeholder="Ex: Manutenção, Obras, Oficina"
-                className="mt-1"
-              />
+              <Label className="text-xs font-semibold text-slate-700">Observações Gerais</Label>
+              <Input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} placeholder="Condições de pagamento, etc." className="mt-1" />
             </div>
-
-            <div>
-              <Label htmlFor="observacoes" className="text-xs font-semibold text-slate-700">Observações</Label>
-              <Input
-                id="observacoes"
-                value={observacoes}
-                onChange={(e) => setObservacoes(e.target.value)}
-                placeholder="Detalhes adicionais..."
-                className="mt-1"
-              />
-            </div>
-
             <DialogFooter className="mt-4 flex gap-2 justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsModalOpen(false)}
-                disabled={saving}
-              >
+              <Button type="button" variant="outline" onClick={() => setIsNovaCotacaoOpen(false)} disabled={saving}>
                 Cancelar
               </Button>
-              <Button
-                type="submit"
-                disabled={saving}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-              >
-                {saving ? "Salvando..." : "Salvar Cotação"}
+              <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                {saving ? "Salvando..." : "Criar Cotação"}
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL: CADASTRAR FORNECEDOR DIRETO NA TELA */}
+      <Dialog open={isNovoFornecedorOpen} onOpenChange={setIsNovoFornecedorOpen}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-slate-800">Cadastrar Novo Fornecedor</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Cadastre o fornecedor para poder incluí-lo nas cotações.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCadastrarFornecedor} className="space-y-3 mt-2">
+            <div>
+              <Label className="text-xs font-semibold text-slate-700">Razão Social *</Label>
+              <Input value={razaoSocial} onChange={(e) => setRazaoSocial(e.target.value)} placeholder="Ex: Comércio de Peças LTDA" required className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-slate-700">Nome Fantasia</Label>
+              <Input value={nomeFantasia} onChange={(e) => setNomeFantasia(e.target.value)} placeholder="Ex: Peças Brasil" className="mt-1" />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">CNPJ</Label>
+                <Input value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="00.000.000/0001-00" className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Telefone / WhatsApp</Label>
+                <Input value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(31) 99999-9999" className="mt-1" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-slate-700">E-mail</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="contato@fornecedor.com" className="mt-1" />
+            </div>
+            <DialogFooter className="mt-4 flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => setIsNovoFornecedorOpen(false)} disabled={saving}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                {saving ? "Salvando..." : "Salvar Fornecedor"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL: EDITAR COTAÇÃO */}
+      <Dialog open={isEditarCotacaoOpen} onOpenChange={setIsEditarCotacaoOpen}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-slate-800">Editar Cotação</DialogTitle>
+          </DialogHeader>
+          {cotacaoEditando && (
+            <form onSubmit={handleUpdateCotacao} className="space-y-4 mt-2">
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Número da Cotação *</Label>
+                <Input
+                  value={cotacaoEditando.numero}
+                  onChange={(e) => setCotacaoEditando({ ...cotacaoEditando, numero: e.target.value })}
+                  required
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Equipamento / Patrimônio</Label>
+                <Input
+                  value={cotacaoEditando.patrimonio || ""}
+                  onChange={(e) => setCotacaoEditando({ ...cotacaoEditando, patrimonio: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Setor</Label>
+                <Input
+                  value={cotacaoEditando.setor || ""}
+                  onChange={(e) => setCotacaoEditando({ ...cotacaoEditando, setor: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Observações Gerais</Label>
+                <Input
+                  value={cotacaoEditando.observacoes || ""}
+                  onChange={(e) => setCotacaoEditando({ ...cotacaoEditando, observacoes: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <DialogFooter className="mt-4 flex gap-2 justify-end">
+                <Button type="button" variant="outline" onClick={() => setIsEditarCotacaoOpen(false)} disabled={saving}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                  {saving ? "Salvando..." : "Salvar Alterações"}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>
