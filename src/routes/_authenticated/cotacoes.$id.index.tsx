@@ -198,33 +198,36 @@ export default function DetalheCotacaoPage() {
     setIsPrecosOpen(true);
   }
 
-  // Salvar Preços do Fornecedor
+ // Salvar Preços do Fornecedor
   async function handleSalvarPrecos(e: React.FormEvent) {
     e.preventDefault();
     if (!fornecedorPrecoAtivo) return;
     try {
       setSaving(true);
+      
       for (const item of itens) {
         const dados = precosTemp[item.id];
-        const precoNum = dados && dados.preco ? parseFloat(dados.preco.replace(",", ".")) : null;
+        const precoStr = dados && dados.preco ? dados.preco.toString().replace(",", ".") : "";
+        const precoNum = precoStr ? parseFloat(precoStr) : null;
         const marcaStr = dados ? dados.marca : null;
 
-        // Verificar se já existe resposta para este item e fornecedor
+        // Verificar se já existe resposta cadastrada
         const existente = respostas.find(
           (r) => r.fornecedor_id === fornecedorPrecoAtivo.fornecedor_id && r.item_id === item.id
         );
 
         if (existente) {
-          if (precoNum !== null && precoNum > 0) {
-            await supabase
+          if (precoNum !== null && !isNaN(precoNum) && precoNum > 0) {
+            const { error: errUpd } = await supabase
               .from("cotacao_respostas")
               .update({ preco: precoNum, marca: marcaStr })
               .eq("id", existente.id);
+            if (errUpd) console.error("Erro update:", errUpd);
           } else {
             await supabase.from("cotacao_respostas").delete().eq("id", existente.id);
           }
-        } else if (precoNum !== null && precoNum > 0) {
-          await supabase.from("cotacao_respostas").insert([
+        } else if (precoNum !== null && !isNaN(precoNum) && precoNum > 0) {
+          const { error: errIns } = await supabase.from("cotacao_respostas").insert([
             {
               cotacao_id: id,
               fornecedor_id: fornecedorPrecoAtivo.fornecedor_id,
@@ -233,19 +236,19 @@ export default function DetalheCotacaoPage() {
               marca: marcaStr,
             },
           ]);
+          if (errIns) console.error("Erro insert:", errIns);
         }
       }
 
       toast.success("Preços salvos com sucesso!");
       setIsPrecosOpen(false);
-      fetchData();
+      await fetchData(); // Recarrega os dados imediatamente na tela
     } catch (error: any) {
       toast.error("Erro ao salvar preços: " + error.message);
     } finally {
       setSaving(false);
     }
   }
-
   // ---- CÁLCULOS DOS MENORES PREÇOS POR ITEM ----
   const menoresPrecosPorItem: { [itemId: string]: { menorPreco: number; fornecedorNome: string; marca: string } } = {};
   let valorTotalOtimo = 0;
