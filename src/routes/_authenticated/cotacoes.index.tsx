@@ -68,9 +68,9 @@ export default function CotacoesPage() {
 
       if (error) throw error;
       setCotacoes(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao buscar cotações:", error);
-      toast.error("Erro ao carregar cotações.");
+      toast.error(error.message || "Erro ao carregar cotações.");
     } finally {
       setLoading(false);
     }
@@ -84,26 +84,31 @@ export default function CotacoesPage() {
   async function handleCreateCotacao(e: React.FormEvent) {
     e.preventDefault();
     if (!numero.trim()) return toast.error("Informe o número da cotação.");
+    
     try {
       setSaving(true);
       const { error } = await supabase.from("cotacoes").insert([
         {
-          numero,
-          patrimonio: patrimonio || null,
-          setor: setor || null,
-          observacoes: observacoes || null,
+          numero: numero.trim(),
+          patrimonio: patrimonio.trim() || null,
+          setor: setor.trim() || null,
+          observacoes: observacoes.trim() || null,
           status: "rascunho",
           data_cotacao: new Date().toISOString().split("T")[0],
         },
       ]);
+      
       if (error) throw error;
+      
       toast.success("Cotação criada com sucesso!");
       setIsNovaCotacaoOpen(false);
       setNumero("");
       setPatrimonio("");
+      setSetor("MANUTENÇÃO");
       setObservacoes("");
       fetchCotacoes();
     } catch (error: any) {
+      console.error("Erro detalhado ao criar cotação:", error);
       toast.error(error.message || "Erro ao criar cotação.");
     } finally {
       setSaving(false);
@@ -114,23 +119,26 @@ export default function CotacoesPage() {
   async function handleCadastrarFornecedor(e: React.FormEvent) {
     e.preventDefault();
     if (!razaoSocial.trim()) return toast.error("Informe a Razão Social.");
+    
     try {
       setSaving(true);
       const { error } = await supabase.from("fornecedores").insert([
         {
-          razao_social: razaoSocial,
-          nome_fantasia: nomeFantasia || razaoSocial,
-          cnpj: cnpj || null,
-          telefone: telefone || null,
-          email: email || null,
-          banco: banco || null,
-          agencia: agencia || null,
-          conta: conta || null,
-          pix: pix || null,
+          razao_social: razaoSocial.trim(),
+          nome_fantasia: nomeFantasia.trim() || razaoSocial.trim(),
+          cnpj: cnpj.trim() || null,
+          telefone: telefone.trim() || null,
+          email: email.trim() || null,
+          banco: banco.trim() || null,
+          agencia: agencia.trim() || null,
+          conta: conta.trim() || null,
+          pix: pix.trim() || null,
           ativo: true,
         },
       ]);
+      
       if (error) throw error;
+      
       toast.success("Fornecedor cadastrado com sucesso!");
       setIsNovoFornecedorOpen(false);
       setRazaoSocial("");
@@ -143,6 +151,7 @@ export default function CotacoesPage() {
       setConta("");
       setPix("");
     } catch (error: any) {
+      console.error("Erro detalhado ao cadastrar fornecedor:", error);
       toast.error(error.message || "Erro ao cadastrar fornecedor.");
     } finally {
       setSaving(false);
@@ -170,6 +179,7 @@ export default function CotacoesPage() {
   async function handleUpdateCotacao(e: React.FormEvent) {
     e.preventDefault();
     if (!cotacaoEditando) return;
+    
     try {
       setSaving(true);
       const { error } = await supabase
@@ -183,12 +193,13 @@ export default function CotacoesPage() {
         .eq("id", cotacaoEditando.id);
 
       if (error) throw error;
+      
       toast.success("Cotação atualizada!");
       setIsEditarCotacaoOpen(false);
       setCotacaoEditando(null);
       fetchCotacoes();
     } catch (error: any) {
-      toast.error("Erro ao atualizar cotação.");
+      toast.error(error.message || "Erro ao atualizar cotação.");
     } finally {
       setSaving(false);
     }
@@ -379,80 +390,4 @@ export default function CotacoesPage() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-xs font-semibold text-slate-700">Conta / Operação</Label>
-                  <Input value={conta} onChange={(e) => setConta(e.target.value)} placeholder="Ex: 12345-6" className="mt-1" />
-                </div>
-                <div>
-                  <Label className="text-xs font-semibold text-slate-700">Chave PIX</Label>
-                  <Input value={pix} onChange={(e) => setPix(e.target.value)} placeholder="CNPJ, E-mail ou Telefone" className="mt-1" />
-                </div>
-              </div>
-            </div>
-            <DialogFooter className="mt-4 flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={() => setIsNovoFornecedorOpen(false)} disabled={saving}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
-                {saving ? "Salvando..." : "Salvar Fornecedor"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* MODAL: EDITAR COTAÇÃO */}
-      <Dialog open={isEditarCotacaoOpen} onOpenChange={setIsEditarCotacaoOpen}>
-        <DialogContent className="sm:max-w-md bg-white">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-slate-800">Editar Cotação</DialogTitle>
-          </DialogHeader>
-          {cotacaoEditando && (
-            <form onSubmit={handleUpdateCotacao} className="space-y-4 mt-2">
-              <div>
-                <Label className="text-xs font-semibold text-slate-700">Número da Cotação *</Label>
-                <Input
-                  value={cotacaoEditando.numero}
-                  onChange={(e) => setCotacaoEditando({ ...cotacaoEditando, numero: e.target.value })}
-                  required
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-slate-700">Equipamento / Patrimônio</Label>
-                <Input
-                  value={cotacaoEditando.patrimonio || ""}
-                  onChange={(e) => setCotacaoEditando({ ...cotacaoEditando, patrimonio: e.target.value })}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-slate-700">Setor</Label>
-                <Input
-                  value={cotacaoEditando.setor || ""}
-                  onChange={(e) => setCotacaoEditando({ ...cotacaoEditando, setor: e.target.value })}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-slate-700">Observações Gerais</Label>
-                <Input
-                  value={cotacaoEditando.observacoes || ""}
-                  onChange={(e) => setCotacaoEditando({ ...cotacaoEditando, observacoes: e.target.value })}
-                  className="mt-1"
-                />
-              </div>
-              <DialogFooter className="mt-4 flex gap-2 justify-end">
-                <Button type="button" variant="outline" onClick={() => setIsEditarCotacaoOpen(false)} disabled={saving}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
-                  {saving ? "Salvando..." : "Salvar Alterações"}
-                </Button>
-              </DialogFooter>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+                  <Label className="text-xs font-semibold text-slate-700">
