@@ -40,6 +40,7 @@ interface Cotacao {
 interface ItemCotacao {
   id: string | number;
   cotacao_id: string | number;
+  codigo?: string;
   descricao: string;
   quantidade: number;
   unidade: string;
@@ -86,7 +87,8 @@ export default function DetalheCotacaoPage() {
   const [isPrecosOpen, setIsPrecosOpen] = useState(false);
   const [isOrcamentoFornecedorOpen, setIsOrcamentoFornecedorOpen] = useState(false);
 
-  // Form Item
+  // Form Item (Com Código)
+  const [codigoItem, setCodigoItem] = useState("");
   const [descricaoItem, setDescricaoItem] = useState("");
   const [quantidadeItem, setQuantidadeItem] = useState("1");
   const [unidadeItem, setUnidadeItem] = useState("UN");
@@ -143,7 +145,7 @@ export default function DetalheCotacaoPage() {
       setTodosFornecedores(allForn || []);
     } catch (error: unknown) {
       const err = error as Error;
-      toast.error(`Erro ao carregar dados da cotação: ${err.message || "Erro desconhecido"}`);
+      toast.error(`Erro ao carregar dados: ${err.message || "Erro desconhecido"}`);
     } finally {
       setLoading(false);
     }
@@ -153,7 +155,7 @@ export default function DetalheCotacaoPage() {
     fetchData();
   }, [fetchData]);
 
-  // Adicionar Item
+  // Adicionar Item com Código
   async function handleAddItem(e: React.FormEvent) {
     e.preventDefault();
     if (!descricaoItem.trim()) return toast.error("Informe a descrição do item.");
@@ -162,16 +164,19 @@ export default function DetalheCotacaoPage() {
       const { error } = await supabase.from("cotacao_itens").insert([
         {
           cotacao_id: id,
-          descricao: descricaoItem,
+          codigo: codigoItem.trim() || null,
+          descricao: descricaoItem.trim(),
           quantidade: parseFloat(quantidadeItem) || 1,
-          unidade: unidadeItem,
+          unidade: unidadeItem.trim(),
         },
       ]);
       if (error) throw error;
       toast.success("Item adicionado!");
       setIsNovoItemOpen(false);
+      setCodigoItem("");
       setDescricaoItem("");
       setQuantidadeItem("1");
+      setUnidadeItem("UN");
       fetchData();
     } catch (error: unknown) {
       const err = error as Error;
@@ -253,8 +258,8 @@ export default function DetalheCotacaoPage() {
     setIsPrecosOpen(true);
   }
 
-  // Salvar Preços do Fornecedor
- async function handleSalvarPrecos(e: React.FormEvent) {
+  // Salvar Preços do Fornecedor com rastreamento detalhado de erro
+  async function handleSalvarPrecos(e: React.FormEvent) {
     e.preventDefault();
     if (!fornecedorPrecoAtivo) return;
     try {
@@ -278,12 +283,15 @@ export default function DetalheCotacaoPage() {
               .from("cotacao_respostas")
               .update({ preco: precoNum, marca: marcaStr })
               .eq("id", existente.id);
-            if (errUpd) console.error("Erro update:", errUpd);
+            if (errUpd) {
+              console.error("Erro update Supabase:", errUpd);
+              toast.error(`Erro ao atualizar preço: ${errUpd.message}`);
+              return;
+            }
           } else {
             await supabase.from("cotacao_respostas").delete().eq("id", existente.id);
           }
         } else if (!isNaN(precoNum) && precoNum > 0) {
-          // Garantimos explicitamente que enviamos os IDs corretos
           const payload = {
             cotacao_id: id,
             fornecedor_id: fornecedorIdReal,
@@ -294,8 +302,8 @@ export default function DetalheCotacaoPage() {
 
           const { error: errIns } = await supabase.from("cotacao_respostas").insert([payload]);
           if (errIns) {
-            console.error("Erro detalhado do Supabase:", errIns);
-            toast.error("Erro ao salvar: " + errIns.message);
+            console.error("Erro insert Supabase:", errIns);
+            toast.error(`Erro ao inserir preço: ${errIns.message}`);
             return;
           }
         }
@@ -311,6 +319,7 @@ export default function DetalheCotacaoPage() {
       setSaving(false);
     }
   }
+
   // ---- CÁLCULOS DOS MENORES PREÇOS POR ITEM ----
   const { menoresPrecosPorItem, valorTotalOtimo } = useMemo(() => {
     const menoresMap: { [itemId: string]: { menorPreco: number; fornecedorNome: string; marca: string } } = {};
@@ -406,6 +415,7 @@ export default function DetalheCotacaoPage() {
           <table className="w-full text-left text-sm border-collapse">
             <thead className="bg-slate-100 text-slate-700 text-xs uppercase">
               <tr>
+                <th className="p-3 border-b">Cód.</th>
                 <th className="p-3 border-b">Item</th>
                 <th className="p-3 border-b text-center">Qtd</th>
                 <th className="p-3 border-b text-center">Un</th>
@@ -436,7 +446,7 @@ export default function DetalheCotacaoPage() {
             <tbody>
               {itens.length === 0 ? (
                 <tr>
-                  <td colSpan={5 + fornecedoresCotacao.length} className="p-6 text-center text-slate-500">
+                  <td colSpan={6 + fornecedoresCotacao.length} className="p-6 text-center text-slate-500">
                     Nenhum item cadastrado nesta cotação.
                   </td>
                 </tr>
@@ -445,6 +455,7 @@ export default function DetalheCotacaoPage() {
                   const menorInfo = menoresPrecosPorItem[item.id];
                   return (
                     <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="p-3 text-xs text-slate-500 font-mono">{item.codigo || "—"}</td>
                       <td className="p-3 text-slate-800 font-medium">{item.descricao}</td>
                       <td className="p-3 text-center text-slate-600">{item.quantidade}</td>
                       <td className="p-3 text-center text-slate-600">{item.unidade}</td>
@@ -501,7 +512,7 @@ export default function DetalheCotacaoPage() {
             </tbody>
             <tfoot className="bg-slate-100 font-bold text-slate-800">
               <tr>
-                <td colSpan={3} className="p-3 text-right">VALOR TOTAL:</td>
+                <td colSpan={4} className="p-3 text-right">VALOR TOTAL:</td>
                 {fornecedoresCotacao.map((fc) => {
                   let totalForn = 0;
                   itens.forEach((item) => {
@@ -529,12 +540,17 @@ export default function DetalheCotacaoPage() {
         </div>
       </div>
 
+      {/* MODAL ADICIONAR ITEM COM CAMPO CÓDIGO */}
       <Dialog open={isNovoItemOpen} onOpenChange={setIsNovoItemOpen}>
         <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
             <DialogTitle>Adicionar Item / Peça</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAddItem} className="space-y-4 mt-2">
+            <div>
+              <Label className="text-xs font-semibold text-slate-700">Código do Produto / Peça</Label>
+              <Input value={codigoItem} onChange={(e) => setCodigoItem(e.target.value)} placeholder="Ex: FIL-01" className="mt-1" />
+            </div>
             <div>
               <Label className="text-xs font-semibold text-slate-700">Descrição da Peça / Serviço *</Label>
               <Input value={descricaoItem} onChange={(e) => setDescricaoItem(e.target.value)} placeholder="Ex: Filtro de Óleo" required className="mt-1" />
@@ -599,7 +615,7 @@ export default function DetalheCotacaoPage() {
               {itens.map((item) => (
                 <div key={item.id} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-slate-50 p-3 rounded-lg border border-slate-200">
                   <div className="md:col-span-6 text-sm">
-                    <span className="font-semibold text-slate-800">{item.descricao}</span>
+                    <span className="font-semibold text-slate-800">{item.codigo ? `[${item.codigo}] ` : ""}{item.descricao}</span>
                     <span className="block text-xs text-slate-500">Qtd: {item.quantidade} {item.unidade}</span>
                   </div>
                   <div className="md:col-span-3">
@@ -666,6 +682,7 @@ export default function DetalheCotacaoPage() {
               <table className="w-full text-left text-sm border-collapse mt-4">
                 <thead>
                   <tr className="bg-slate-100 text-xs uppercase text-slate-700">
+                    <th className="p-2 border">Cód.</th>
                     <th className="p-2 border">Item</th>
                     <th className="p-2 border text-center">Qtd</th>
                     <th className="p-2 border text-center">Un</th>
@@ -684,6 +701,7 @@ export default function DetalheCotacaoPage() {
                     const subtotal = preco * (item.quantidade || 1);
                     return (
                       <tr key={item.id} className="border-b">
+                        <td className="p-2 border font-mono text-xs">{item.codigo || "—"}</td>
                         <td className="p-2 border">{item.descricao}</td>
                         <td className="p-2 border text-center">{item.quantidade}</td>
                         <td className="p-2 border text-center">{item.unidade}</td>
@@ -696,7 +714,7 @@ export default function DetalheCotacaoPage() {
                 </tbody>
                 <tfoot>
                   <tr className="bg-slate-100 font-bold">
-                    <td colSpan={5} className="p-2 border text-right">TOTAL DO FORNECEDOR:</td>
+                    <td colSpan={6} className="p-2 border text-right">TOTAL DO FORNECEDOR:</td>
                     <td className="p-2 border text-right text-base text-blue-700">
                       {brl(
                         itens.reduce((acc, item) => {
