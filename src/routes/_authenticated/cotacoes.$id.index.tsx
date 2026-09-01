@@ -749,19 +749,31 @@ export default function CotacaoDetalhesPage() {
               const d = draft[it.id] || { preco: "", prazo: "", marca: "", obs: "" };
               const total = (Number(d.preco) || 0) * Number(it.quantidade || 0);
               return (
-                <div key={it.id} className="rounded-lg border border-slate-200 p-3">
-                  <p className="font-semibold text-slate-800 text-sm">
-                    {it.descricao} — {it.quantidade} {it.unidade}
-                  </p>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+                <div key={it.id} className="p-3 border border-slate-200 rounded-lg bg-slate-50 space-y-3">
+                  <div className="flex justify-between items-start">
                     <div>
-                      <Label className="text-xs text-slate-600">Preço unitário (R$)</Label>
+                      <p className="font-semibold text-slate-800 text-sm">{it.descricao}</p>
+                      <p className="text-xs text-slate-500">
+                        Qtd: {it.quantidade} {it.unidade} {it.codigo ? `| Cód: ${it.codigo}` : ""}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs text-slate-500 block">Total do item</span>
+                      <span className="font-bold text-slate-800 text-sm">{brl(total)}</span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div>
+                      <Label className="text-xs text-slate-600">Preço Unitário (R$)</Label>
                       <Input
                         type="number"
                         step="0.01"
                         value={d.preco}
-                        onChange={(e) => setDraft((p) => ({ ...p, [it.id]: { ...d, preco: e.target.value } }))}
-                        className="mt-1"
+                        onChange={(e) =>
+                          setDraft({ ...draft, [it.id]: { ...d, preco: e.target.value } })
+                        }
+                        placeholder="0,00"
+                        className="mt-1 bg-white"
                       />
                     </div>
                     <div>
@@ -769,29 +781,36 @@ export default function CotacaoDetalhesPage() {
                       <Input
                         type="number"
                         value={d.prazo}
-                        onChange={(e) => setDraft((p) => ({ ...p, [it.id]: { ...d, prazo: e.target.value } }))}
-                        className="mt-1"
+                        onChange={(e) =>
+                          setDraft({ ...draft, [it.id]: { ...d, prazo: e.target.value } })
+                        }
+                        placeholder="Ex: 5"
+                        className="mt-1 bg-white"
                       />
                     </div>
                     <div>
-                      <Label className="text-xs text-slate-600">Marca ofertada</Label>
+                      <Label className="text-xs text-slate-600">Marca da Oferta</Label>
                       <Input
                         value={d.marca}
-                        onChange={(e) => setDraft((p) => ({ ...p, [it.id]: { ...d, marca: e.target.value } }))}
-                        className="mt-1"
+                        onChange={(e) =>
+                          setDraft({ ...draft, [it.id]: { ...d, marca: e.target.value } })
+                        }
+                        placeholder="Marca"
+                        className="mt-1 bg-white"
                       />
                     </div>
                     <div>
-                      <Label className="text-xs text-slate-600">Total do item</Label>
-                      <p className="mt-2 font-bold text-slate-800">{brl(total)}</p>
+                      <Label className="text-xs text-slate-600">Observações</Label>
+                      <Input
+                        value={d.obs}
+                        onChange={(e) =>
+                          setDraft({ ...draft, [it.id]: { ...d, obs: e.target.value } })
+                        }
+                        placeholder="Obs"
+                        className="mt-1 bg-white"
+                      />
                     </div>
                   </div>
-                  <Input
-                    value={d.obs}
-                    onChange={(e) => setDraft((p) => ({ ...p, [it.id]: { ...d, obs: e.target.value } }))}
-                    placeholder="Observações do fornecedor..."
-                    className="mt-2"
-                  />
                 </div>
               );
             })}
@@ -801,7 +820,7 @@ export default function CotacaoDetalhesPage() {
               Cancelar
             </Button>
             <Button onClick={salvarRespostas} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
-              {saving ? "Salvando..." : "Salvar valores"}
+              {saving ? "Salvando..." : "Salvar Valores"}
             </Button>
           </DialogFooter>
         </DialogContent>
