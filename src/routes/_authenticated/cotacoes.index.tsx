@@ -103,7 +103,7 @@ export default function CotacoesPage() {
     setIsNovaCotacaoOpen(true);
   }
 
-  // Criar Cotação
+  // Criar Cotação (Corrigido sem valor_total)
   async function handleCreateCotacao(e: React.FormEvent) {
     e.preventDefault();
     if (!numero.trim()) return toast.error("Informe o número da cotação.");
@@ -117,7 +117,6 @@ export default function CotacoesPage() {
           setor: setor.trim() || null,
           observacoes: observacoes.trim() || null,
           status: "RASCUNHO",
-          valor_total: 0,
           data_cotacao: new Date().toISOString().split("T")[0],
         },
       ]);
@@ -275,7 +274,6 @@ export default function CotacoesPage() {
               </thead>
               <tbody>
                 {cotacoes.map((c) => {
-                  // Lê valor_total ou total dependendo de como está no banco
                   const valorTotal = c.valor_total ?? c.total ?? 0;
                   return (
                     <tr key={c.id} className="border-b border-slate-100 hover:bg-slate-50">
