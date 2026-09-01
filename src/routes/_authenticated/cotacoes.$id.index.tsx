@@ -258,7 +258,7 @@ export default function DetalheCotacaoPage() {
     setIsPrecosOpen(true);
   }
 
-  // Salvar Preços do Fornecedor com rastreamento detalhado de erro
+  // Salvar Preços do Fornecedor
   async function handleSalvarPrecos(e: React.FormEvent) {
     e.preventDefault();
     if (!fornecedorPrecoAtivo) return;
@@ -320,15 +320,16 @@ export default function DetalheCotacaoPage() {
     }
   }
 
-  // ---- CÁLCULOS DOS MENORES PREÇOS POR ITEM ----
+  // ---- CÁLCULOS DOS MENORES PREÇOS POR ITEM (MUNICIPALIZADOS COM QUANTIDADE) ----
   const { menoresPrecosPorItem, valorTotalOtimo } = useMemo(() => {
-    const menoresMap: { [itemId: string]: { menorPreco: number; fornecedorNome: string; marca: string } } = {};
+    const menoresMap: { [itemId: string]: { menorTotal: number; menorUnitario: number; fornecedorNome: string; marca: string } } = {};
     let totalOtimo = 0;
 
     itens.forEach((item) => {
-      let menor: number | null = null;
+      let menorUnit: number | null = null;
       let fornNome = "—";
       let marcaStr = "—";
+      const qtd = item.quantidade || 1;
 
       fornecedoresCotacao.forEach((fc) => {
         const resp = respostas.find(
@@ -337,17 +338,22 @@ export default function DetalheCotacaoPage() {
         );
         
         if (resp && typeof resp.preco === 'number' && resp.preco > 0) {
-          if (menor === null || resp.preco < menor) {
-            menor = resp.preco;
+          if (menorUnit === null || resp.preco < menorUnit) {
+            menorUnit = resp.preco;
             fornNome = fc.fornecedores?.nome_fantasia || fc.fornecedores?.razao_social || "Fornecedor";
             marcaStr = resp.marca || "—";
           }
         }
       });
 
-      if (menor !== null) {
-        const subtotalItem = menor * (item.quantidade || 1);
-        menoresMap[item.id] = { menorPreco: menor, fornecedorNome: fornNome, marca: marcaStr };
+      if (menorUnit !== null) {
+        const subtotalItem = menorUnit * qtd;
+        menoresMap[item.id] = { 
+          menorTotal: subtotalItem, 
+          menorUnitario: menorUnit, 
+          fornecedorNome: fornNome, 
+          marca: marcaStr 
+        };
         totalOtimo += subtotalItem;
       }
     });
@@ -438,7 +444,7 @@ export default function DetalheCotacaoPage() {
                   </th>
                 ))}
                 <th className="p-3 border-b text-right bg-emerald-50 text-emerald-900 font-bold">
-                  Menor Preço por Item
+                  Menor Preço (Total)
                 </th>
                 <th className="p-3 border-b text-center print:hidden">Ações Item</th>
               </tr>
@@ -465,17 +471,18 @@ export default function DetalheCotacaoPage() {
                           (r) => String(r.fornecedor_id).trim() === String(fc.fornecedor_id).trim() && 
                                  String(r.cotacao_item_id).trim() === String(item.id).trim()
                         );
-                        const isMenor = menorInfo && resp && resp.preco === menorInfo.menorPreco;
+                        const subtotalForn = resp && resp.preco > 0 ? resp.preco * (item.quantidade || 1) : 0;
+                        const isMenor = menorInfo && resp && resp.preco === menorInfo.menorUnitario;
 
                         return (
                           <td
                             key={fc.fornecedor_id}
                             className={`p-3 text-right ${isMenor ? "bg-green-50 font-bold text-green-700" : "text-slate-700"}`}
                           >
-                            {resp && resp.preco > 0 ? (
+                            {subtotalForn > 0 ? (
                               <div>
-                                <div>{brl(resp.preco)}</div>
-                                {resp.marca && <div className="text-[10px] text-slate-500 font-normal">Marca: {resp.marca}</div>}
+                                <div>{brl(subtotalForn)}</div>
+                                <div className="text-[10px] text-slate-500 font-normal">Unit: {brl(resp.preco)} {resp.marca ? `(${resp.marca})` : ""}</div>
                               </div>
                             ) : (
                               <span className="text-slate-300">—</span>
@@ -489,7 +496,7 @@ export default function DetalheCotacaoPage() {
                           <div>
                             <div className="flex items-center justify-end gap-1">
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              {brl(menorInfo.menorPreco)}
+                              {brl(menorInfo.menorTotal)}
                             </div>
                             <div className="text-[10px] text-slate-600 font-normal">
                               {menorInfo.fornecedorNome} {menorInfo.marca !== "—" ? `(${menorInfo.marca})` : ""}
