@@ -16,8 +16,6 @@ import {
   Plus,
   Trash2,
   Printer,
-  FileText,
-  DollarSign,
   Loader2,
   CheckCircle2,
 } from "lucide-react";
@@ -90,7 +88,7 @@ export default function DetalheCotacaoPage() {
         .eq("cotacao_id", id);
       setFornecedoresCotacao(fornCotData || []);
 
-      // Buscar respostas de preços
+      // Buscar respostas de preços vinculadas a esta cotação
       const { data: respData } = await supabase
         .from("cotacao_respostas")
         .select("*")
@@ -188,9 +186,11 @@ export default function DetalheCotacaoPage() {
     setFornecedorPrecoAtivo(fc);
     const map: { [itemId: string]: { preco: string; marca: string } } = {};
     itens.forEach((item) => {
-      const resp = respostas.find((r) => r.fornecedor_id === fc.fornecedor_id && r.item_id === item.id);
+      const resp = respostas.find(
+        (r) => String(r.fornecedor_id) === String(fc.fornecedor_id) && String(r.item_id) === String(item.id)
+      );
       map[item.id] = {
-        preco: resp ? resp.preco.toString() : "",
+        preco: resp && resp.preco !== null ? resp.preco.toString() : "",
         marca: resp ? resp.marca || "" : "",
       };
     });
@@ -198,22 +198,22 @@ export default function DetalheCotacaoPage() {
     setIsPrecosOpen(true);
   }
 
- // Salvar Preços do Fornecedor
+  // Salvar Preços do Fornecedor
   async function handleSalvarPrecos(e: React.FormEvent) {
     e.preventDefault();
     if (!fornecedorPrecoAtivo) return;
     try {
       setSaving(true);
-      
+      const fornecedorIdReal = fornecedorPrecoAtivo.fornecedor_id;
+
       for (const item of itens) {
         const dados = precosTemp[item.id];
         const precoStr = dados && dados.preco ? dados.preco.toString().replace(",", ".") : "";
         const precoNum = precoStr ? parseFloat(precoStr) : null;
         const marcaStr = dados ? dados.marca : null;
 
-        // Verificar se já existe resposta cadastrada
         const existente = respostas.find(
-          (r) => r.fornecedor_id === fornecedorPrecoAtivo.fornecedor_id && r.item_id === item.id
+          (r) => String(r.fornecedor_id) === String(fornecedorIdReal) && String(r.item_id) === String(item.id)
         );
 
         if (existente) {
@@ -230,7 +230,7 @@ export default function DetalheCotacaoPage() {
           const { error: errIns } = await supabase.from("cotacao_respostas").insert([
             {
               cotacao_id: id,
-              fornecedor_id: fornecedorPrecoAtivo.fornecedor_id,
+              fornecedor_id: fornecedorIdReal,
               item_id: item.id,
               preco: precoNum,
               marca: marcaStr,
@@ -242,13 +242,14 @@ export default function DetalheCotacaoPage() {
 
       toast.success("Preços salvos com sucesso!");
       setIsPrecosOpen(false);
-      await fetchData(); // Recarrega os dados imediatamente na tela
+      await fetchData();
     } catch (error: any) {
       toast.error("Erro ao salvar preços: " + error.message);
     } finally {
       setSaving(false);
     }
   }
+
   // ---- CÁLCULOS DOS MENORES PREÇOS POR ITEM ----
   const menoresPrecosPorItem: { [itemId: string]: { menorPreco: number; fornecedorNome: string; marca: string } } = {};
   let valorTotalOtimo = 0;
@@ -259,7 +260,9 @@ export default function DetalheCotacaoPage() {
     let marcaStr = "—";
 
     fornecedoresCotacao.forEach((fc) => {
-      const resp = respostas.find((r) => r.fornecedor_id === fc.fornecedor_id && r.item_id === item.id);
+      const resp = respostas.find(
+        (r) => String(r.fornecedor_id) === String(fc.fornecedor_id) && String(r.item_id) === String(item.id)
+      );
       if (resp && resp.preco > 0) {
         if (menor === null || resp.preco < menor) {
           menor = resp.preco;
@@ -288,7 +291,6 @@ export default function DetalheCotacaoPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 print:p-0">
-      {/* Topo / Navegação (Não imprime) */}
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Button variant="outline" onClick={() => navigate({ to: "/cotacoes" })} className="gap-2">
           <ArrowLeft className="w-4 h-4" /> Voltar às Cotações
@@ -300,7 +302,6 @@ export default function DetalheCotacaoPage() {
         </div>
       </div>
 
-      {/* Cabeçalho da Cotação */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 print:border-none print:shadow-none">
         <div className="flex justify-between items-start">
           <div>
@@ -320,7 +321,6 @@ export default function DetalheCotacaoPage() {
         </div>
       </div>
 
-      {/* Ações de Gestão de Itens e Fornecedores (Não imprime) */}
       <div className="flex flex-wrap gap-3 print:hidden">
         <Button onClick={() => setIsNovoItemOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
           <Plus className="w-4 h-4" /> Adicionar Item / Peça
@@ -330,7 +330,6 @@ export default function DetalheCotacaoPage() {
         </Button>
       </div>
 
-      {/* TABELA DE COMPARATIVO DE PREÇOS */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
           <h2 className="font-bold text-slate-800 text-base">Quadro Comparativo de Preços</h2>
@@ -361,7 +360,6 @@ export default function DetalheCotacaoPage() {
                     </div>
                   </th>
                 ))}
-                {/* COLUNA FINAL: MENORES PREÇOS */}
                 <th className="p-3 border-b text-right bg-emerald-50 text-emerald-900 font-bold">
                   Menor Preço por Item
                 </th>
@@ -376,7 +374,7 @@ export default function DetalheCotacaoPage() {
                   </td>
                 </tr>
               ) : (
-                itens.map((item, idx) => {
+                itens.map((item) => {
                   const menorInfo = menoresPrecosPorItem[item.id];
                   return (
                     <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
@@ -384,12 +382,10 @@ export default function DetalheCotacaoPage() {
                       <td className="p-3 text-center text-slate-600">{item.quantidade}</td>
                       <td className="p-3 text-center text-slate-600">{item.unidade}</td>
 
-                      {/* Preços por Fornecedor */}
                       {fornecedoresCotacao.map((fc) => {
                         const resp = respostas.find(
-                          (r) => r.fornecedor_id === fc.fornecedor_id && r.item_id === item.id
+                          (r) => String(r.fornecedor_id) === String(fc.fornecedor_id) && String(r.item_id) === String(item.id)
                         );
-                        // Verificar se é o menor preço para destacar em verde
                         const isMenor = menorInfo && resp && resp.preco === menorInfo.menorPreco;
 
                         return (
@@ -397,7 +393,7 @@ export default function DetalheCotacaoPage() {
                             key={fc.fornecedor_id}
                             className={`p-3 text-right ${isMenor ? "bg-green-50 font-bold text-green-700" : "text-slate-700"}`}
                           >
-                            {resp ? (
+                            {resp && resp.preco > 0 ? (
                               <div>
                                 <div>{brl(resp.preco)}</div>
                                 {resp.marca && <div className="text-[10px] text-slate-500 font-normal">Marca: {resp.marca}</div>}
@@ -409,7 +405,6 @@ export default function DetalheCotacaoPage() {
                         );
                       })}
 
-                      {/* COLUNA FINAL: MENOR PREÇO */}
                       <td className="p-3 text-right bg-emerald-50/60 font-semibold text-emerald-800">
                         {menorInfo ? (
                           <div>
@@ -436,14 +431,15 @@ export default function DetalheCotacaoPage() {
                 })
               )}
             </tbody>
-            {/* RODAPÉ COM TOTAIS */}
             <tfoot className="bg-slate-100 font-bold text-slate-800">
               <tr>
                 <td colSpan={3} className="p-3 text-right">VALOR TOTAL:</td>
                 {fornecedoresCotacao.map((fc) => {
                   let totalForn = 0;
                   itens.forEach((item) => {
-                    const resp = respostas.find((r) => r.fornecedor_id === fc.fornecedor_id && r.item_id === item.id);
+                    const resp = respostas.find(
+                      (r) => String(r.fornecedor_id) === String(fc.fornecedor_id) && String(r.item_id) === String(item.id)
+                    );
                     if (resp && resp.preco > 0) {
                       totalForn += resp.preco * (item.quantidade || 1);
                     }
@@ -454,7 +450,6 @@ export default function DetalheCotacaoPage() {
                     </td>
                   );
                 })}
-                {/* TOTAL OTIMIZADO */}
                 <td className="p-3 text-right bg-emerald-100 text-emerald-900 text-base">
                   {brl(valorTotalOtimo)}
                 </td>
@@ -465,7 +460,6 @@ export default function DetalheCotacaoPage() {
         </div>
       </div>
 
-      {/* MODAL: ADICIONAR ITEM */}
       <Dialog open={isNovoItemOpen} onOpenChange={setIsNovoItemOpen}>
         <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
@@ -494,7 +488,6 @@ export default function DetalheCotacaoPage() {
         </DialogContent>
       </Dialog>
 
-      {/* MODAL: VINCULAR FORNECEDOR */}
       <Dialog open={isVincularFornecedorOpen} onOpenChange={setIsVincularFornecedorOpen}>
         <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
@@ -525,7 +518,6 @@ export default function DetalheCotacaoPage() {
         </DialogContent>
       </Dialog>
 
-      {/* MODAL: INSERIR / EDITAR PREÇOS DO FORNECEDOR */}
       <Dialog open={isPrecosOpen} onOpenChange={setIsPrecosOpen}>
         <DialogContent className="sm:max-w-2xl bg-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -580,7 +572,6 @@ export default function DetalheCotacaoPage() {
         </DialogContent>
       </Dialog>
 
-      {/* MODAL: ORÇAMENTO EXCLUSIVO DO FORNECEDOR */}
       <Dialog open={isOrcamentoFornecedorOpen} onOpenChange={setIsOrcamentoFornecedorOpen}>
         <DialogContent className="sm:max-w-3xl bg-white max-h-[90vh] overflow-y-auto print:shadow-none print:border-none">
           {fornecedorImprimir && (
@@ -594,11 +585,6 @@ export default function DetalheCotacaoPage() {
                   <p className="text-xs text-slate-600">
                     CNPJ: {fornecedorImprimir.fornecedores?.cnpj || "—"} | Tel: {fornecedorImprimir.fornecedores?.telefone || "—"}
                   </p>
-                  {fornecedorImprimir.fornecedores?.banco && (
-                    <p className="text-xs text-slate-500 mt-1">
-                      Dados Bancários: {fornecedorImprimir.fornecedores.banco} | Ag: {fornecedorImprimir.fornecedores.agencia} | CC: {fornecedorImprimir.fornecedores.conta} | PIX: {fornecedorImprimir.fornecedores.pix}
-                    </p>
-                  )}
                 </div>
                 <div className="text-right">
                   <span className="text-xs font-bold bg-slate-100 text-slate-800 px-2 py-1 rounded">
@@ -608,7 +594,6 @@ export default function DetalheCotacaoPage() {
                 </div>
               </div>
 
-              {/* Tabela do Orçamento Exclusivo */}
               <table className="w-full text-left text-sm border-collapse mt-4">
                 <thead>
                   <tr className="bg-slate-100 text-xs uppercase text-slate-700">
@@ -623,7 +608,7 @@ export default function DetalheCotacaoPage() {
                 <tbody>
                   {itens.map((item) => {
                     const resp = respostas.find(
-                      (r) => r.fornecedor_id === fornecedorImprimir.fornecedor_id && r.item_id === item.id
+                      (r) => String(r.fornecedor_id) === String(fornecedorImprimir.fornecedor_id) && String(r.item_id) === String(item.id)
                     );
                     const preco = resp ? resp.preco : 0;
                     const subtotal = preco * (item.quantidade || 1);
@@ -646,7 +631,7 @@ export default function DetalheCotacaoPage() {
                       {brl(
                         itens.reduce((acc, item) => {
                           const resp = respostas.find(
-                            (r) => r.fornecedor_id === fornecedorImprimir.fornecedor_id && r.item_id === item.id
+                            (r) => String(r.fornecedor_id) === String(fornecedorImprimir.fornecedor_id) && String(r.item_id) === String(item.id)
                           );
                           return acc + (resp ? resp.preco * (item.quantidade || 1) : 0);
                         }, 0)
