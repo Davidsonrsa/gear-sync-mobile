@@ -14,6 +14,7 @@ import {
   Pencil,
   Loader2,
   Trash2,
+  Calculator,
 } from "lucide-react";
 import {
   Dialog,
@@ -379,6 +380,8 @@ function NotasFiscaisPage() {
     );
   });
 
+  const valorTotalSomatoria = notasFiltradas.reduce((acc, nota) => acc + (nota.valor || 0), 0);
+
   return (
     <div className="p-2 md:p-4 w-full max-w-full space-y-3">
       <div className="flex flex-row items-center justify-between">
@@ -435,10 +438,17 @@ function NotasFiscaisPage() {
         </div>
       </div>
 
-      <div className="flex gap-2 items-center bg-white p-3 rounded-lg border border-slate-200">
+      <div className="flex flex-col md:flex-row gap-2 items-center justify-between bg-white p-3 rounded-lg border border-slate-200">
         <div className="relative w-full md:w-72">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
           <Input placeholder="Buscar..." className="pl-8 text-xs h-9" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-md text-blue-900 text-xs font-medium w-full md:w-auto justify-between md:justify-end">
+          <div className="flex items-center gap-1.5">
+            <Calculator className="w-4 h-4 text-blue-600" />
+            <span>Valor Total Lançado:</span>
+          </div>
+          <span className="font-bold text-sm text-blue-700">{formatBRL(valorTotalSomatoria)}</span>
         </div>
       </div>
 
