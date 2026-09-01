@@ -19,6 +19,8 @@ import {
   Loader2,
   CheckCircle2,
   FileText,
+  MessageCircle,
+  Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -63,6 +65,7 @@ interface Fornecedor {
   nome_fantasia?: string;
   cnpj?: string;
   telefone?: string;
+  email?: string;
 }
 
 interface CotacaoFornecedor {
@@ -89,6 +92,7 @@ export default function DetalheCotacaoPage() {
   const [fornecedoresCotacao, setFornecedoresCotacao] = useState<CotacaoFornecedor[]>([]);
   const [respostas, setRespostas] = useState<RespostaPreco[]>([]);
   const [todosFornecedores, setTodosFornecedores] = useState<Fornecedor[]>([]);
+  const [usuarioNome, setUsuarioNome] = useState("Usuário");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -122,6 +126,25 @@ export default function DetalheCotacaoPage() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
+
+      // Buscar usuário logado atual
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Tenta buscar nome do perfil se houver tabela profiles, senão pega do metadata ou email
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("nome")
+          .eq("id", user.id)
+          .single();
+        
+        if (profile?.nome) {
+          setUsuarioNome(profile.nome);
+        } else if (user.user_metadata?.name) {
+          setUsuarioNome(user.user_metadata.name);
+        } else if (user.email) {
+          setUsuarioNome(user.email.split("@")[0].toUpperCase());
+        }
+      }
 
       if (id === "nova") {
         setCotacao(null);
@@ -384,6 +407,41 @@ export default function DetalheCotacaoPage() {
     setIsOrcamentoOpen(true);
   }
 
+  function gerarTextoOrcamento() {
+    const fornNome = fornecedorOrcamentoAtivo?.fornecedores?.nome_fantasia || fornecedorOrcamentoAtivo?.fornecedores?.razao_social || "Prezado Fornecedor";
+    let texto = `*SOLICITAÇÃO DE ORÇAMENTO - COTAÇÃO Nº ${cotacao?.numero}*\n`;
+    texto += `*Fornecedor:* ${fornNome}\n`;
+    texto += `*Solicitante:* ${usuarioNome}\n`;
+    texto += `*Equipamento/Patrimônio:* ${cotacao?.patrimonio || "—"}\n`;
+    texto += `*Setor:* ${cotacao?.setor || "—"} | *Data:* ${formatarData(cotacao?.data_cotacao)}\n\n`;
+    texto += `*ITENS SOLICITADOS:*\n`;
+    
+    itens.forEach((item, index) => {
+      texto += `${index + 1}. *${item.descricao}* (Cód: ${item.codigo || "N/D"}) - Qtd: ${item.quantidade} ${item.unidade}\n`;
+    });
+
+    if (cotacao?.observacoes) {
+      texto += `\n*Obs:* ${cotacao.observacoes}\n`;
+    }
+    texto += `\nPor gentileza, retornar com os preços unitários e marcas dos itens acima. Obrigado!`;
+    return texto;
+  }
+
+  function enviarPorWhatsApp() {
+    const telefone = fornecedorOrcamentoAtivo?.fornecedores?.telefone?.replace(/\D/g, "") || "";
+    const texto = encodeURIComponent(gerarTextoOrcamento());
+    const url = telefone ? `https://wa.me/55${telefone}?text=${texto}` : `https://wa.me/?text=${texto}`;
+    window.open(url, "_blank");
+  }
+
+  function enviarPorEmail() {
+    const email = fornecedorOrcamentoAtivo?.fornecedores?.email || "";
+    const assunto = encodeURIComponent(`Solicitação de Orçamento - Cotação Nº ${cotacao?.numero}`);
+    const corpo = encodeURIComponent(gerarTextoOrcamento().replace(/\*/g, ""));
+    const url = `mailto:${email}?subject=${assunto}&body=${corpo}`;
+    window.open(url, "_blank");
+  }
+
   async function handleSalvarPrecos(e: React.FormEvent) {
     e.preventDefault();
     if (!fornecedorPrecoAtivo) return;
@@ -544,7 +602,7 @@ export default function DetalheCotacaoPage() {
               Patrimônio / Equipamento: {cotacao.patrimonio || "Não informado"}
             </h1>
             <p className="text-sm text-slate-600 mt-1">
-              Setor: {cotacao.setor || "—"} | Data: {formatarData(cotacao.data_cotacao)}
+              Setor: {cotacao.setor || "—"} | Data: {formatarData(cotacao.data_cotacao)} | <strong>Solicitante:</strong> {usuarioNome}
             </p>
             {cotacao.observacoes && <p className="text-xs text-slate-500 mt-2">Obs: {cotacao.observacoes}</p>}
           </div>
@@ -739,11 +797,15 @@ export default function DetalheCotacaoPage() {
               <p><strong>Cotação Nº:</strong> {cotacao.numero}</p>
               <p><strong>Equipamento / Patrimônio:</strong> {cotacao.patrimonio || "—"}</p>
               <p><strong>Setor:</strong> {cotacao.setor || "—"} | <strong>Data:</strong> {formatarData(cotacao.data_cotacao)}</p>
+              <p><strong>Solicitante:</strong> <span className="text-blue-700 font-bold">{usuarioNome}</span></p>
               {fornecedorOrcamentoAtivo?.fornecedores?.cnpj && (
                 <p><strong>CNPJ Fornecedor:</strong> {fornecedorOrcamentoAtivo.fornecedores.cnpj}</p>
               )}
               {fornecedorOrcamentoAtivo?.fornecedores?.telefone && (
                 <p><strong>Telefone:</strong> {fornecedorOrcamentoAtivo.fornecedores.telefone}</p>
+              )}
+              {fornecedorOrcamentoAtivo?.fornecedores?.email && (
+                <p><strong>E-mail:</strong> {fornecedorOrcamentoAtivo.fornecedores.email}</p>
               )}
             </div>
 
@@ -782,13 +844,23 @@ export default function DetalheCotacaoPage() {
             )}
           </div>
 
-          <DialogFooter className="flex gap-2 justify-end">
-            <Button type="button" variant="outline" onClick={() => setIsOrcamentoOpen(false)}>
-              Fechar
-            </Button>
-            <Button type="button" onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-900 text-white gap-2">
-              <Printer className="w-4 h-4" /> Imprimir / Salvar PDF
-            </Button>
+          <DialogFooter className="flex flex-wrap gap-2 justify-between items-center pt-2 border-t">
+            <div className="flex gap-2">
+              <Button type="button" onClick={enviarPorWhatsApp} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 text-xs">
+                <MessageCircle className="w-4 h-4" /> Enviar por WhatsApp
+              </Button>
+              <Button type="button" onClick={enviarPorEmail} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 text-xs">
+                <Mail className="w-4 h-4" /> Enviar por E-mail
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" onClick={() => window.print()} variant="outline" className="gap-2 text-xs">
+                <Printer className="w-4 h-4" /> Imprimir PDF
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setIsOrcamentoOpen(false)} className="text-xs">
+                Fechar
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
