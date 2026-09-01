@@ -403,6 +403,221 @@ export default function CotacoesPage() {
         )}
       </div>
 
+      {/* MODAL: NOVA COTAÇÃO */}
+      <Dialog open={isNovaCotacaoOpen} onOpenChange={setIsNovaCotacaoOpen}>
+        <DialogContent className="sm:max-w-lg bg-white max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-slate-800">Nova Cotação</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Preencha os dados básicos para iniciar uma nova cotação.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateCotacao} className="space-y-3 mt-2">
+            <div>
+              <Label className="text-xs font-semibold text-slate-700">Número da Cotação *</Label>
+              <Input
+                value={numero}
+                onChange={(e) => setNumero(e.target.value)}
+                required
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-slate-700">Patrimônio / Equipamento</Label>
+              <Input
+                value={patrimonio}
+                onChange={(e) => setPatrimonio(e.target.value)}
+                placeholder="Ex: CAMINHÃO 01"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-slate-700">Setor</Label>
+              <Input
+                value={setor}
+                onChange={(e) => setSetor(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-slate-700">Observações</Label>
+              <Input
+                value={observacoes}
+                onChange={(e) => setObservacoes(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <DialogFooter className="mt-4 flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => setIsNovaCotacaoOpen(false)} disabled={saving}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                {saving ? "Salvando..." : "Criar Cotação"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL: NOVO FORNECEDOR */}
+      <Dialog open={isNovoFornecedorOpen} onOpenChange={setIsNovoFornecedorOpen}>
+        <DialogContent className="sm:max-w-lg bg-white max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-slate-800">Cadastrar Fornecedor</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Insira os dados do novo fornecedor.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCadastrarFornecedor} className="space-y-3 mt-2">
+            <div>
+              <Label className="text-xs font-semibold text-slate-700">Razão Social *</Label>
+              <Input
+                value={razaoSocial}
+                onChange={(e) => setRazaoSocial(e.target.value)}
+                required
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-slate-700">Nome Fantasia</Label>
+              <Input
+                value={nomeFantasia}
+                onChange={(e) => setNomeFantasia(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">CNPJ</Label>
+                <Input
+                  value={cnpj}
+                  onChange={(e) => setCnpj(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Telefone / WhatsApp</Label>
+                <Input
+                  value={telefone}
+                  onChange={(e) => setTelefone(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-slate-700">E-mail</Label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div className="border-t border-slate-200 pt-3 mt-3">
+              <p className="text-xs font-bold text-slate-700 mb-2">Dados para Pagamento</p>
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Banco</Label>
+                  <Input
+                    value={banco}
+                    onChange={(e) => setBanco(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Agência</Label>
+                  <Input
+                    value={agencia}
+                    onChange={(e) => setAgencia(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Conta</Label>
+                  <Input
+                    value={conta}
+                    onChange={(e) => setConta(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <div className="mt-2">
+                <Label className="text-xs font-semibold text-slate-700">Chave Pix</Label>
+                <Input
+                  value={pix}
+                  onChange={(e) => setPix(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <DialogFooter className="mt-4 flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => setIsNovoFornecedorOpen(false)} disabled={saving}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                {saving ? "Salvando..." : "Cadastrar Fornecedor"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL: EDITAR COTAÇÃO */}
+      <Dialog open={isEditarCotacaoOpen} onOpenChange={setIsEditarCotacaoOpen}>
+        <DialogContent className="sm:max-w-lg bg-white max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-slate-800">Editar Cotação</DialogTitle>
+          </DialogHeader>
+          {cotacaoEditando && (
+            <form onSubmit={handleUpdateCotacao} className="space-y-3 mt-2">
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Número da Cotação *</Label>
+                <Input
+                  value={cotacaoEditando.numero || ""}
+                  onChange={(e) => setCotacaoEditando({ ...cotacaoEditando, numero: e.target.value })}
+                  required
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Patrimônio / Equipamento</Label>
+                <Input
+                  value={cotacaoEditando.patrimonio || ""}
+                  onChange={(e) => setCotacaoEditando({ ...cotacaoEditando, patrimonio: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Setor</Label>
+                <Input
+                  value={cotacaoEditando.setor || ""}
+                  onChange={(e) => setCotacaoEditando({ ...cotacaoEditando, setor: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Observações</Label>
+                <Input
+                  value={cotacaoEditando.observacoes || ""}
+                  onChange={(e) => setCotacaoEditando({ ...cotacaoEditando, observacoes: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <DialogFooter className="mt-4 flex gap-2 justify-end">
+                <Button type="button" variant="outline" onClick={() => setIsEditarCotacaoOpen(false)} disabled={saving}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                  {saving ? "Salvando..." : "Salvar Alterações"}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* MODAL: CONSULTAR / GERENCIAR FORNECEDORES */}
       <Dialog open={isGerenciarFornecedoresOpen} onOpenChange={setIsGerenciarFornecedoresOpen}>
         <DialogContent className="sm:max-w-3xl bg-white max-h-[85vh] overflow-y-auto">
