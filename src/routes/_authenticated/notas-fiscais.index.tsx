@@ -15,6 +15,7 @@ import {
   Loader2,
   Trash2,
   Calculator,
+  FilterX,
 } from "lucide-react";
 import {
   Dialog,
@@ -181,6 +182,8 @@ function NotasFiscaisPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [busca, setBusca] = useState("");
+  const [dataInicio, setDataInicio] = useState("");
+  const [dataFim, setDataFim] = useState("");
 
   const [numeroNf, setNumeroNf] = useState("");
   const [fornecedor, setFornecedor] = useState("");
@@ -370,14 +373,28 @@ function NotasFiscaisPage() {
 
   const notasFiltradas = notasList.filter((nota) => {
     const termo = busca.trim().toLowerCase();
-    return (
+    const matchBusca =
       !termo ||
       nota.nf.toLowerCase().includes(termo) ||
       nota.fornecedor.toLowerCase().includes(termo) ||
       nota.identificacao.toLowerCase().includes(termo) ||
       nota.cl.toLowerCase().includes(termo) ||
-      nota.observacao.toLowerCase().includes(termo)
-    );
+      nota.observacao.toLowerCase().includes(termo);
+
+    let matchData = true;
+    const dataNota = nota.data && nota.data !== "—" ? nota.data.split("T")[0] : "";
+
+    if (dataInicio && dataNota) {
+      if (dataNota < dataInicio) matchData = false;
+    }
+    if (dataFim && dataNota) {
+      if (dataNota > dataFim) matchData = false;
+    }
+    if ((dataInicio || dataFim) && !dataNota) {
+      matchData = false;
+    }
+
+    return matchBusca && matchData;
   });
 
   const valorTotalSomatoria = notasFiltradas.reduce((acc, nota) => acc + (nota.valor || 0), 0);
@@ -439,10 +456,29 @@ function NotasFiscaisPage() {
       </div>
 
       <div className="flex flex-col md:flex-row gap-2 items-center justify-between bg-white p-3 rounded-lg border border-slate-200">
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-          <Input placeholder="Buscar..." className="pl-8 text-xs h-9" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        <div className="flex flex-col md:flex-row gap-2 items-center w-full md:w-auto">
+          <div className="relative w-full md:w-64">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+            <Input placeholder="Buscar..." className="pl-8 text-xs h-9" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          </div>
+          <div className="flex items-center gap-1.5 w-full md:w-auto">
+            <div className="flex flex-col">
+              <span className="text-[10px] text-slate-500 font-medium">Data Início</span>
+              <Input type="date" className="text-xs h-9 w-full md:w-36" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
+            </div>
+            <span className="text-slate-400 mt-4">-</span>
+            <div className="flex flex-col">
+              <span className="text-[10px] text-slate-500 font-medium">Data Fim</span>
+              <Input type="date" className="text-xs h-9 w-full md:w-36" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
+            </div>
+            {(dataInicio || dataFim || busca) && (
+              <Button variant="ghost" size="icon" className="h-9 w-9 mt-4 text-slate-500 hover:text-slate-800" onClick={() => { setBusca(""); setDataInicio(""); setDataFim(""); }} title="Limpar Filtros">
+                <FilterX className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
+
         <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-md text-blue-900 text-xs font-medium w-full md:w-auto justify-between md:justify-end">
           <div className="flex items-center gap-1.5">
             <Calculator className="w-4 h-4 text-blue-600" />
