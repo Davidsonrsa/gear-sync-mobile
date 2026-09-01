@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Eye, Trash2, Loader2, Users, UserPlus } from "lucide-react";
+import { Search, Plus, Eye, Trash2, Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/cotacoes")({
@@ -38,7 +38,6 @@ export default function ListaCotacoesPage() {
   const [cotacoes, setCotacoes] = useState<Cotacao[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Estados dos filtros
   const [filtroNumero, setFiltroNumero] = useState("");
   const [filtroPatrimonio, setFiltroPatrimonio] = useState("");
   const [filtroSetor, setFiltroSetor] = useState("");
@@ -66,7 +65,6 @@ export default function ListaCotacoesPage() {
     fetchCotacoes();
   }, []);
 
-  // Lógica de filtragem em tempo real dos dados
   const cotacoesFiltradas = useMemo(() => {
     return cotacoes.filter((cot) => {
       const matchNumero = String(cot.numero)
@@ -111,14 +109,12 @@ export default function ListaCotacoesPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
-      {/* Cabeçalho */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Gerenciamento de Cotações</h1>
           <p className="text-sm text-slate-600">Acompanhe e registre cotações de peças e serviços da frota</p>
         </div>
         
-        {/* Ações e Atalhos de Fornecedores */}
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
@@ -126,14 +122,6 @@ export default function ListaCotacoesPage() {
             className="gap-2 border-slate-300 text-slate-700 hover:bg-slate-50"
           >
             <Users className="w-4 h-4" /> Consultar Fornecedores
-          </Button>
-
-          <Button
-            variant="outline"
-            onClick={() => navigate({ to: "/fornecedores/novo" })}
-            className="gap-2 border-slate-300 text-slate-700 hover:bg-slate-50"
-          >
-            <UserPlus className="w-4 h-4" /> Cadastrar Fornecedor
           </Button>
 
           <Button
@@ -145,7 +133,6 @@ export default function ListaCotacoesPage() {
         </div>
       </div>
 
-      {/* BARRA DE FILTROS */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
         <div>
           <label className="text-xs font-semibold text-slate-600">Filtrar por Número</label>
@@ -194,7 +181,6 @@ export default function ListaCotacoesPage() {
         </div>
       </div>
 
-      {/* Tabela de Listagem */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm border-collapse">
