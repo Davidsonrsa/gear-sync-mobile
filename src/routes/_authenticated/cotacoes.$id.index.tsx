@@ -64,7 +64,7 @@ interface RespostaPreco {
   id: string | number;
   cotacao_id: string | number;
   fornecedor_id: string | number;
-  item_id: string | number;
+  cotacao_item_id: string | number;
   preco: number;
   marca?: string;
 }
@@ -191,7 +191,7 @@ export default function DetalheCotacaoPage() {
     if (!confirm("Deseja excluir este item?")) return;
     try {
       await supabase.from("cotacao_itens").delete().eq("id", itemId);
-      await supabase.from("cotacao_respostas").delete().eq("item_id", itemId);
+      await supabase.from("cotacao_respostas").delete().eq("cotacao_item_id", itemId);
       toast.success("Item excluído.");
       fetchData();
     } catch (error: unknown) {
@@ -247,7 +247,7 @@ export default function DetalheCotacaoPage() {
     itens.forEach((item) => {
       const resp = respostas.find(
         (r) => String(r.fornecedor_id).trim() === String(fc.fornecedor_id).trim() && 
-               String(r.item_id).trim() === String(item.id).trim()
+               String(r.cotacao_item_id).trim() === String(item.id).trim()
       );
       map[item.id] = {
         preco: resp && resp.preco !== null && resp.preco !== undefined ? resp.preco.toString() : "",
@@ -274,7 +274,7 @@ export default function DetalheCotacaoPage() {
 
         const existente = respostas.find(
           (r) => String(r.fornecedor_id).trim() === String(fornecedorIdReal).trim() && 
-                 String(r.item_id).trim() === String(item.id).trim()
+                 String(r.cotacao_item_id).trim() === String(item.id).trim()
         );
 
         if (existente) {
@@ -295,7 +295,7 @@ export default function DetalheCotacaoPage() {
           const payload = {
             cotacao_id: id,
             fornecedor_id: fornecedorIdReal,
-            item_id: item.id,
+            cotacao_item_id: item.id,
             preco: precoNum,
             marca: marcaStr,
           };
@@ -333,7 +333,7 @@ export default function DetalheCotacaoPage() {
       fornecedoresCotacao.forEach((fc) => {
         const resp = respostas.find(
           (r) => String(r.fornecedor_id).trim() === String(fc.fornecedor_id).trim() && 
-                 String(r.item_id).trim() === String(item.id).trim()
+                 String(r.cotacao_item_id).trim() === String(item.id).trim()
         );
         
         if (resp && typeof resp.preco === 'number' && resp.preco > 0) {
@@ -463,7 +463,7 @@ export default function DetalheCotacaoPage() {
                       {fornecedoresCotacao.map((fc) => {
                         const resp = respostas.find(
                           (r) => String(r.fornecedor_id).trim() === String(fc.fornecedor_id).trim() && 
-                                 String(r.item_id).trim() === String(item.id).trim()
+                                 String(r.cotacao_item_id).trim() === String(item.id).trim()
                         );
                         const isMenor = menorInfo && resp && resp.preco === menorInfo.menorPreco;
 
@@ -518,7 +518,7 @@ export default function DetalheCotacaoPage() {
                   itens.forEach((item) => {
                     const resp = respostas.find(
                       (r) => String(r.fornecedor_id).trim() === String(fc.fornecedor_id).trim() && 
-                             String(r.item_id).trim() === String(item.id).trim()
+                             String(r.cotacao_item_id).trim() === String(item.id).trim()
                     );
                     if (resp && resp.preco > 0) {
                       totalForn += resp.preco * (item.quantidade || 1);
@@ -695,7 +695,7 @@ export default function DetalheCotacaoPage() {
                   {itens.map((item) => {
                     const resp = respostas.find(
                       (r) => String(r.fornecedor_id).trim() === String(fornecedorImprimir.fornecedor_id).trim() && 
-                             String(r.item_id).trim() === String(item.id).trim()
+                             String(r.cotacao_item_id).trim() === String(item.id).trim()
                     );
                     const preco = resp ? resp.preco : 0;
                     const subtotal = preco * (item.quantidade || 1);
@@ -720,7 +720,7 @@ export default function DetalheCotacaoPage() {
                         itens.reduce((acc, item) => {
                           const resp = respostas.find(
                             (r) => String(r.fornecedor_id).trim() === String(fornecedorImprimir.fornecedor_id).trim() && 
-                                   String(r.item_id).trim() === String(item.id).trim()
+                                   String(r.cotacao_item_id).trim() === String(item.id).trim()
                           );
                           return acc + (resp ? resp.preco * (item.quantidade || 1) : 0);
                         }, 0)
