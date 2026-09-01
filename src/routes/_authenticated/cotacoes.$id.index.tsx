@@ -28,7 +28,6 @@ export const Route = createFileRoute("/_authenticated/cotacoes/$id")({
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-// Função para formatar a data do padrão americano (YYYY-MM-DD) para o brasileiro (DD/MM/YYYY)
 const formatarData = (dataStr?: string) => {
   if (!dataStr) return "—";
   const partes = dataStr.split("T")[0].split("-");
@@ -92,11 +91,17 @@ export default function DetalheCotacaoPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Estados para o formulário de NOVA COTAÇÃO (caso id === "nova")
+  const [novaNumero, setNovaNumero] = useState("");
+  const [novaPatrimonio, setNovaPatrimonio] = useState("");
+  const [novaSetor, setNovaSetor] = useState("");
+  const [novaData, setNovaData] = useState("");
+  const [novaObs, setNovaObs] = useState("");
+
   // Modais
   const [isNovoItemOpen, setIsNovoItemOpen] = useState(false);
   const [isVincularFornecedorOpen, setIsVincularFornecedorOpen] = useState(false);
   const [isPrecosOpen, setIsPrecosOpen] = useState(false);
-  const [isOrcamentoFornecedorOpen, setIsOrcamentoFornecedorOpen] = useState(false);
 
   // Form Item
   const [codigoItem, setCodigoItem] = useState("");
@@ -111,12 +116,28 @@ export default function DetalheCotacaoPage() {
   const [fornecedorPrecoAtivo, setFornecedorPrecoAtivo] = useState<CotacaoFornecedor | null>(null);
   const [precosTemp, setPrecosTemp] = useState<{ [itemId: string]: { preco: string; marca: string } }>({});
 
-  // Orçamento Individual
-  const [fornecedorImprimir, setFornecedorImprimir] = useState<CotacaoFornecedor | null>(null);
-
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
+
+      // CORREÇÃO PRINCIPAL: Se for "nova", não busca no banco por UUID
+      if (id === "nova") {
+        setCotacao(null);
+        setItens([]);
+        setFornecedoresCotacao([]);
+        setRespostas([]);
+        
+        // Buscar apenas a lista de fornecedores gerais para caso queira cadastrar depois
+        const { data: allForn, error: allFornErr } = await supabase
+          .from("fornecedores")
+          .select("*")
+          .order("razao_social", { ascending: true });
+        if (allFornErr) throw allFornErr;
+        setTodosFornecedores(allForn || []);
+        
+        setLoading(false);
+        return;
+      }
       
       const { data: cotData, error: cotErr } = await supabase
         .from("cotacoes")
@@ -166,6 +187,42 @@ export default function DetalheCotacaoPage() {
     fetchData();
   }, [fetchData]);
 
+  // Criar nova cotação no banco de dados caso id seja "nova"
+  async function handleCriarCotacao(e: React.FormEvent) {
+    e.preventDefault();
+    if (!novaNumero.trim()) return toast.error("Informe o número da cotação.");
+    
+    try {
+      setSaving(true);
+      const { data, error } = await supabase
+        .from("cotacoes")
+        .insert([
+          {
+            numero: novaNumero.trim(),
+            patrimonio: novaPatrimonio.trim() || null,
+            setor: novaSetor.trim() || null,
+            data_cotacao: novaData || new Date().toISOString().split("T")[0],
+            observacoes: novaObs.trim() || null,
+            status: "RASCUNHO",
+            valor_total: 0
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+      toast.success("Cotação criada com sucesso!");
+      
+      // Redireciona para a página de detalhes usando o ID gerado pelo banco
+      navigate({ to: `/cotacoes/${data.id}` });
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error("Erro ao criar cotação: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   // Cálculos de Menores Preços e Totais Otimizados
   const { menoresPrecosPorItem, valorTotalOtimo } = useMemo(() => {
     const menoresMap: { [itemId: string]: { menorTotal: number; menorUnitario: number; fornecedorNome: string; marca: string } } = {};
@@ -208,10 +265,10 @@ export default function DetalheCotacaoPage() {
     return { menoresPrecosPorItem: menoresMap, valorTotalOtimo: totalOtimo };
   }, [itens, fornecedoresCotacao, respostas]);
 
-  // Sincronizar o total otimizado e status com a tabela principal 'cotacoes' para exibir na listagem
+  // Sincronizar o total otimizado e status com a tabela principal 'cotacoes'
   useEffect(() => {
     async function atualizarTotalCotacao() {
-      if (!id || itens.length === 0) return;
+      if (id === "nova" || !id || itens.length === 0) return;
       try {
         await supabase
           .from("cotacoes")
@@ -383,6 +440,85 @@ export default function DetalheCotacaoPage() {
     );
   }
 
+  // TELA DE CADASTRO DE NOVA COTAÇÃO
+  if (id === "nova") {
+    return (
+      <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <Button variant="outline" onClick={() => navigate({ to: "/cotacoes" })} className="gap-2">
+            <ArrowLeft className="w-4 h-4" /> Voltar às Cotações
+          </Button>
+          <h1 className="text-xl font-bold text-slate-800">Nova Cotação</h1>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <form onSubmit={handleCriarCotacao} className="space-y-4">
+            <div>
+              <Label className="text-xs font-semibold text-slate-700">Número da Cotação *</Label>
+              <Input
+                placeholder="Ex: 0005"
+                value={novaNumero}
+                onChange={(e) => setNovaNumero(e.target.value)}
+                required
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs font-semibold text-slate-700">Patrimônio / Equipamento</Label>
+              <Input
+                placeholder="Ex: RE50- VIDRO"
+                value={novaPatrimonio}
+                onChange={(e) => setNovaPatrimonio(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs font-semibold text-slate-700">Setor</Label>
+              <Input
+                placeholder="Ex: MANUTENÇÃO"
+                value={novaSetor}
+                onChange={(e) => setNovaSetor(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs font-semibold text-slate-700">Data da Cotação</Label>
+              <Input
+                type="date"
+                value={novaData}
+                onChange={(e) => setNovaData(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs font-semibold text-slate-700">Observações</Label>
+              <Input
+                placeholder="Observações adicionais..."
+                value={novaObs}
+                onChange={(e) => setNovaObs(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => navigate({ to: "/cotacoes" })}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Avançar para Adicionar Itens
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   if (!cotacao) return <div className="p-6 text-center">Cotação não encontrada.</div>;
 
   return (
@@ -407,7 +543,6 @@ export default function DetalheCotacaoPage() {
             <h1 className="text-2xl font-bold text-slate-800 mt-2">
               Patrimônio / Equipamento: {cotacao.patrimonio || "Não informado"}
             </h1>
-            {/* Aqui a data foi corrigida para usar formatarData */}
             <p className="text-sm text-slate-600 mt-1">
               Setor: {cotacao.setor || "—"} | Data: {formatarData(cotacao.data_cotacao)}
             </p>
@@ -450,10 +585,6 @@ export default function DetalheCotacaoPage() {
                       <div className="text-[10px] text-slate-500 print:hidden flex justify-end gap-1 mt-1">
                         <button type="button" onClick={() => abrirModalPrecos(fc)} className="text-blue-600 hover:underline">
                           Editar Preços
-                        </button>
-                        <span>|</span>
-                        <button type="button" onClick={() => { setFornecedorImprimir(fc); setIsOrcamentoFornecedorOpen(true); }} className="text-emerald-600 hover:underline">
-                          Orçamento
                         </button>
                         <span>|</span>
                         <button type="button" onClick={() => handleRemoverFornecedor(fornId)} className="text-red-600 hover:underline">
@@ -569,7 +700,7 @@ export default function DetalheCotacaoPage() {
         </div>
       </div>
 
-      {/* CAMPO DE ASSINATURAS DOS 3 RESPONSÁVEIS (EXCLUSIVO PARA IMPRESSÃO) */}
+      {/* CAMPO DE ASSINATURAS DOS RESPONSÁVEIS (EXCLUSIVO PARA IMPRESSÃO) */}
       <div className="hidden print:block mt-12 pt-8 border-t border-slate-400">
         <div className="grid grid-cols-3 gap-8 text-center">
           <div className="space-y-2">
@@ -590,7 +721,7 @@ export default function DetalheCotacaoPage() {
         </div>
       </div>
 
-      {/* MODAIS (Item, Vincular, Preços, Orçamento) */}
+      {/* MODAIS */}
       <Dialog open={isNovoItemOpen} onOpenChange={setIsNovoItemOpen}>
         <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader><DialogTitle>Adicionar Item / Peça</DialogTitle></DialogHeader>
