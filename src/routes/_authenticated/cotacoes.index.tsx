@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Eye, Edit, Trash2, Loader2 } from "lucide-react";
+import { Search, Plus, Eye, Trash2, Loader2, Users, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/cotacoes")({
@@ -117,9 +117,27 @@ export default function ListaCotacoesPage() {
           <h1 className="text-2xl font-bold text-slate-800">Gerenciamento de Cotações</h1>
           <p className="text-sm text-slate-600">Acompanhe e registre cotações de peças e serviços da frota</p>
         </div>
-        <div className="flex gap-2">
+        
+        {/* Ações e Atalhos de Fornecedores */}
+        <div className="flex flex-wrap gap-2">
           <Button
-            onClick={() => navigate({ to: "/cotacoes/nova" })} // Ajuste a rota se necessário
+            variant="outline"
+            onClick={() => navigate({ to: "/fornecedores" })}
+            className="gap-2 border-slate-300 text-slate-700 hover:bg-slate-50"
+          >
+            <Users className="w-4 h-4" /> Consultar Fornecedores
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => navigate({ to: "/fornecedores/novo" })}
+            className="gap-2 border-slate-300 text-slate-700 hover:bg-slate-50"
+          >
+            <UserPlus className="w-4 h-4" /> Cadastrar Fornecedor
+          </Button>
+
+          <Button
+            onClick={() => navigate({ to: "/cotacoes/nova" })}
             className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
           >
             <Plus className="w-4 h-4" /> Nova Cotação
