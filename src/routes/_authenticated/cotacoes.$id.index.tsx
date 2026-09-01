@@ -29,7 +29,7 @@ const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 interface Cotacao {
-  id: string;
+  id: string | number;
   numero: string | number;
   patrimonio?: string;
   setor?: string;
@@ -38,15 +38,15 @@ interface Cotacao {
 }
 
 interface ItemCotacao {
-  id: string;
-  cotacao_id: string;
+  id: string | number;
+  cotacao_id: string | number;
   descricao: string;
   quantidade: number;
   unidade: string;
 }
 
 interface Fornecedor {
-  id: string;
+  id: string | number;
   razao_social: string;
   nome_fantasia?: string;
   cnpj?: string;
@@ -54,16 +54,16 @@ interface Fornecedor {
 }
 
 interface CotacaoFornecedor {
-  cotacao_id: string;
-  fornecedor_id: string;
+  cotacao_id: string | number;
+  fornecedor_id: string | number;
   fornecedores?: Fornecedor;
 }
 
 interface RespostaPreco {
-  id: string;
-  cotacao_id: string;
-  fornecedor_id: string;
-  item_id: string;
+  id: string | number;
+  cotacao_id: string | number;
+  fornecedor_id: string | number;
+  item_id: string | number;
   preco: number;
   marca?: string;
 }
@@ -182,7 +182,7 @@ export default function DetalheCotacaoPage() {
   }
 
   // Deletar Item
-  async function handleDeleteItem(itemId: string) {
+  async function handleDeleteItem(itemId: string | number) {
     if (!confirm("Deseja excluir este item?")) return;
     try {
       await supabase.from("cotacao_itens").delete().eq("id", itemId);
@@ -221,7 +221,7 @@ export default function DetalheCotacaoPage() {
   }
 
   // Remover Fornecedor da Cotação
-  async function handleRemoverFornecedor(fornecedorId: string) {
+  async function handleRemoverFornecedor(fornecedorId: string | number) {
     if (!confirm("Remover fornecedor desta cotação e seus preços informados?")) return;
     try {
       await supabase.from("cotacao_respostas").delete().eq("cotacao_id", id).eq("fornecedor_id", fornecedorId);
@@ -238,12 +238,14 @@ export default function DetalheCotacaoPage() {
   function abrirModalPrecos(fc: CotacaoFornecedor) {
     setFornecedorPrecoAtivo(fc);
     const map: { [itemId: string]: { preco: string; marca: string } } = {};
+    
     itens.forEach((item) => {
       const resp = respostas.find(
-        (r) => String(r.fornecedor_id) === String(fc.fornecedor_id) && String(r.item_id) === String(item.id)
+        (r) => String(r.fornecedor_id).trim() === String(fc.fornecedor_id).trim() && 
+               String(r.item_id).trim() === String(item.id).trim()
       );
       map[item.id] = {
-        preco: resp && resp.preco !== null ? resp.preco.toString() : "",
+        preco: resp && resp.preco !== null && resp.preco !== undefined ? resp.preco.toString() : "",
         marca: resp ? resp.marca || "" : "",
       };
     });
@@ -262,15 +264,16 @@ export default function DetalheCotacaoPage() {
       for (const item of itens) {
         const dados = precosTemp[item.id];
         const precoStr = dados && dados.preco ? dados.preco.toString().replace(",", ".") : "";
-        const precoNum = precoStr ? parseFloat(precoStr) : null;
+        const precoNum = precoStr ? parseFloat(precoStr) : NaN;
         const marcaStr = dados ? dados.marca : null;
 
         const existente = respostas.find(
-          (r) => String(r.fornecedor_id) === String(fornecedorIdReal) && String(r.item_id) === String(item.id)
+          (r) => String(r.fornecedor_id).trim() === String(fornecedorIdReal).trim() && 
+                 String(r.item_id).trim() === String(item.id).trim()
         );
 
         if (existente) {
-          if (precoNum !== null && !isNaN(precoNum) && precoNum > 0) {
+          if (!isNaN(precoNum) && precoNum > 0) {
             const { error: errUpd } = await supabase
               .from("cotacao_respostas")
               .update({ preco: precoNum, marca: marcaStr })
@@ -279,7 +282,7 @@ export default function DetalheCotacaoPage() {
           } else {
             await supabase.from("cotacao_respostas").delete().eq("id", existente.id);
           }
-        } else if (precoNum !== null && !isNaN(precoNum) && precoNum > 0) {
+        } else if (!isNaN(precoNum) && precoNum > 0) {
           const { error: errIns } = await supabase.from("cotacao_respostas").insert([
             {
               cotacao_id: id,
@@ -304,7 +307,7 @@ export default function DetalheCotacaoPage() {
     }
   }
 
-  // ---- CÁLCULOS DOS MENORES PREÇOS POR ITEM (Otimizado com useMemo) ----
+  // ---- CÁLCULOS DOS MENORES PREÇOS POR ITEM ----
   const { menoresPrecosPorItem, valorTotalOtimo } = useMemo(() => {
     const menoresMap: { [itemId: string]: { menorPreco: number; fornecedorNome: string; marca: string } } = {};
     let totalOtimo = 0;
@@ -316,9 +319,11 @@ export default function DetalheCotacaoPage() {
 
       fornecedoresCotacao.forEach((fc) => {
         const resp = respostas.find(
-          (r) => String(r.fornecedor_id) === String(fc.fornecedor_id) && String(r.item_id) === String(item.id)
+          (r) => String(r.fornecedor_id).trim() === String(fc.fornecedor_id).trim() && 
+                 String(r.item_id).trim() === String(item.id).trim()
         );
-        if (resp && resp.preco > 0) {
+        
+        if (resp && typeof resp.preco === 'number' && resp.preco > 0) {
           if (menor === null || resp.preco < menor) {
             menor = resp.preco;
             fornNome = fc.fornecedores?.nome_fantasia || fc.fornecedores?.razao_social || "Fornecedor";
@@ -404,15 +409,15 @@ export default function DetalheCotacaoPage() {
                   <th key={fc.fornecedor_id} className="p-3 border-b text-right">
                     <div className="font-bold">{fc.fornecedores?.nome_fantasia || fc.fornecedores?.razao_social}</div>
                     <div className="text-[10px] text-slate-500 print:hidden flex justify-end gap-1 mt-1">
-                      <button onClick={() => abrirModalPrecos(fc)} className="text-blue-600 hover:underline">
+                      <button type="button" onClick={() => abrirModalPrecos(fc)} className="text-blue-600 hover:underline">
                         Editar Preços
                       </button>
                       <span>|</span>
-                      <button onClick={() => { setFornecedorImprimir(fc); setIsOrcamentoFornecedorOpen(true); }} className="text-emerald-600 hover:underline">
+                      <button type="button" onClick={() => { setFornecedorImprimir(fc); setIsOrcamentoFornecedorOpen(true); }} className="text-emerald-600 hover:underline">
                         Orçamento
                       </button>
                       <span>|</span>
-                      <button onClick={() => handleRemoverFornecedor(fc.fornecedor_id)} className="text-red-600 hover:underline">
+                      <button type="button" onClick={() => handleRemoverFornecedor(fc.fornecedor_id)} className="text-red-600 hover:underline">
                         Excluir
                       </button>
                     </div>
@@ -442,7 +447,8 @@ export default function DetalheCotacaoPage() {
 
                       {fornecedoresCotacao.map((fc) => {
                         const resp = respostas.find(
-                          (r) => String(r.fornecedor_id) === String(fc.fornecedor_id) && String(r.item_id) === String(item.id)
+                          (r) => String(r.fornecedor_id).trim() === String(fc.fornecedor_id).trim() && 
+                                 String(r.item_id).trim() === String(item.id).trim()
                         );
                         const isMenor = menorInfo && resp && resp.preco === menorInfo.menorPreco;
 
@@ -496,7 +502,8 @@ export default function DetalheCotacaoPage() {
                   let totalForn = 0;
                   itens.forEach((item) => {
                     const resp = respostas.find(
-                      (r) => String(r.fornecedor_id) === String(fc.fornecedor_id) && String(r.item_id) === String(item.id)
+                      (r) => String(r.fornecedor_id).trim() === String(fc.fornecedor_id).trim() && 
+                             String(r.item_id).trim() === String(item.id).trim()
                     );
                     if (resp && resp.preco > 0) {
                       totalForn += resp.preco * (item.quantidade || 1);
@@ -666,7 +673,8 @@ export default function DetalheCotacaoPage() {
                 <tbody>
                   {itens.map((item) => {
                     const resp = respostas.find(
-                      (r) => String(r.fornecedor_id) === String(fornecedorImprimir.fornecedor_id) && String(r.item_id) === String(item.id)
+                      (r) => String(r.fornecedor_id).trim() === String(fornecedorImprimir.fornecedor_id).trim() && 
+                             String(r.item_id).trim() === String(item.id).trim()
                     );
                     const preco = resp ? resp.preco : 0;
                     const subtotal = preco * (item.quantidade || 1);
@@ -688,8 +696,9 @@ export default function DetalheCotacaoPage() {
                     <td className="p-2 border text-right text-base text-blue-700">
                       {brl(
                         itens.reduce((acc, item) => {
-                          const resp = respostas.respostasFindId ?? respostas.find(
-                            (r) => String(r.fornecedor_id) === String(fornecedorImprimir.fornecedor_id) && String(r.item_id) === String(item.id)
+                          const resp = respostas.find(
+                            (r) => String(r.fornecedor_id).trim() === String(fornecedorImprimir.fornecedor_id).trim() && 
+                                   String(r.item_id).trim() === String(item.id).trim()
                           );
                           return acc + (resp ? resp.preco * (item.quantidade || 1) : 0);
                         }, 0)
@@ -700,8 +709,8 @@ export default function DetalheCotacaoPage() {
               </table>
 
               <div className="pt-6 flex justify-end gap-2 print:hidden">
-                <Button variant="outline" onClick={() => setIsOrcamentoFornecedorOpen(false)}>Fechar</Button>
-                <Button onClick={() => window.print()} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsOrcamentoFornecedorOpen(false)}>Fechar</Button>
+                <Button type="button" onClick={() => window.print()} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
                   <Printer className="w-4 h-4" /> Imprimir Orçamento
                 </Button>
               </div>
