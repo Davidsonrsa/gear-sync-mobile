@@ -391,3 +391,82 @@ export default function CotacoesPage() {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label className="text-xs font-semibold text-slate-700">
+<div>
+                  <Label className="text-xs font-semibold text-slate-700">Conta</Label>
+                  <Input value={conta} onChange={(e) => setConta(e.target.value)} placeholder="Ex: 12345-6" className="mt-1" />
+                </div>
+              </div>
+              <div className="mt-2">
+                <Label className="text-xs font-semibold text-slate-700">Chave Pix</Label>
+                <Input value={pix} onChange={(e) => setPix(e.target.value)} placeholder="CNPJ, E-mail, Telefone ou Chave Aleatória" className="mt-1" />
+              </div>
+            </div>
+
+            <DialogFooter className="mt-4 flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => setIsNovoFornecedorOpen(false)} disabled={saving}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                {saving ? "Salvando..." : "Salvar Fornecedor"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL: EDITAR COTAÇÃO */}
+      <Dialog open={isEditarCotacaoOpen} onOpenChange={setIsEditarCotacaoOpen}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-slate-800">Editar Cotação</DialogTitle>
+          </DialogHeader>
+          {cotacaoEditando && (
+            <form onSubmit={handleUpdateCotacao} className="space-y-4 mt-2">
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Número da Cotação *</Label>
+                <Input 
+                  value={cotacaoEditando.numero} 
+                  onChange={(e) => setCotacaoEditando({ ...cotacaoEditando, numero: e.target.value })} 
+                  required 
+                  className="mt-1" 
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Equipamento / Patrimônio</Label>
+                <Input 
+                  value={cotacaoEditando.patrimonio || ""} 
+                  onChange={(e) => setCotacaoEditando({ ...cotacaoEditando, patrimonio: e.target.value })} 
+                  className="mt-1" 
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Setor</Label>
+                <Input 
+                  value={cotacaoEditando.setor || ""} 
+                  onChange={(e) => setCotacaoEditando({ ...cotacaoEditando, setor: e.target.value })} 
+                  className="mt-1" 
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Observações Gerais</Label>
+                <Input 
+                  value={cotacaoEditando.observacoes || ""} 
+                  onChange={(e) => setCotacaoEditando({ ...cotacaoEditando, observacoes: e.target.value })} 
+                  className="mt-1" 
+                />
+              </div>
+              <DialogFooter className="mt-4 flex gap-2 justify-end">
+                <Button type="button" variant="outline" onClick={() => setIsEditarCotacaoOpen(false)} disabled={saving}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                  {saving ? "Salvando..." : "Salvar Alterações"}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
