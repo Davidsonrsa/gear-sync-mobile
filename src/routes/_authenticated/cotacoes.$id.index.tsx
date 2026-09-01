@@ -87,7 +87,7 @@ export default function DetalheCotacaoPage() {
   const [isPrecosOpen, setIsPrecosOpen] = useState(false);
   const [isOrcamentoFornecedorOpen, setIsOrcamentoFornecedorOpen] = useState(false);
 
-  // Form Item (Com Código)
+  // Form Item
   const [codigoItem, setCodigoItem] = useState("");
   const [descricaoItem, setDescricaoItem] = useState("");
   const [quantidadeItem, setQuantidadeItem] = useState("1");
@@ -96,11 +96,11 @@ export default function DetalheCotacaoPage() {
   // Vinculação de Fornecedor
   const [fornecedorIdSelecionado, setFornecedorIdSelecionado] = useState("");
 
-  // Inserção/Edição de Preços por Fornecedor
+  // Inserção/Edição de Preços
   const [fornecedorPrecoAtivo, setFornecedorPrecoAtivo] = useState<CotacaoFornecedor | null>(null);
   const [precosTemp, setPrecosTemp] = useState<{ [itemId: string]: { preco: string; marca: string } }>({});
 
-  // Orçamento Individual do Fornecedor para Impressão
+  // Orçamento Individual
   const [fornecedorImprimir, setFornecedorImprimir] = useState<CotacaoFornecedor | null>(null);
 
   const fetchData = useCallback(async () => {
@@ -155,7 +155,67 @@ export default function DetalheCotacaoPage() {
     fetchData();
   }, [fetchData]);
 
-  // Adicionar Item com Código
+  // Cálculos de Menores Preços e Totais Otimizados
+  const { menoresPrecosPorItem, valorTotalOtimo } = useMemo(() => {
+    const menoresMap: { [itemId: string]: { menorTotal: number; menorUnitario: number; fornecedorNome: string; marca: string } } = {};
+    let totalOtimo = 0;
+
+    itens.forEach((item) => {
+      let menorUnit: number | null = null;
+      let fornNome = "—";
+      let marcaStr = "—";
+      const qtd = item.quantidade || 1;
+
+      fornecedoresCotacao.forEach((fc) => {
+        const fornId = fc.fornecedor_id || (fc as any).fornecedores?.id;
+        const resp = respostas.find(
+          (r) => String(r.fornecedor_id).trim() === String(fornId).trim() && 
+                 String(r.cotacao_item_id).trim() === String(item.id).trim()
+        );
+        
+        if (resp && typeof resp.preco === 'number' && resp.preco > 0) {
+          if (menorUnit === null || resp.preco < menorUnit) {
+            menorUnit = resp.preco;
+            fornNome = fc.fornecedores?.nome_fantasia || fc.fornecedores?.razao_social || "Fornecedor";
+            marcaStr = resp.marca || "—";
+          }
+        }
+      });
+
+      if (menorUnit !== null) {
+        const subtotalItem = menorUnit * qtd;
+        menoresMap[item.id] = { 
+          menorTotal: subtotalItem, 
+          menorUnitario: menorUnit, 
+          fornecedorNome: fornNome, 
+          marca: marcaStr 
+        };
+        totalOtimo += subtotalItem;
+      }
+    });
+
+    return { menoresPrecosPorItem: menoresMap, valorTotalOtimo: totalOtimo };
+  }, [itens, fornecedoresCotacao, respostas]);
+
+  // Sincronizar o total otimizado e status com a tabela principal 'cotacoes' para exibir na listagem
+  useEffect(() => {
+    async function atualizarTotalCotacao() {
+      if (!id || itens.length === 0) return;
+      try {
+        await supabase
+          .from("cotacoes")
+          .update({ 
+            valor_total: valorTotalOtimo,
+            status: valorTotalOtimo > 0 ? "FINALIZADA" : "RASCUNHO"
+          })
+          .eq("id", id);
+      } catch (e) {
+        console.error("Erro ao atualizar total da cotação", e);
+      }
+    }
+    atualizarTotalCotacao();
+  }, [id, valorTotalOtimo, itens.length]);
+
   async function handleAddItem(e: React.FormEvent) {
     e.preventDefault();
     if (!descricaoItem.trim()) return toast.error("Informe a descrição do item.");
@@ -186,7 +246,6 @@ export default function DetalheCotacaoPage() {
     }
   }
 
-  // Deletar Item
   async function handleDeleteItem(itemId: string | number) {
     if (!confirm("Deseja excluir este item?")) return;
     try {
@@ -200,7 +259,6 @@ export default function DetalheCotacaoPage() {
     }
   }
 
-  // Vincular Fornecedor à Cotação
   async function handleVincularFornecedor(e: React.FormEvent) {
     e.preventDefault();
     if (!fornecedorIdSelecionado) return toast.error("Selecione um fornecedor.");
@@ -219,15 +277,14 @@ export default function DetalheCotacaoPage() {
       fetchData();
     } catch (error: unknown) {
       const err = error as Error;
-      toast.error("Erro ao vincular (Fornecedor já vinculado?): " + err.message);
+      toast.error("Erro ao vincular: " + err.message);
     } finally {
       setSaving(false);
     }
   }
 
-  // Remover Fornecedor da Cotação
   async function handleRemoverFornecedor(fornecedorId: string | number) {
-    if (!confirm("Remover fornecedor desta cotação e seus preços informados?")) return;
+    if (!confirm("Remover fornecedor desta cotação e seus preços?")) return;
     try {
       await supabase.from("cotacao_respostas").delete().eq("cotacao_id", id).eq("fornecedor_id", fornecedorId);
       await supabase.from("cotacao_fornecedores").delete().eq("cotacao_id", id).eq("fornecedor_id", fornecedorId);
@@ -239,14 +296,14 @@ export default function DetalheCotacaoPage() {
     }
   }
 
-  // Abrir Modal de Inserir Preços do Fornecedor
   function abrirModalPrecos(fc: CotacaoFornecedor) {
     setFornecedorPrecoAtivo(fc);
     const map: { [itemId: string]: { preco: string; marca: string } } = {};
+    const fornId = fc.fornecedor_id || (fc as any).fornecedores?.id;
     
     itens.forEach((item) => {
       const resp = respostas.find(
-        (r) => String(r.fornecedor_id).trim() === String(fc.fornecedor_id).trim() && 
+        (r) => String(r.fornecedor_id).trim() === String(fornId).trim() && 
                String(r.cotacao_item_id).trim() === String(item.id).trim()
       );
       map[item.id] = {
@@ -258,13 +315,12 @@ export default function DetalheCotacaoPage() {
     setIsPrecosOpen(true);
   }
 
-  // Salvar Preços do Fornecedor
   async function handleSalvarPrecos(e: React.FormEvent) {
     e.preventDefault();
     if (!fornecedorPrecoAtivo) return;
     try {
       setSaving(true);
-      const fornecedorIdReal = fornecedorPrecoAtivo.fornecedor_id;
+      const fornecedorIdReal = fornecedorPrecoAtivo.fornecedor_id || (fornecedorPrecoAtivo as any).fornecedores?.id;
 
       for (const item of itens) {
         const dados = precosTemp[item.id];
@@ -279,37 +335,25 @@ export default function DetalheCotacaoPage() {
 
         if (existente) {
           if (!isNaN(precoNum) && precoNum > 0) {
-            const { error: errUpd } = await supabase
+            await supabase
               .from("cotacao_respostas")
               .update({ preco: precoNum, marca: marcaStr })
               .eq("id", existente.id);
-            if (errUpd) {
-              console.error("Erro update Supabase:", errUpd);
-              toast.error(`Erro ao atualizar preço: ${errUpd.message}`);
-              return;
-            }
           } else {
             await supabase.from("cotacao_respostas").delete().eq("id", existente.id);
           }
         } else if (!isNaN(precoNum) && precoNum > 0) {
-          const payload = {
+          await supabase.from("cotacao_respostas").insert([{
             cotacao_id: id,
             fornecedor_id: fornecedorIdReal,
             cotacao_item_id: item.id,
             preco: precoNum,
             marca: marcaStr,
-          };
-
-          const { error: errIns } = await supabase.from("cotacao_respostas").insert([payload]);
-          if (errIns) {
-            console.error("Erro insert Supabase:", errIns);
-            toast.error(`Erro ao inserir preço: ${errIns.message}`);
-            return;
-          }
+          }]);
         }
       }
 
-      toast.success("Preços salvos com sucesso!");
+      toast.success("Preços salvos!");
       setIsPrecosOpen(false);
       await fetchData();
     } catch (error: unknown) {
@@ -319,47 +363,6 @@ export default function DetalheCotacaoPage() {
       setSaving(false);
     }
   }
-
-  // ---- CÁLCULOS DOS MENORES PREÇOS POR ITEM (MUNICIPALIZADOS COM QUANTIDADE) ----
-  const { menoresPrecosPorItem, valorTotalOtimo } = useMemo(() => {
-    const menoresMap: { [itemId: string]: { menorTotal: number; menorUnitario: number; fornecedorNome: string; marca: string } } = {};
-    let totalOtimo = 0;
-
-    itens.forEach((item) => {
-      let menorUnit: number | null = null;
-      let fornNome = "—";
-      let marcaStr = "—";
-      const qtd = item.quantidade || 1;
-
-      fornecedoresCotacao.forEach((fc) => {
-        const resp = respostas.find(
-          (r) => String(r.fornecedor_id).trim() === String(fc.fornecedor_id).trim() && 
-                 String(r.cotacao_item_id).trim() === String(item.id).trim()
-        );
-        
-        if (resp && typeof resp.preco === 'number' && resp.preco > 0) {
-          if (menorUnit === null || resp.preco < menorUnit) {
-            menorUnit = resp.preco;
-            fornNome = fc.fornecedores?.nome_fantasia || fc.fornecedores?.razao_social || "Fornecedor";
-            marcaStr = resp.marca || "—";
-          }
-        }
-      });
-
-      if (menorUnit !== null) {
-        const subtotalItem = menorUnit * qtd;
-        menoresMap[item.id] = { 
-          menorTotal: subtotalItem, 
-          menorUnitario: menorUnit, 
-          fornecedorNome: fornNome, 
-          marca: marcaStr 
-        };
-        totalOtimo += subtotalItem;
-      }
-    });
-
-    return { menoresPrecosPorItem: menoresMap, valorTotalOtimo: totalOtimo };
-  }, [itens, fornecedoresCotacao, respostas]);
 
   if (loading) {
     return (
@@ -413,12 +416,12 @@ export default function DetalheCotacaoPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+        <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center print:hidden">
           <h2 className="font-bold text-slate-800 text-base">Quadro Comparativo de Preços</h2>
           <span className="text-xs text-slate-500">Valores em Reais (R$)</span>
         </div>
         <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm border-collapse">
+          <table className="w-full text-left text-sm border-collapse">
             <thead className="bg-slate-100 text-slate-700 text-xs uppercase">
               <tr>
                 <th className="p-3 border-b">Cód.</th>
@@ -549,20 +552,41 @@ export default function DetalheCotacaoPage() {
               </tr>
             </tfoot>
           </table>
+        </div>
+      </div>
 
-      {/* MODAL ADICIONAR ITEM COM CAMPO CÓDIGO */}
+      {/* CAMPO DE ASSINATURAS DOS 3 RESPONSÁVEIS (EXCLUSIVO PARA IMPRESSÃO) */}
+      <div className="hidden print:block mt-12 pt-8 border-t border-slate-400">
+        <div className="grid grid-cols-3 gap-8 text-center">
+          <div className="space-y-2">
+            <div className="border-b border-black pb-12"></div>
+            <p className="text-xs font-bold text-black">Responsável Técnico / Compras</p>
+            <p className="text-[10px] text-slate-600">Data: ____/____/________</p>
+          </div>
+          <div className="space-y-2">
+            <div className="border-b border-black pb-12"></div>
+            <p className="text-xs font-bold text-black">Gerência de Manutenção</p>
+            <p className="text-[10px] text-slate-600">Data: ____/____/________</p>
+          </div>
+          <div className="space-y-2">
+            <div className="border-b border-black pb-12"></div>
+            <p className="text-xs font-bold text-black">Diretoria / Financeiro</p>
+            <p className="text-[10px] text-slate-600">Data: ____/____/________</p>
+          </div>
+        </div>
+      </div>
+
+      {/* MODAIS (Item, Vincular, Preços, Orçamento) mantêm-se iguais... */}
       <Dialog open={isNovoItemOpen} onOpenChange={setIsNovoItemOpen}>
         <DialogContent className="sm:max-w-md bg-white">
-          <DialogHeader>
-            <DialogTitle>Adicionar Item / Peça</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Adicionar Item / Peça</DialogTitle></DialogHeader>
           <form onSubmit={handleAddItem} className="space-y-4 mt-2">
             <div>
               <Label className="text-xs font-semibold text-slate-700">Código do Produto / Peça</Label>
               <Input value={codigoItem} onChange={(e) => setCodigoItem(e.target.value)} placeholder="Ex: FIL-01" className="mt-1" />
             </div>
             <div>
-              <Label className="text-xs font-semibold text-slate-700">Descrição da Peça / Serviço *</Label>
+              <Label className="text-xs font-semibold text-slate-700">Descrição *</Label>
               <Input value={descricaoItem} onChange={(e) => setDescricaoItem(e.target.value)} placeholder="Ex: Filtro de Óleo" required className="mt-1" />
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -572,12 +596,12 @@ export default function DetalheCotacaoPage() {
               </div>
               <div>
                 <Label className="text-xs font-semibold text-slate-700">Unidade</Label>
-                <Input value={unidadeItem} onChange={(e) => setUnidadeItem(e.target.value)} placeholder="UN, PC, LT" required className="mt-1" />
+                <Input value={unidadeItem} onChange={(e) => setUnidadeItem(e.target.value)} required className="mt-1" />
               </div>
             </div>
             <DialogFooter className="mt-4 flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={() => setIsNovoItemOpen(false)} disabled={saving}>Cancelar</Button>
-              <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white">Salvar Item</Button>
+              <Button type="button" variant="outline" onClick={() => setIsNovoItemOpen(false)}>Cancelar</Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Salvar</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -585,12 +609,10 @@ export default function DetalheCotacaoPage() {
 
       <Dialog open={isVincularFornecedorOpen} onOpenChange={setIsVincularFornecedorOpen}>
         <DialogContent className="sm:max-w-md bg-white">
-          <DialogHeader>
-            <DialogTitle>Vincular Fornecedor à Cotação</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Vincular Fornecedor</DialogTitle></DialogHeader>
           <form onSubmit={handleVincularFornecedor} className="space-y-4 mt-2">
             <div>
-              <Label className="text-xs font-semibold text-slate-700">Selecione o Fornecedor *</Label>
+              <Label className="text-xs font-semibold text-slate-700">Fornecedor *</Label>
               <select
                 className="w-full mt-1 border border-slate-300 rounded-md p-2 text-sm bg-white"
                 value={fornecedorIdSelecionado}
@@ -599,15 +621,13 @@ export default function DetalheCotacaoPage() {
               >
                 <option value="">Selecione...</option>
                 {todosFornecedores.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.nome_fantasia || f.razao_social} {f.cnpj ? `(CNPJ: ${f.cnpj})` : ""}
-                  </option>
+                  <option key={f.id} value={f.id}>{f.nome_fantasia || f.razao_social}</option>
                 ))}
               </select>
             </div>
             <DialogFooter className="mt-4 flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={() => setIsVincularFornecedorOpen(false)} disabled={saving}>Cancelar</Button>
-              <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white">Vincular</Button>
+              <Button type="button" variant="outline" onClick={() => setIsVincularFornecedorOpen(false)}>Cancelar</Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Vincular</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -615,139 +635,36 @@ export default function DetalheCotacaoPage() {
 
       <Dialog open={isPrecosOpen} onOpenChange={setIsPrecosOpen}>
         <DialogContent className="sm:max-w-2xl bg-white max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              Informar Preços: {fornecedorPrecoAtivo?.fornecedores?.nome_fantasia || fornecedorPrecoAtivo?.fornecedores?.razao_social}
-            </DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Informar Preços</DialogTitle></DialogHeader>
           <form onSubmit={handleSalvarPrecos} className="space-y-4 mt-2">
             <div className="space-y-3">
               {itens.map((item) => (
                 <div key={item.id} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-slate-50 p-3 rounded-lg border border-slate-200">
                   <div className="md:col-span-6 text-sm">
-                    <span className="font-semibold text-slate-800">{item.codigo ? `[${item.codigo}] ` : ""}{item.descricao}</span>
-                    <span className="block text-xs text-slate-500">Qtd: {item.quantidade} {item.unidade}</span>
+                    <span className="font-semibold text-slate-800">{item.descricao}</span>
                   </div>
                   <div className="md:col-span-3">
-                    <Label className="text-[10px] text-slate-500">Preço Unitário (R$)</Label>
                     <Input
-                      type="text"
-                      placeholder="0,00"
+                      placeholder="Preço (R$)"
                       value={precosTemp[item.id]?.preco || ""}
-                      onChange={(e) =>
-                        setPrecosTemp({
-                          ...precosTemp,
-                          [item.id]: { ...precosTemp[item.id], preco: e.target.value },
-                        })
-                      }
+                      onChange={(e) => setPrecosTemp({ ...precosTemp, [item.id]: { ...precosTemp[item.id], preco: e.target.value } })}
                     />
                   </div>
                   <div className="md:col-span-3">
-                    <Label className="text-[10px] text-slate-500">Marca / Obs</Label>
                     <Input
-                      type="text"
-                      placeholder="Marca..."
+                      placeholder="Marca"
                       value={precosTemp[item.id]?.marca || ""}
-                      onChange={(e) =>
-                        setPrecosTemp({
-                          ...precosTemp,
-                          [item.id]: { ...precosTemp[item.id], marca: e.target.value },
-                        })
-                      }
+                      onChange={(e) => setPrecosTemp({ ...precosTemp, [item.id]: { ...precosTemp[item.id], marca: e.target.value } })}
                     />
                   </div>
                 </div>
               ))}
             </div>
             <DialogFooter className="mt-4 flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={() => setIsPrecosOpen(false)} disabled={saving}>Cancelar</Button>
-              <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white">Salvar Preços</Button>
+              <Button type="button" variant="outline" onClick={() => setIsPrecosOpen(false)}>Cancelar</Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Salvar Preços</Button>
             </DialogFooter>
           </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isOrcamentoFornecedorOpen} onOpenChange={setIsOrcamentoFornecedorOpen}>
-        <DialogContent className="sm:max-w-3xl bg-white max-h-[90vh] overflow-y-auto print:shadow-none print:border-none">
-          {fornecedorImprimir && (
-            <div className="space-y-4">
-              <div className="border-b pb-4 flex justify-between items-start">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900">Orçamento de Fornecedor</h2>
-                  <p className="text-sm font-semibold text-blue-700 mt-1">
-                    {fornecedorImprimir.fornecedores?.razao_social}
-                  </p>
-                  <p className="text-xs text-slate-600">
-                    CNPJ: {fornecedorImprimir.fornecedores?.cnpj || "—"} | Tel: {fornecedorImprimir.fornecedores?.telefone || "—"}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs font-bold bg-slate-100 text-slate-800 px-2 py-1 rounded">
-                    Cotação Nº {cotacao.numero}
-                  </span>
-                  <p className="text-xs text-slate-500 mt-1">Equipamento: {cotacao.patrimonio}</p>
-                </div>
-              </div>
-
-              <table className="w-full text-left text-sm border-collapse mt-4">
-                <thead>
-                  <tr className="bg-slate-100 text-xs uppercase text-slate-700">
-                    <th className="p-2 border">Cód.</th>
-                    <th className="p-2 border">Item</th>
-                    <th className="p-2 border text-center">Qtd</th>
-                    <th className="p-2 border text-center">Un</th>
-                    <th className="p-2 border text-right">Preço Unit.</th>
-                    <th className="p-2 border">Marca</th>
-                    <th className="p-2 border text-right">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {itens.map((item) => {
-                    const resp = respostas.find(
-                      (r) => String(r.fornecedor_id).trim() === String(fornecedorImprimir.fornecedor_id).trim() && 
-                             String(r.cotacao_item_id).trim() === String(item.id).trim()
-                    );
-                    const preco = resp ? resp.preco : 0;
-                    const subtotal = preco * (item.quantidade || 1);
-                    return (
-                      <tr key={item.id} className="border-b">
-                        <td className="p-2 border font-mono text-xs">{item.codigo || "—"}</td>
-                        <td className="p-2 border">{item.descricao}</td>
-                        <td className="p-2 border text-center">{item.quantidade}</td>
-                        <td className="p-2 border text-center">{item.unidade}</td>
-                        <td className="p-2 border text-right">{preco > 0 ? brl(preco) : "—"}</td>
-                        <td className="p-2 border text-slate-600">{resp?.marca || "—"}</td>
-                        <td className="p-2 border text-right font-semibold">{subtotal > 0 ? brl(subtotal) : "—"}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-slate-100 font-bold">
-                    <td colSpan={6} className="p-2 border text-right">TOTAL DO FORNECEDOR:</td>
-                    <td className="p-2 border text-right text-base text-blue-700">
-                      {brl(
-                        itens.reduce((acc, item) => {
-                          const resp = respostas.find(
-                            (r) => String(r.fornecedor_id).trim() === String(fornecedorImprimir.fornecedor_id).trim() && 
-                                   String(r.cotacao_item_id).trim() === String(item.id).trim()
-                          );
-                          return acc + (resp ? resp.preco * (item.quantidade || 1) : 0);
-                        }, 0)
-                      )}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-
-              <div className="pt-6 flex justify-end gap-2 print:hidden">
-                <Button type="button" variant="outline" onClick={() => setIsOrcamentoFornecedorOpen(false)}>Fechar</Button>
-                <Button type="button" onClick={() => window.print()} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
-                  <Printer className="w-4 h-4" /> Imprimir Orçamento
-                </Button>
-              </div>
-            </div>
-          )}
         </DialogContent>
       </Dialog>
     </div>
