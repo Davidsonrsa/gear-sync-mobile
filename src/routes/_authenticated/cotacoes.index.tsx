@@ -390,8 +390,6 @@ export default function CotacoesPage() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-xs font-semibold text-slate-700">
-<div>
                   <Label className="text-xs font-semibold text-slate-700">Conta</Label>
                   <Input value={conta} onChange={(e) => setConta(e.target.value)} placeholder="Ex: 12345-6" className="mt-1" />
                 </div>
