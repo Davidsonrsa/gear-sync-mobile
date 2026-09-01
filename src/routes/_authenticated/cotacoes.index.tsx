@@ -47,7 +47,7 @@ export default function CotacoesPage() {
   const [setor, setSetor] = useState("MANUTENÇÃO");
   const [observacoes, setObservacoes] = useState("");
 
-  // Form Novo Fornecedor direto na tela de cotações (com dados de pagamento)
+  // Form Novo Fornecedor
   const [razaoSocial, setRazaoSocial] = useState("");
   const [nomeFantasia, setNomeFantasia] = useState("");
   const [cnpj, setCnpj] = useState("");
@@ -80,6 +80,29 @@ export default function CotacoesPage() {
     fetchCotacoes();
   }, [fetchCotacoes]);
 
+  // Função para gerar o próximo número automático ao abrir o modal
+  async function abrirModalNovaCotacao() {
+    try {
+      const { data, error } = await supabase
+        .from("cotacoes")
+        .select("numero")
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      let proximoNum = 1;
+      if (data && data.length > 0) {
+        const ultimo = parseInt(String(data[0].numero).replace(/\D/g, ""), 10);
+        if (!isNaN(ultimo)) {
+          proximoNum = ultimo + 1;
+        }
+      }
+      setNumero(String(proximoNum).padStart(4, "0"));
+    } catch (e) {
+      setNumero("0001");
+    }
+    setIsNovaCotacaoOpen(true);
+  }
+
   // Criar Cotação
   async function handleCreateCotacao(e: React.FormEvent) {
     e.preventDefault();
@@ -93,7 +116,8 @@ export default function CotacoesPage() {
           patrimonio: patrimonio.trim() || null,
           setor: setor.trim() || null,
           observacoes: observacoes.trim() || null,
-          status: "rascunho",
+          status: "RASCUNHO",
+          valor_total: 0,
           data_cotacao: new Date().toISOString().split("T")[0],
         },
       ]);
@@ -102,7 +126,6 @@ export default function CotacoesPage() {
       
       toast.success("Cotação criada com sucesso!");
       setIsNovaCotacaoOpen(false);
-      setNumero("");
       setPatrimonio("");
       setSetor("MANUTENÇÃO");
       setObservacoes("");
@@ -115,7 +138,7 @@ export default function CotacoesPage() {
     }
   }
 
-  // Cadastrar Fornecedor Direto com Dados de Pagamento
+  // Cadastrar Fornecedor
   async function handleCadastrarFornecedor(e: React.FormEvent) {
     e.preventDefault();
     if (!razaoSocial.trim()) return toast.error("Informe a Razão Social.");
@@ -207,7 +230,6 @@ export default function CotacoesPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
-      {/* Cabeçalho */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-black">Gerenciamento de Cotações</h1>
@@ -222,7 +244,7 @@ export default function CotacoesPage() {
             <Building2 className="w-4 h-4" /> Cadastrar Fornecedor
           </Button>
           <Button
-            onClick={() => setIsNovaCotacaoOpen(true)}
+            onClick={abrirModalNovaCotacao}
             className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
           >
             <Plus className="w-4 h-4" /> Nova Cotação
@@ -230,7 +252,6 @@ export default function CotacoesPage() {
         </div>
       </div>
 
-      {/* Tabela de Cotações */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         {loading ? (
           <div className="flex justify-center items-center py-20">
@@ -253,56 +274,60 @@ export default function CotacoesPage() {
                 </tr>
               </thead>
               <tbody>
-                {cotacoes.map((c) => (
-                  <tr key={c.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="p-3 font-semibold text-slate-800">{c.numero}</td>
-                    <td className="p-3 text-slate-600">{c.data_cotacao || "—"}</td>
-                    <td className="p-3 text-slate-600">{c.patrimonio || "—"}</td>
-                    <td className="p-3 text-slate-600">{c.setor || "—"}</td>
-                    <td className="p-3">
-                      <span className={`px-2 py-1 rounded text-xs uppercase font-medium ${
-                        c.status === 'finalizada' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {c.status}
-                      </span>
-                    </td>
-                    <td className="p-3 text-slate-700">
-                      {c.total > 0 ? brl(c.total) : "Pendente"}
-                      {c.fornecedores && (
-                        <span className="block text-xs text-slate-500">
-                          Fornecedor: {c.fornecedores.nome_fantasia || c.fornecedores.razao_social}
+                {cotacoes.map((c) => {
+                  // Lê valor_total ou total dependendo de como está no banco
+                  const valorTotal = c.valor_total ?? c.total ?? 0;
+                  return (
+                    <tr key={c.id} className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="p-3 font-semibold text-slate-800">{c.numero}</td>
+                      <td className="p-3 text-slate-600">{c.data_cotacao || "—"}</td>
+                      <td className="p-3 text-slate-600">{c.patrimonio || "—"}</td>
+                      <td className="p-3 text-slate-600">{c.setor || "—"}</td>
+                      <td className="p-3">
+                        <span className={`px-2 py-1 rounded text-xs uppercase font-medium ${
+                          String(c.status).toUpperCase() === 'FINALIZADA' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          {c.status}
                         </span>
-                      )}
-                    </td>
-                    <td className="p-3 text-right space-x-2 whitespace-nowrap">
-                      <Button
-                        size="sm"
-                        onClick={() => navigate({ to: `/cotacoes/${c.id}` })}
-                        className="bg-blue-600 hover:bg-blue-700 text-white gap-1"
-                      >
-                        <Eye className="w-4 h-4" /> Detalhes
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setCotacaoEditando(c);
-                          setIsEditarCotacaoOpen(true);
-                        }}
-                        className="gap-1 text-slate-700"
-                      >
-                        <Edit className="w-4 h-4" /> Editar
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleDeleteCotacao(c.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="p-3 text-slate-700">
+                        {valorTotal > 0 ? brl(valorTotal) : "Pendente"}
+                        {c.fornecedores && (
+                          <span className="block text-xs text-slate-500">
+                            Fornecedor: {c.fornecedores.nome_fantasia || c.fornecedores.razao_social}
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-3 text-right space-x-2 whitespace-nowrap">
+                        <Button
+                          size="sm"
+                          onClick={() => navigate({ to: `/cotacoes/${c.id}` })}
+                          className="bg-blue-600 hover:bg-blue-700 text-white gap-1"
+                        >
+                          <Eye className="w-4 h-4" /> Detalhes
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setCotacaoEditando(c);
+                            setIsEditarCotacaoOpen(true);
+                          }}
+                          className="gap-1 text-slate-700"
+                        >
+                          <Edit className="w-4 h-4" /> Editar
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleDeleteCotacao(c.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -344,7 +369,7 @@ export default function CotacoesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* MODAL: CADASTRAR FORNECEDOR DIRETO NA TELA (COM DADOS BANCÁRIOS) */}
+      {/* MODAL: CADASTRAR FORNECEDOR */}
       <Dialog open={isNovoFornecedorOpen} onOpenChange={setIsNovoFornecedorOpen}>
         <DialogContent className="sm:max-w-lg bg-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -399,7 +424,6 @@ export default function CotacoesPage() {
                 <Input value={pix} onChange={(e) => setPix(e.target.value)} placeholder="CNPJ, E-mail, Telefone ou Chave Aleatória" className="mt-1" />
               </div>
             </div>
-
             <DialogFooter className="mt-4 flex gap-2 justify-end">
               <Button type="button" variant="outline" onClick={() => setIsNovoFornecedorOpen(false)} disabled={saving}>
                 Cancelar
