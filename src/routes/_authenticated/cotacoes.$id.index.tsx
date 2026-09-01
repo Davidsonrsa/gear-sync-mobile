@@ -18,6 +18,7 @@ import {
   Printer,
   Loader2,
   CheckCircle2,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -102,6 +103,8 @@ export default function DetalheCotacaoPage() {
   const [isNovoItemOpen, setIsNovoItemOpen] = useState(false);
   const [isVincularFornecedorOpen, setIsVincularFornecedorOpen] = useState(false);
   const [isPrecosOpen, setIsPrecosOpen] = useState(false);
+  const [isOrcamentoOpen, setIsOrcamentoOpen] = useState(false);
+  const [fornecedorOrcamentoAtivo, setFornecedorOrcamentoAtivo] = useState<CotacaoFornecedor | null>(null);
 
   // Form Item
   const [codigoItem, setCodigoItem] = useState("");
@@ -120,14 +123,12 @@ export default function DetalheCotacaoPage() {
     try {
       setLoading(true);
 
-      // CORREÇÃO PRINCIPAL: Se for "nova", não busca no banco por UUID
       if (id === "nova") {
         setCotacao(null);
         setItens([]);
         setFornecedoresCotacao([]);
         setRespostas([]);
         
-        // Buscar apenas a lista de fornecedores gerais para caso queira cadastrar depois
         const { data: allForn, error: allFornErr } = await supabase
           .from("fornecedores")
           .select("*")
@@ -187,7 +188,6 @@ export default function DetalheCotacaoPage() {
     fetchData();
   }, [fetchData]);
 
-  // Criar nova cotação no banco de dados caso id seja "nova"
   async function handleCriarCotacao(e: React.FormEvent) {
     e.preventDefault();
     if (!novaNumero.trim()) return toast.error("Informe o número da cotação.");
@@ -212,8 +212,6 @@ export default function DetalheCotacaoPage() {
 
       if (error) throw error;
       toast.success("Cotação criada com sucesso!");
-      
-      // Redireciona para a página de detalhes usando o ID gerado pelo banco
       navigate({ to: `/cotacoes/${data.id}` });
     } catch (error: unknown) {
       const err = error as Error;
@@ -223,7 +221,6 @@ export default function DetalheCotacaoPage() {
     }
   }
 
-  // Cálculos de Menores Preços e Totais Otimizados
   const { menoresPrecosPorItem, valorTotalOtimo } = useMemo(() => {
     const menoresMap: { [itemId: string]: { menorTotal: number; menorUnitario: number; fornecedorNome: string; marca: string } } = {};
     let totalOtimo = 0;
@@ -265,7 +262,6 @@ export default function DetalheCotacaoPage() {
     return { menoresPrecosPorItem: menoresMap, valorTotalOtimo: totalOtimo };
   }, [itens, fornecedoresCotacao, respostas]);
 
-  // Sincronizar o total otimizado e status com a tabela principal 'cotacoes'
   useEffect(() => {
     async function atualizarTotalCotacao() {
       if (id === "nova" || !id || itens.length === 0) return;
@@ -383,6 +379,11 @@ export default function DetalheCotacaoPage() {
     setIsPrecosOpen(true);
   }
 
+  function abrirModalOrcamento(fc: CotacaoFornecedor) {
+    setFornecedorOrcamentoAtivo(fc);
+    setIsOrcamentoOpen(true);
+  }
+
   async function handleSalvarPrecos(e: React.FormEvent) {
     e.preventDefault();
     if (!fornecedorPrecoAtivo) return;
@@ -440,7 +441,6 @@ export default function DetalheCotacaoPage() {
     );
   }
 
-  // TELA DE CADASTRO DE NOVA COTAÇÃO
   if (id === "nova") {
     return (
       <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
@@ -583,6 +583,10 @@ export default function DetalheCotacaoPage() {
                     <th key={fornId} className="p-3 border-b text-right">
                       <div className="font-bold">{fc.fornecedores?.nome_fantasia || fc.fornecedores?.razao_social || "Fornecedor"}</div>
                       <div className="text-[10px] text-slate-500 print:hidden flex justify-end gap-1 mt-1">
+                        <button type="button" onClick={() => abrirModalOrcamento(fc)} className="text-emerald-700 hover:underline font-semibold">
+                          Orçamento
+                        </button>
+                        <span>|</span>
                         <button type="button" onClick={() => abrirModalPrecos(fc)} className="text-blue-600 hover:underline">
                           Editar Preços
                         </button>
@@ -700,7 +704,6 @@ export default function DetalheCotacaoPage() {
         </div>
       </div>
 
-      {/* CAMPO DE ASSINATURAS DOS RESPONSÁVEIS (EXCLUSIVO PARA IMPRESSÃO) */}
       <div className="hidden print:block mt-12 pt-8 border-t border-slate-400">
         <div className="grid grid-cols-3 gap-8 text-center">
           <div className="space-y-2">
@@ -721,7 +724,76 @@ export default function DetalheCotacaoPage() {
         </div>
       </div>
 
-      {/* MODAIS */}
+      {/* MODAL DE ORÇAMENTO ESPECÍFICO PARA O FORNECEDOR */}
+      <Dialog open={isOrcamentoOpen} onOpenChange={setIsOrcamentoOpen}>
+        <DialogContent className="sm:max-w-2xl bg-white max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-blue-600" />
+              Solicitação de Orçamento - {fornecedorOrcamentoAtivo?.fornecedores?.nome_fantasia || fornecedorOrcamentoAtivo?.fornecedores?.razao_social}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs space-y-1">
+              <p><strong>Cotação Nº:</strong> {cotacao.numero}</p>
+              <p><strong>Equipamento / Patrimônio:</strong> {cotacao.patrimonio || "—"}</p>
+              <p><strong>Setor:</strong> {cotacao.setor || "—"} | <strong>Data:</strong> {formatarData(cotacao.data_cotacao)}</p>
+              {fornecedorOrcamentoAtivo?.fornecedores?.cnpj && (
+                <p><strong>CNPJ Fornecedor:</strong> {fornecedorOrcamentoAtivo.fornecedores.cnpj}</p>
+              )}
+              {fornecedorOrcamentoAtivo?.fornecedores?.telefone && (
+                <p><strong>Telefone:</strong> {fornecedorOrcamentoAtivo.fornecedores.telefone}</p>
+              )}
+            </div>
+
+            <div>
+              <h4 className="text-xs font-bold uppercase text-slate-700 mb-2">Itens solicitados para cotação:</h4>
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-100 text-slate-700">
+                    <tr>
+                      <th className="p-2 border-b">Cód.</th>
+                      <th className="p-2 border-b">Descrição</th>
+                      <th className="p-2 border-b text-center">Qtd</th>
+                      <th className="p-2 border-b text-center">Un</th>
+                      <th className="p-2 border-b text-right">Preço Unit. (R$)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {itens.map((item) => (
+                      <tr key={item.id} className="border-b border-slate-100">
+                        <td className="p-2 font-mono text-slate-500">{item.codigo || "—"}</td>
+                        <td className="p-2 font-medium text-slate-800">{item.descricao}</td>
+                        <td className="p-2 text-center">{item.quantidade}</td>
+                        <td className="p-2 text-center">{item.unidade}</td>
+                        <td className="p-2 text-right text-slate-400">________</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {cotacao.observacoes && (
+              <div className="text-xs text-slate-600 bg-amber-50 border border-amber-200 p-2.5 rounded">
+                <strong>Observações:</strong> {cotacao.observacoes}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex gap-2 justify-end">
+            <Button type="button" variant="outline" onClick={() => setIsOrcamentoOpen(false)}>
+              Fechar
+            </Button>
+            <Button type="button" onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-900 text-white gap-2">
+              <Printer className="w-4 h-4" /> Imprimir / Salvar PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAIS DE ITEM, FORNECEDOR E PREÇOS */}
       <Dialog open={isNovoItemOpen} onOpenChange={setIsNovoItemOpen}>
         <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader><DialogTitle>Adicionar Item / Peça</DialogTitle></DialogHeader>
