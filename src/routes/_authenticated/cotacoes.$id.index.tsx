@@ -418,31 +418,34 @@ export default function DetalheCotacaoPage() {
           <span className="text-xs text-slate-500">Valores em Reais (R$)</span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm border-collapse">
+        <table className="w-full text-left text-sm border-collapse">
             <thead className="bg-slate-100 text-slate-700 text-xs uppercase">
               <tr>
                 <th className="p-3 border-b">Cód.</th>
                 <th className="p-3 border-b">Item</th>
                 <th className="p-3 border-b text-center">Qtd</th>
                 <th className="p-3 border-b text-center">Un</th>
-                {fornecedoresCotacao.map((fc) => (
-                  <th key={fc.fornecedor_id} className="p-3 border-b text-right">
-                    <div className="font-bold">{fc.fornecedores?.nome_fantasia || fc.fornecedores?.razao_social}</div>
-                    <div className="text-[10px] text-slate-500 print:hidden flex justify-end gap-1 mt-1">
-                      <button type="button" onClick={() => abrirModalPrecos(fc)} className="text-blue-600 hover:underline">
-                        Editar Preços
-                      </button>
-                      <span>|</span>
-                      <button type="button" onClick={() => { setFornecedorImprimir(fc); setIsOrcamentoFornecedorOpen(true); }} className="text-emerald-600 hover:underline">
-                        Orçamento
-                      </button>
-                      <span>|</span>
-                      <button type="button" onClick={() => handleRemoverFornecedor(fc.fornecedor_id)} className="text-red-600 hover:underline">
-                        Excluir
-                      </button>
-                    </div>
-                  </th>
-                ))}
+                {fornecedoresCotacao.map((fc) => {
+                  const fornId = fc.fornecedor_id || (fc as any).fornecedores?.id;
+                  return (
+                    <th key={fornId} className="p-3 border-b text-right">
+                      <div className="font-bold">{fc.fornecedores?.nome_fantasia || fc.fornecedores?.razao_social || "Fornecedor"}</div>
+                      <div className="text-[10px] text-slate-500 print:hidden flex justify-end gap-1 mt-1">
+                        <button type="button" onClick={() => abrirModalPrecos(fc)} className="text-blue-600 hover:underline">
+                          Editar Preços
+                        </button>
+                        <span>|</span>
+                        <button type="button" onClick={() => { setFornecedorImprimir(fc); setIsOrcamentoFornecedorOpen(true); }} className="text-emerald-600 hover:underline">
+                          Orçamento
+                        </button>
+                        <span>|</span>
+                        <button type="button" onClick={() => handleRemoverFornecedor(fornId)} className="text-red-600 hover:underline">
+                          Excluir
+                        </button>
+                      </div>
+                    </th>
+                  );
+                })}
                 <th className="p-3 border-b text-right bg-emerald-50 text-emerald-900 font-bold">
                   Menor Preço (Total)
                 </th>
@@ -467,8 +470,9 @@ export default function DetalheCotacaoPage() {
                       <td className="p-3 text-center text-slate-600">{item.unidade}</td>
 
                       {fornecedoresCotacao.map((fc) => {
+                        const fornId = fc.fornecedor_id || (fc as any).fornecedores?.id;
                         const resp = respostas.find(
-                          (r) => String(r.fornecedor_id).trim() === String(fc.fornecedor_id).trim() && 
+                          (r) => String(r.fornecedor_id).trim() === String(fornId).trim() && 
                                  String(r.cotacao_item_id).trim() === String(item.id).trim()
                         );
                         const subtotalForn = resp && resp.preco > 0 ? resp.preco * (item.quantidade || 1) : 0;
@@ -476,7 +480,7 @@ export default function DetalheCotacaoPage() {
 
                         return (
                           <td
-                            key={fc.fornecedor_id}
+                            key={fornId}
                             className={`p-3 text-right ${isMenor ? "bg-green-50 font-bold text-green-700" : "text-slate-700"}`}
                           >
                             {subtotalForn > 0 ? (
@@ -521,10 +525,11 @@ export default function DetalheCotacaoPage() {
               <tr>
                 <td colSpan={4} className="p-3 text-right">VALOR TOTAL:</td>
                 {fornecedoresCotacao.map((fc) => {
+                  const fornId = fc.fornecedor_id || (fc as any).fornecedores?.id;
                   let totalForn = 0;
                   itens.forEach((item) => {
                     const resp = respostas.find(
-                      (r) => String(r.fornecedor_id).trim() === String(fc.fornecedor_id).trim() && 
+                      (r) => String(r.fornecedor_id).trim() === String(fornId).trim() && 
                              String(r.cotacao_item_id).trim() === String(item.id).trim()
                     );
                     if (resp && resp.preco > 0) {
@@ -532,7 +537,7 @@ export default function DetalheCotacaoPage() {
                     }
                   });
                   return (
-                    <td key={fc.fornecedor_id} className="p-3 text-right">
+                    <td key={fornId} className="p-3 text-right">
                       {totalForn > 0 ? brl(totalForn) : "—"}
                     </td>
                   );
@@ -544,8 +549,6 @@ export default function DetalheCotacaoPage() {
               </tr>
             </tfoot>
           </table>
-        </div>
-      </div>
 
       {/* MODAL ADICIONAR ITEM COM CAMPO CÓDIGO */}
       <Dialog open={isNovoItemOpen} onOpenChange={setIsNovoItemOpen}>
