@@ -254,7 +254,7 @@ export default function DetalheCotacaoPage() {
   }
 
   // Salvar Preços do Fornecedor
-  async function handleSalvarPrecos(e: React.FormEvent) {
+ async function handleSalvarPrecos(e: React.FormEvent) {
     e.preventDefault();
     if (!fornecedorPrecoAtivo) return;
     try {
@@ -283,16 +283,21 @@ export default function DetalheCotacaoPage() {
             await supabase.from("cotacao_respostas").delete().eq("id", existente.id);
           }
         } else if (!isNaN(precoNum) && precoNum > 0) {
-          const { error: errIns } = await supabase.from("cotacao_respostas").insert([
-            {
-              cotacao_id: id,
-              fornecedor_id: fornecedorIdReal,
-              item_id: item.id,
-              preco: precoNum,
-              marca: marcaStr,
-            },
-          ]);
-          if (errIns) console.error("Erro insert:", errIns);
+          // Garantimos explicitamente que enviamos os IDs corretos
+          const payload = {
+            cotacao_id: id,
+            fornecedor_id: fornecedorIdReal,
+            item_id: item.id,
+            preco: precoNum,
+            marca: marcaStr,
+          };
+
+          const { error: errIns } = await supabase.from("cotacao_respostas").insert([payload]);
+          if (errIns) {
+            console.error("Erro detalhado do Supabase:", errIns);
+            toast.error("Erro ao salvar: " + errIns.message);
+            return;
+          }
         }
       }
 
@@ -306,7 +311,6 @@ export default function DetalheCotacaoPage() {
       setSaving(false);
     }
   }
-
   // ---- CÁLCULOS DOS MENORES PREÇOS POR ITEM ----
   const { menoresPrecosPorItem, valorTotalOtimo } = useMemo(() => {
     const menoresMap: { [itemId: string]: { menorPreco: number; fornecedorNome: string; marca: string } } = {};
