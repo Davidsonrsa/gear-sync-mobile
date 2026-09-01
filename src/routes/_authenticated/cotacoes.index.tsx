@@ -19,7 +19,6 @@ import {
   Edit,
   Eye,
   Building2,
-  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,12 +47,16 @@ export default function CotacoesPage() {
   const [setor, setSetor] = useState("MANUTENÇÃO");
   const [observacoes, setObservacoes] = useState("");
 
-  // Form Novo Fornecedor direto na tela de cotações
-  const [ razaoSocial, setRazaoSocial ] = useState("");
+  // Form Novo Fornecedor direto na tela de cotações (com dados de pagamento)
+  const [razaoSocial, setRazaoSocial] = useState("");
   const [nomeFantasia, setNomeFantasia] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
+  const [banco, setBanco] = useState("");
+  const [agencia, setAgencia] = useState("");
+  const [conta, setConta] = useState("");
+  const [pix, setPix] = useState("");
 
   const fetchCotacoes = useCallback(async () => {
     try {
@@ -107,7 +110,7 @@ export default function CotacoesPage() {
     }
   }
 
-  // Cadastrar Fornecedor Direto
+  // Cadastrar Fornecedor Direto com Dados de Pagamento
   async function handleCadastrarFornecedor(e: React.FormEvent) {
     e.preventDefault();
     if (!razaoSocial.trim()) return toast.error("Informe a Razão Social.");
@@ -120,6 +123,10 @@ export default function CotacoesPage() {
           cnpj: cnpj || null,
           telefone: telefone || null,
           email: email || null,
+          banco: banco || null,
+          agencia: agencia || null,
+          conta: conta || null,
+          pix: pix || null,
           ativo: true,
         },
       ]);
@@ -131,6 +138,10 @@ export default function CotacoesPage() {
       setCnpj("");
       setTelefone("");
       setEmail("");
+      setBanco("");
+      setAgencia("");
+      setConta("");
+      setPix("");
     } catch (error: any) {
       toast.error(error.message || "Erro ao cadastrar fornecedor.");
     } finally {
@@ -142,7 +153,6 @@ export default function CotacoesPage() {
   async function handleDeleteCotacao(id: string) {
     if (!confirm("Tem certeza que deseja excluir esta cotação? Todos os itens e respostas vinculadas serão removidos.")) return;
     try {
-      // Deleta dependências primeiro se necessário ou deixa o cascade agir
       await supabase.from("cotacao_respostas").delete().eq("cotacao_id", id);
       await supabase.from("cotacao_itens").delete().eq("cotacao_id", id);
       await supabase.from("cotacao_fornecedores").delete().eq("cotacao_id", id);
@@ -323,13 +333,13 @@ export default function CotacoesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* MODAL: CADASTRAR FORNECEDOR DIRETO NA TELA */}
+      {/* MODAL: CADASTRAR FORNECEDOR DIRETO NA TELA (COM DADOS BANCÁRIOS) */}
       <Dialog open={isNovoFornecedorOpen} onOpenChange={setIsNovoFornecedorOpen}>
-        <DialogContent className="sm:max-w-md bg-white">
+        <DialogContent className="sm:max-w-lg bg-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-slate-800">Cadastrar Novo Fornecedor</DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              Cadastre o fornecedor para poder incluí-lo nas cotações.
+              Cadastre o fornecedor e seus dados de pagamento para incluí-lo nas cotações.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCadastrarFornecedor} className="space-y-3 mt-2">
@@ -354,6 +364,29 @@ export default function CotacoesPage() {
             <div>
               <Label className="text-xs font-semibold text-slate-700">E-mail</Label>
               <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="contato@fornecedor.com" className="mt-1" />
+            </div>
+            <div className="border-t border-slate-200 pt-3 mt-3">
+              <p className="text-xs font-bold text-slate-700 mb-2">Dados para Pagamento</p>
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Banco</Label>
+                  <Input value={banco} onChange={(e) => setBanco(e.target.value)} placeholder="Ex: 001 - Banco do Brasil" className="mt-1" />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Agência</Label>
+                  <Input value={agencia} onChange={(e) => setAgencia(e.target.value)} placeholder="Ex: 1234-5" className="mt-1" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Conta / Operação</Label>
+                  <Input value={conta} onChange={(e) => setConta(e.target.value)} placeholder="Ex: 12345-6" className="mt-1" />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Chave PIX</Label>
+                  <Input value={pix} onChange={(e) => setPix(e.target.value)} placeholder="CNPJ, E-mail ou Telefone" className="mt-1" />
+                </div>
+              </div>
             </div>
             <DialogFooter className="mt-4 flex gap-2 justify-end">
               <Button type="button" variant="outline" onClick={() => setIsNovoFornecedorOpen(false)} disabled={saving}>
