@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,15 +28,55 @@ export const Route = createFileRoute("/_authenticated/cotacoes/$id")({
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+interface Cotacao {
+  id: string;
+  numero: string | number;
+  patrimonio?: string;
+  setor?: string;
+  data_cotacao?: string;
+  observacoes?: string;
+}
+
+interface ItemCotacao {
+  id: string;
+  cotacao_id: string;
+  descricao: string;
+  quantidade: number;
+  unidade: string;
+}
+
+interface Fornecedor {
+  id: string;
+  razao_social: string;
+  nome_fantasia?: string;
+  cnpj?: string;
+  telefone?: string;
+}
+
+interface CotacaoFornecedor {
+  cotacao_id: string;
+  fornecedor_id: string;
+  fornecedores?: Fornecedor;
+}
+
+interface RespostaPreco {
+  id: string;
+  cotacao_id: string;
+  fornecedor_id: string;
+  item_id: string;
+  preco: number;
+  marca?: string;
+}
+
 export default function DetalheCotacaoPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
 
-  const [cotacao, setCotacao] = useState<any>(null);
-  const [itens, setItens] = useState<any[]>([]);
-  const [fornecedoresCotacao, setFornecedoresCotacao] = useState<any[]>([]);
-  const [respostas, setRespostas] = useState<any[]>([]);
-  const [todosFornecedores, setTodosFornecedores] = useState<any[]>([]);
+  const [cotacao, setCotacao] = useState<Cotacao | null>(null);
+  const [itens, setItens] = useState<ItemCotacao[]>([]);
+  const [fornecedoresCotacao, setFornecedoresCotacao] = useState<CotacaoFornecedor[]>([]);
+  const [respostas, setRespostas] = useState<RespostaPreco[]>([]);
+  const [todosFornecedores, setTodosFornecedores] = useState<Fornecedor[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -55,16 +95,16 @@ export default function DetalheCotacaoPage() {
   const [fornecedorIdSelecionado, setFornecedorIdSelecionado] = useState("");
 
   // Inserção/Edição de Preços por Fornecedor
-  const [fornecedorPrecoAtivo, setFornecedorPrecoAtivo] = useState<any>(null);
+  const [fornecedorPrecoAtivo, setFornecedorPrecoAtivo] = useState<CotacaoFornecedor | null>(null);
   const [precosTemp, setPrecosTemp] = useState<{ [itemId: string]: { preco: string; marca: string } }>({});
 
   // Orçamento Individual do Fornecedor para Impressão
-  const [fornecedorImprimir, setFornecedorImprimir] = useState<any>(null);
+  const [fornecedorImprimir, setFornecedorImprimir] = useState<CotacaoFornecedor | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      // Buscar cotação
+      
       const { data: cotData, error: cotErr } = await supabase
         .from("cotacoes")
         .select("*")
@@ -73,36 +113,37 @@ export default function DetalheCotacaoPage() {
       if (cotErr) throw cotErr;
       setCotacao(cotData);
 
-      // Buscar itens
-      const { data: itensData } = await supabase
+      const { data: itensData, error: itensErr } = await supabase
         .from("cotacao_itens")
         .select("*")
         .eq("cotacao_id", id)
-        .order("created_at");
+        .order("created_at", { ascending: true });
+      if (itensErr) throw itensErr;
       setItens(itensData || []);
 
-      // Buscar fornecedores vinculados
-      const { data: fornCotData } = await supabase
+      const { data: fornCotData, error: fornCotErr } = await supabase
         .from("cotacao_fornecedores")
         .select("*, fornecedores(*)")
         .eq("cotacao_id", id);
+      if (fornCotErr) throw fornCotErr;
       setFornecedoresCotacao(fornCotData || []);
 
-      // Buscar respostas de preços vinculadas a esta cotação
-      const { data: respData } = await supabase
+      const { data: respData, error: respErr } = await supabase
         .from("cotacao_respostas")
         .select("*")
         .eq("cotacao_id", id);
+      if (respErr) throw respErr;
       setRespostas(respData || []);
 
-      // Buscar todos os fornecedores para o select de vínculo
-      const { data: allForn } = await supabase
+      const { data: allForn, error: allFornErr } = await supabase
         .from("fornecedores")
         .select("*")
-        .order("razao_social");
+        .order("razao_social", { ascending: true });
+      if (allFornErr) throw allFornErr;
       setTodosFornecedores(allForn || []);
-    } catch (error: any) {
-      toast.error("Erro ao carregar dados da cotação.");
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(`Erro ao carregar dados da cotação: ${err.message || "Erro desconhecido"}`);
     } finally {
       setLoading(false);
     }
@@ -132,8 +173,9 @@ export default function DetalheCotacaoPage() {
       setDescricaoItem("");
       setQuantidadeItem("1");
       fetchData();
-    } catch (error: any) {
-      toast.error("Erro ao adicionar item: " + error.message);
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error("Erro ao adicionar item: " + err.message);
     } finally {
       setSaving(false);
     }
@@ -142,10 +184,15 @@ export default function DetalheCotacaoPage() {
   // Deletar Item
   async function handleDeleteItem(itemId: string) {
     if (!confirm("Deseja excluir este item?")) return;
-    await supabase.from("cotacao_itens").delete().eq("id", itemId);
-    await supabase.from("cotacao_respostas").delete().eq("item_id", itemId);
-    toast.success("Item excluído.");
-    fetchData();
+    try {
+      await supabase.from("cotacao_itens").delete().eq("id", itemId);
+      await supabase.from("cotacao_respostas").delete().eq("item_id", itemId);
+      toast.success("Item excluído.");
+      fetchData();
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error("Erro ao excluir item: " + err.message);
+    }
   }
 
   // Vincular Fornecedor à Cotação
@@ -165,8 +212,9 @@ export default function DetalheCotacaoPage() {
       setIsVincularFornecedorOpen(false);
       setFornecedorIdSelecionado("");
       fetchData();
-    } catch (error: any) {
-      toast.error("Erro ao vincular (Fornecedor já vinculado?).");
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error("Erro ao vincular (Fornecedor já vinculado?): " + err.message);
     } finally {
       setSaving(false);
     }
@@ -175,14 +223,19 @@ export default function DetalheCotacaoPage() {
   // Remover Fornecedor da Cotação
   async function handleRemoverFornecedor(fornecedorId: string) {
     if (!confirm("Remover fornecedor desta cotação e seus preços informados?")) return;
-    await supabase.from("cotacao_respostas").delete().eq("cotacao_id", id).eq("fornecedor_id", fornecedorId);
-    await supabase.from("cotacao_fornecedores").delete().eq("cotacao_id", id).eq("fornecedor_id", fornecedorId);
-    toast.success("Fornecedor removido.");
-    fetchData();
+    try {
+      await supabase.from("cotacao_respostas").delete().eq("cotacao_id", id).eq("fornecedor_id", fornecedorId);
+      await supabase.from("cotacao_fornecedores").delete().eq("cotacao_id", id).eq("fornecedor_id", fornecedorId);
+      toast.success("Fornecedor removido.");
+      fetchData();
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error("Erro ao remover fornecedor: " + err.message);
+    }
   }
 
   // Abrir Modal de Inserir Preços do Fornecedor
-  function abrirModalPrecos(fc: any) {
+  function abrirModalPrecos(fc: CotacaoFornecedor) {
     setFornecedorPrecoAtivo(fc);
     const map: { [itemId: string]: { preco: string; marca: string } } = {};
     itens.forEach((item) => {
@@ -243,41 +296,46 @@ export default function DetalheCotacaoPage() {
       toast.success("Preços salvos com sucesso!");
       setIsPrecosOpen(false);
       await fetchData();
-    } catch (error: any) {
-      toast.error("Erro ao salvar preços: " + error.message);
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error("Erro ao salvar preços: " + err.message);
     } finally {
       setSaving(false);
     }
   }
 
-  // ---- CÁLCULOS DOS MENORES PREÇOS POR ITEM ----
-  const menoresPrecosPorItem: { [itemId: string]: { menorPreco: number; fornecedorNome: string; marca: string } } = {};
-  let valorTotalOtimo = 0;
+  // ---- CÁLCULOS DOS MENORES PREÇOS POR ITEM (Otimizado com useMemo) ----
+  const { menoresPrecosPorItem, valorTotalOtimo } = useMemo(() => {
+    const menoresMap: { [itemId: string]: { menorPreco: number; fornecedorNome: string; marca: string } } = {};
+    let totalOtimo = 0;
 
-  itens.forEach((item) => {
-    let menor: number | null = null;
-    let fornNome = "—";
-    let marcaStr = "—";
+    itens.forEach((item) => {
+      let menor: number | null = null;
+      let fornNome = "—";
+      let marcaStr = "—";
 
-    fornecedoresCotacao.forEach((fc) => {
-      const resp = respostas.find(
-        (r) => String(r.fornecedor_id) === String(fc.fornecedor_id) && String(r.item_id) === String(item.id)
-      );
-      if (resp && resp.preco > 0) {
-        if (menor === null || resp.preco < menor) {
-          menor = resp.preco;
-          fornNome = fc.fornecedores?.nome_fantasia || fc.fornecedores?.razao_social || "Fornecedor";
-          marcaStr = resp.marca || "—";
+      fornecedoresCotacao.forEach((fc) => {
+        const resp = respostas.find(
+          (r) => String(r.fornecedor_id) === String(fc.fornecedor_id) && String(r.item_id) === String(item.id)
+        );
+        if (resp && resp.preco > 0) {
+          if (menor === null || resp.preco < menor) {
+            menor = resp.preco;
+            fornNome = fc.fornecedores?.nome_fantasia || fc.fornecedores?.razao_social || "Fornecedor";
+            marcaStr = resp.marca || "—";
+          }
         }
+      });
+
+      if (menor !== null) {
+        const subtotalItem = menor * (item.quantidade || 1);
+        menoresMap[item.id] = { menorPreco: menor, fornecedorNome: fornNome, marca: marcaStr };
+        totalOtimo += subtotalItem;
       }
     });
 
-    if (menor !== null) {
-      const subtotalItem = menor * (item.quantidade || 1);
-      menoresPrecosPorItem[item.id] = { menorPreco: menor, fornecedorNome: fornNome, marca: marcaStr };
-      valorTotalOtimo += subtotalItem;
-    }
-  });
+    return { menoresPrecosPorItem: menoresMap, valorTotalOtimo: totalOtimo };
+  }, [itens, fornecedoresCotacao, respostas]);
 
   if (loading) {
     return (
@@ -630,7 +688,7 @@ export default function DetalheCotacaoPage() {
                     <td className="p-2 border text-right text-base text-blue-700">
                       {brl(
                         itens.reduce((acc, item) => {
-                          const resp = respostas.find(
+                          const resp = respostas.respostasFindId ?? respostas.find(
                             (r) => String(r.fornecedor_id) === String(fornecedorImprimir.fornecedor_id) && String(r.item_id) === String(item.id)
                           );
                           return acc + (resp ? resp.preco * (item.quantidade || 1) : 0);
