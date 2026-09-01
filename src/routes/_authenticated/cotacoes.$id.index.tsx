@@ -28,6 +28,17 @@ export const Route = createFileRoute("/_authenticated/cotacoes/$id")({
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+// Função para formatar a data do padrão americano (YYYY-MM-DD) para o brasileiro (DD/MM/YYYY)
+const formatarData = (dataStr?: string) => {
+  if (!dataStr) return "—";
+  const partes = dataStr.split("T")[0].split("-");
+  if (partes.length === 3) {
+    const [ano, mes, dia] = partes;
+    return `${dia}/${mes}/${ano}`;
+  }
+  return dataStr;
+};
+
 interface Cotacao {
   id: string | number;
   numero: string | number;
@@ -396,7 +407,10 @@ export default function DetalheCotacaoPage() {
             <h1 className="text-2xl font-bold text-slate-800 mt-2">
               Patrimônio / Equipamento: {cotacao.patrimonio || "Não informado"}
             </h1>
-            <p className="text-sm text-slate-600 mt-1">Setor: {cotacao.setor || "—"} | Data: {cotacao.data_cotacao}</p>
+            {/* Aqui a data foi corrigida para usar formatarData */}
+            <p className="text-sm text-slate-600 mt-1">
+              Setor: {cotacao.setor || "—"} | Data: {formatarData(cotacao.data_cotacao)}
+            </p>
             {cotacao.observacoes && <p className="text-xs text-slate-500 mt-2">Obs: {cotacao.observacoes}</p>}
           </div>
           <div className="text-right print:hidden">
@@ -576,7 +590,7 @@ export default function DetalheCotacaoPage() {
         </div>
       </div>
 
-      {/* MODAIS (Item, Vincular, Preços, Orçamento) mantêm-se iguais... */}
+      {/* MODAIS (Item, Vincular, Preços, Orçamento) */}
       <Dialog open={isNovoItemOpen} onOpenChange={setIsNovoItemOpen}>
         <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader><DialogTitle>Adicionar Item / Peça</DialogTitle></DialogHeader>
