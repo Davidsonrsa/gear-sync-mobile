@@ -30,6 +30,18 @@ export const Route = createFileRoute("/_authenticated/cotacoes/")({
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+// Função para converter AAAA-MM-DD para DD/MM/AAAA
+const formatarData = (dataStr: string) => {
+  if (!dataStr) return "—";
+  // Se já estiver formatada ou vier com timestamp, trata adequadamente
+  const partes = dataStr.split("T")[0].split("-");
+  if (partes.length === 3) {
+    const [ano, mes, dia] = partes;
+    return `${dia}/${mes}/${ano}`;
+  }
+  return dataStr;
+};
+
 export default function CotacoesPage() {
   const navigate = useNavigate();
   const [cotacoes, setCotacoes] = useState<any[]>([]);
@@ -349,7 +361,7 @@ export default function CotacoesPage() {
                   return (
                     <tr key={c.id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="p-3 font-semibold text-slate-800">{c.numero}</td>
-                      <td className="p-3 text-slate-600">{c.data_cotacao || "—"}</td>
+                      <td className="p-3 text-slate-600">{formatarData(c.data_cotacao)}</td>
                       <td className="p-3 text-slate-600">{c.patrimonio || "—"}</td>
                       <td className="p-3 text-slate-600">{c.setor || "—"}</td>
                       <td className="p-3">
