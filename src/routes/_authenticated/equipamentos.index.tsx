@@ -535,14 +535,18 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
 
   return (
     <>
-      <Button
+    <Button
         size="sm"
-        variant="destructive"
         className={`h-7 px-2.5 text-[11px] gap-1 font-bold shadow-sm transition-all border ${
           temPendenciasAbertas 
-            ? "bg-red-600 hover:bg-red-700 text-white border-red-700 animate-pulse" 
-            : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300"
+            ? "text-white border-red-700 animate-pulse" 
+            : "text-slate-700 border-slate-300 hover:bg-slate-200"
         }`}
+        style={
+          temPendenciasAbertas
+            ? { backgroundColor: "#dc2626", color: "#ffffff", opacity: 1 }
+            : { backgroundColor: "#f1f5f9", color: "#334155", opacity: 1 }
+        }
         onClick={(e) => {
           e.preventDefault();
           setOpen(true);
@@ -551,7 +555,6 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
         <AlertCircle className={`w-3.5 h-3.5 ${temPendenciasAbertas ? "text-white animate-bounce" : "text-slate-500"}`} />
         <span>{temPendenciasAbertas ? `Pendências (${pendenciasAbertas.length})` : "Pendências"}</span>
       </Button>
-
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           style={{ backgroundColor: "#ffffff", opacity: 1 }}
