@@ -52,7 +52,7 @@ export default function NovoFornecedorPage() {
   return (
     <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <Button variant="outline" onClick={() => navigate({ to: "/cotacoes" })} className="gap-2">
+        <Button variant="outline" onClick={() => navigate({ to: "/fornecedores" })} className="gap-2">
           <ArrowLeft className="w-4 h-4" /> Voltar
         </Button>
         <h1 className="text-xl font-bold text-slate-800">Cadastrar Novo Fornecedor</h1>
@@ -113,7 +113,7 @@ export default function NovoFornecedorPage() {
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => navigate({ to: "/cotacoes" })}>
+            <Button type="button" variant="outline" onClick={() => navigate({ to: "/fornecedores" })}>
               Cancelar
             </Button>
             <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white">
