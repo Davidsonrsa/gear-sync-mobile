@@ -268,10 +268,32 @@ export function MedicoesPage() {
       {visao === 'contratos' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {contratos.map(c => (
-            <div key={c.id} onClick={() => { setContratoSelecionado(c); setVisao('meses'); }} className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 hover:border-orange-500 cursor-pointer transition">
-              <span className="bg-orange-100 text-orange-700 text-xs font-semibold px-2 py-0.5 rounded">Contrato nº {c.numero}</span>
-              <h3 className="font-bold text-gray-800 mt-2">{c.contratante}</h3>
-              <p className="text-gray-500 text-xs mt-1">{c.objeto}</p>
+            <div key={c.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 hover:border-orange-500 transition flex flex-col justify-between gap-4">
+              <div className="flex justify-between items-start">
+                <span className="bg-orange-100 text-orange-700 text-xs font-semibold px-2 py-0.5 rounded">Contrato nº {c.numero}</span>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => {
+                    setContratoEditando(c);
+                    setFormNumero(c.numero);
+                    setFormContratante(c.contratante);
+                    setFormObjeto(c.objeto);
+                    setModalContratoAberto(true);
+                  }} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-lg transition" title="Editar Contrato">
+                    <Edit size={16} />
+                  </button>
+                  <button onClick={() => {
+                    if (confirm(`Deseja excluir o contrato nº ${c.numero}?`)) {
+                      setContratos(contratos.filter(item => item.id !== c.id));
+                    }
+                  }} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded-lg transition" title="Excluir Contrato">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+              <div onClick={() => { setContratoSelecionado(c); setVisao('meses'); }} className="cursor-pointer">
+                <h3 className="font-bold text-gray-800">{c.contratante}</h3>
+                <p className="text-gray-500 text-xs mt-1">{c.objeto}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -617,11 +639,22 @@ export function MedicoesPage() {
       {modalContratoAberto && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-800">Novo Contrato</h3>
+            <h3 className="text-lg font-bold text-gray-800">
+              {contratoEditando ? 'Editar Contrato' : 'Novo Contrato'}
+            </h3>
             <form onSubmit={handleSalvarContrato} className="space-y-3">
-              <input type="text" value={formNumero} onChange={e => setFormNumero(e.target.value)} required className="w-full p-2 border rounded text-sm" placeholder="Número do Contrato (Ex: 48/2022)" />
-              <input type="text" value={formContratante} onChange={e => setFormContratante(e.target.value)} required className="w-full p-2 border rounded text-sm" placeholder="Contratante (Ex: Prefeitura)" />
-              <input type="text" value={formObjeto} onChange={e => setFormObjeto(e.target.value)} className="w-full p-2 border rounded text-sm" placeholder="Objeto" />
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Número do Contrato</label>
+                <input type="text" value={formNumero} onChange={e => setFormNumero(e.target.value)} required className="w-full p-2 border rounded text-sm" placeholder="Ex: 48/2022" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Contratante</label>
+                <input type="text" value={formContratante} onChange={e => setFormContratante(e.target.value)} required className="w-full p-2 border rounded text-sm" placeholder="Ex: Prefeitura" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Objeto</label>
+                <input type="text" value={formObjeto} onChange={e => setFormObjeto(e.target.value)} className="w-full p-2 border rounded text-sm" placeholder="Objeto do contrato" />
+              </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setModalContratoAberto(false)} className="px-3 py-1.5 bg-gray-100 rounded text-sm">Cancelar</button>
                 <button type="submit" className="px-3 py-1.5 bg-orange-600 text-white rounded text-sm">Salvar</button>
