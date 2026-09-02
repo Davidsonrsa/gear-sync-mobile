@@ -18,7 +18,7 @@ interface MesAno {
   contratoId: string;
   nome: string; 
   ano: number;
-  mesIndex: number; // 0 a 11
+  mesIndex: number;
 }
 
 interface DiaMedicao {
@@ -39,6 +39,9 @@ interface MaquinaMedicao {
   tipo: string; 
   operador: string;
   valorHora: number;
+  dataAprovacao: string;
+  assinaturaResponsavel: string;
+  assinaturaContratante: string;
   dias: DiaMedicao[];
 }
 
@@ -50,7 +53,7 @@ export function MedicoesPage() {
   ]);
 
   const [meses, setMeses] = useState<MesAno[]>([
-    { id: 'm1', contratoId: '1', nome: 'Agosto', ano: 2026, mesIndex: 7 }
+    { id: 'm1', contratoId: '1', nome: 'Setembro', ano: 2026, mesIndex: 8 }
   ]);
 
   const gerarDiasDoMes = (ano: number, mesIndex: number) => {
@@ -82,11 +85,14 @@ export function MedicoesPage() {
     {
       id: 'eq1',
       mesId: 'm1',
-      codigo: 'RE23',
+      codigo: 'RE01',
       tipo: 'Retroescavadeira',
-      operador: 'Jeferson Pascoal Rocha',
+      operador: 'Não informado',
       valorHora: 193.62,
-      dias: gerarDiasDoMes(2026, 7)
+      dataAprovacao: '2026-09-30',
+      assinaturaResponsavel: 'Responsável Técnico',
+      assinaturaContratante: 'Fiscal da Prefeitura',
+      dias: gerarDiasDoMes(2026, 8)
     }
   ]);
 
@@ -100,6 +106,14 @@ export function MedicoesPage() {
   const [formContratante, setFormContratante] = useState('');
   const [formObjeto, setFormObjeto] = useState('');
 
+  // Modal Máquina
+  const [modalMaquinaAberto, setModalMaquinaAberto] = useState(false);
+  const [maquinaEditando, setMaquinaEditando] = useState<MaquinaMedicao | null>(null);
+  const [formCodigo, setFormCodigo] = useState('');
+  const [formTipo, setFormTipo] = useState('');
+  const [formOperador, setFormOperador] = useState('');
+  const [formValorHora, setFormValorHora] = useState('193.62');
+
   const handleSalvarContrato = (e: React.FormEvent) => {
     e.preventDefault();
     if (contratoEditando) {
@@ -108,6 +122,36 @@ export function MedicoesPage() {
       setContratos([...contratos, { id: String(Date.now()), numero: formNumero, contratante: formContratante, objeto: formObjeto }]);
     }
     setModalContratoAberto(false);
+  };
+
+  const handleSalvarMaquina = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mesSelecionado) return;
+
+    if (maquinaEditando) {
+      setMaquinas(maquinas.map(m => m.id === maquinaEditando.id ? {
+        ...m,
+        codigo: formCodigo,
+        tipo: formTipo,
+        operador: formOperador,
+        valorHora: Number(formValorHora)
+      } : m));
+    } else {
+      const nova: MaquinaMedicao = {
+        id: String(Date.now()),
+        mesId: mesSelecionado.id,
+        codigo: formCodigo,
+        tipo: formTipo,
+        operador: formOperador || 'Não informado',
+        valorHora: Number(formValorHora) || 0,
+        dataAprovacao: new Date().toISOString().split('T')[0],
+        assinaturaResponsavel: 'Responsável Técnico',
+        assinaturaContratante: 'Fiscal',
+        dias: gerarDiasDoMes(mesSelecionado.ano, mesSelecionado.mesIndex)
+      };
+      setMaquinas([...maquinas, nova]);
+    }
+    setModalMaquinaAberto(false);
   };
 
   const calcularSubtotal = (inicio: string, fim: string) => {
@@ -119,7 +163,28 @@ export function MedicoesPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 print:p-0 print:space-y-2">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 print:p-0 print:m-0 print:max-w-none">
+      {/* Estilo injetado para forçar a supressão de cabeçalho e rodapé do navegador na impressão A4 */}
+      <style>{`
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 8mm;
+          }
+          body {
+            background-color: white !important;
+            color: black !important;
+            -webkit-print-color-adjust: exact;
+          }
+          header, nav, footer, .print\\:hidden {
+            display: none !important;
+          }
+          .print\\:block {
+            display: block !important;
+          }
+        }
+      `}</style>
+
       <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100 print:hidden">
         <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
           <Clock className="text-orange-500" /> Medições e Contratos
@@ -163,23 +228,14 @@ export function MedicoesPage() {
               <h2 className="text-md font-bold text-gray-800">{contratoSelecionado.contratante} (Nº {contratoSelecionado.numero})</h2>
             </div>
             <button onClick={() => {
-              const nomeMes = prompt('Nome do Mês (Ex: Setembro):');
+              const nomeMes = prompt('Nome do Mês (Ex: Outubro):');
               const anoStr = prompt('Ano (Ex: 2026):', '2026');
-              const mesIdxStr = prompt('Número do Mês de 1 a 12 (Ex: 9 para Setembro):', '9');
+              const mesIdxStr = prompt('Número do Mês de 1 a 12 (Ex: 10 para Outubro):', '10');
               if (nomeMes && anoStr && mesIdxStr) {
                 const ano = Number(anoStr);
                 const mesIndex = Number(mesIdxStr) - 1;
                 const novoMesId = String(Date.now());
                 setMeses([...meses, { id: novoMesId, contratoId: contratoSelecionado.id, nome: nomeMes, ano, mesIndex }]);
-                setMaquinas([...maquinas, {
-                  id: 'eq_' + novoMesId,
-                  mesId: novoMesId,
-                  codigo: 'RE01',
-                  tipo: 'Retroescavadeira',
-                  operador: 'Não informado',
-                  valorHora: 193.62,
-                  dias: gerarDiasDoMes(ano, mesIndex)
-                }]);
               }
             }} className="bg-orange-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1">
               <Calendar size={16} /> Adicionar Mês
@@ -205,35 +261,82 @@ export function MedicoesPage() {
       )}
 
       {visao === 'maquina' && mesSelecionado && contratoSelecionado && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 space-y-4 print:border-none print:p-0">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 space-y-4 print:border-none print:p-0 print:m-0">
           <div className="flex justify-between items-center border-b pb-3 print:hidden">
             <h2 className="text-lg font-bold text-gray-800">Apontamento - {mesSelecionado.nome} de {mesSelecionado.ano}</h2>
             <div className="flex gap-2">
+              <button onClick={() => {
+                setMaquinaEditando(null);
+                setFormCodigo('');
+                setFormTipo('');
+                setFormOperador('');
+                setFormValorHora('193.62');
+                setModalMaquinaAberto(true);
+              }} className="flex items-center gap-1 bg-orange-600 text-white px-3 py-1.5 rounded-lg text-sm">
+                <Plus size={16} /> Novo Equipamento
+              </button>
               <button onClick={() => window.print()} className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm">
                 <Printer size={16} /> Imprimir A4
               </button>
             </div>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-1 print:hidden">
-            {maquinas.filter(eq => eq.mesId === mesSelecionado.id).map((eq, index) => (
-              <button key={eq.id} onClick={() => setMaquinaSelecionada(eq)} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${ (maquinaSelecionada?.id === eq.id) || (!maquinaSelecionada && index === 0) ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-700'}`}>
-                {eq.codigo} - {eq.tipo}
-              </button>
-            ))}
+          <div className="flex justify-between items-center print:hidden">
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {maquinas.filter(eq => eq.mesId === mesSelecionado.id).map((eq, index) => (
+                <div key={eq.id} className="flex items-center gap-1">
+                  <button onClick={() => setMaquinaSelecionada(eq)} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${ (maquinaSelecionada?.id === eq.id) || (!maquinaSelecionada && index === 0) ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-700'}`}>
+                    {eq.codigo} - {eq.tipo}
+                  </button>
+                  <button onClick={() => {
+                    setMaquinaEditando(eq);
+                    setFormCodigo(eq.codigo);
+                    setFormTipo(eq.tipo);
+                    setFormOperador(eq.operador);
+                    setFormValorHora(String(eq.valorHora));
+                    setModalMaquinaAberto(true);
+                  }} className="p-1 text-gray-500 hover:text-blue-600" title="Editar Equipamento">
+                    <Edit size={14} />
+                  </button>
+                  <button onClick={() => {
+                    if(confirm(`Deseja excluir o equipamento ${eq.codigo}?`)) {
+                      setMaquinas(maquinas.filter(m => m.id !== eq.id));
+                      setMaquinaSelecionada(null);
+                    }
+                  }} className="p-1 text-gray-500 hover:text-red-600" title="Excluir Equipamento">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
 
           {(() => {
-            const maqAtiva = maquinaSelecionada || maquinas.find(eq => eq.mesId === mesSelecionado.id);
-            if (!maqAtiva) return <p className="text-gray-500 text-center py-4">Nenhuma máquina cadastrada.</p>;
+            const listaMes = maquinas.filter(eq => eq.mesId === mesSelecionado.id);
+            const maqAtiva = maquinaSelecionada || listaMes[0];
+            if (!maqAtiva) return (
+              <div className="text-center py-8 space-y-3 print:hidden">
+                <p className="text-gray-500">Nenhum equipamento cadastrado neste mês.</p>
+                <button onClick={() => {
+                  setMaquinaEditando(null);
+                  setFormCodigo('RE01');
+                  setFormTipo('Retroescavadeira');
+                  setFormOperador('');
+                  setFormValorHora('193.62');
+                  setModalMaquinaAberto(true);
+                }} className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm">
+                  Cadastrar Primeiro Equipamento
+                </button>
+              </div>
+            );
 
             let totalGeralHoras = 0;
             let totalGeralValor = 0;
 
             return (
-              <div className="space-y-3 print:space-y-1">
-                {/* Cabeçalho compacto para caber perfeitamente em 1 folha A4 */}
-                <div className="border border-gray-800 text-[10px] print:text-[9px]">
+              <div className="space-y-2 print:space-y-1">
+                {/* Cabeçalho compacto otimizado para caber em 1 folha A4 com folga */}
+                <div className="border border-gray-800 text-[10px] print:text-[8px]">
                   <div className="bg-gray-200 text-center font-bold py-1 border-b border-gray-800 uppercase">
                     CONTROLE DE MEDIÇÃO DE HORAS - {mesSelecionado.nome.toUpperCase()} / {mesSelecionado.ano}
                   </div>
@@ -353,12 +456,57 @@ export function MedicoesPage() {
                     </tfoot>
                   </table>
                 </div>
+
+                {/* Bloco de Assinaturas e Data de Aprovação */}
+                <div className="mt-2 pt-2 border border-gray-800 p-2 text-[10px] print:text-[9px] space-y-4 bg-gray-50">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold">DATA DE APROVAÇÃO:</span>
+                      <input 
+                        type="date" 
+                        value={maqAtiva.dataAprovacao} 
+                        onChange={e => {
+                          const val = e.target.value;
+                          setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dataAprovacao: val } : m));
+                        }}
+                        className="p-0.5 border rounded bg-white print:border-none" 
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-8 pt-6 text-center">
+                    <div className="border-t border-gray-600 pt-1">
+                      <input 
+                        type="text" 
+                        value={maqAtiva.assinaturaResponsavel}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, assinaturaResponsavel: val } : m));
+                        }}
+                        className="w-full text-center font-bold bg-transparent border-none"
+                      />
+                      <span className="text-[8px] text-gray-500">Responsável pela Medição / Executante</span>
+                    </div>
+                    <div className="border-t border-gray-600 pt-1">
+                      <input 
+                        type="text" 
+                        value={maqAtiva.assinaturaContratante}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, assinaturaContratante: val } : m));
+                        }}
+                        className="w-full text-center font-bold bg-transparent border-none"
+                      />
+                      <span className="text-[8px] text-gray-500">Fiscal / Gestor do Contrato</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             );
           })()}
         </div>
       )}
 
+      {/* Modal Contrato */}
       {modalContratoAberto && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
@@ -370,6 +518,39 @@ export function MedicoesPage() {
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setModalContratoAberto(false)} className="px-3 py-1.5 bg-gray-100 rounded text-sm">Cancelar</button>
                 <button type="submit" className="px-3 py-1.5 bg-orange-600 text-white rounded text-sm">Salvar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Equipamento (Criar / Editar) */}
+      {modalMaquinaAberto && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
+            <h3 className="text-lg font-bold text-gray-800">
+              {maquinaEditando ? 'Editar Equipamento' : 'Novo Equipamento'}
+            </h3>
+            <form onSubmit={handleSalvarMaquina} className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Código (Ex: RE01)</label>
+                <input type="text" value={formCodigo} onChange={e => setFormCodigo(e.target.value)} required className="w-full p-2 border rounded text-sm" placeholder="RE01" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Tipo de Equipamento (Ex: Retroescavadeira)</label>
+                <input type="text" value={formTipo} onChange={e => setFormTipo(e.target.value)} required className="w-full p-2 border rounded text-sm" placeholder="Retroescavadeira" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Nome do Operador</label>
+                <input type="text" value={formOperador} onChange={e => setFormOperador(e.target.value)} className="w-full p-2 border rounded text-sm" placeholder="Nome do operador" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Valor da Hora (R$)</label>
+                <input type="number" step="0.01" value={formValorHora} onChange={e => setFormValorHora(e.target.value)} required className="w-full p-2 border rounded text-sm" placeholder="193.62" />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setModalMaquinaAberto(false)} className="px-3 py-1.5 bg-gray-100 rounded text-sm">Cancelar</button>
+                <button type="submit" className="px-3 py-1.5 bg-orange-600 text-white rounded text-sm">Salvar Equipamento</button>
               </div>
             </form>
           </div>
