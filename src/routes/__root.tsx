@@ -152,3 +152,9 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
+<Link 
+  to="/medicoes" 
+  className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-orange-600 font-medium transition"
+>
+  <Clock size={18} /> Medições
+</Link>
