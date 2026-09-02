@@ -406,26 +406,25 @@ function CustosPage() {
           </p>
         </div>
 
-        {/* Opção 1: Botão para abrir o Dashboard em Modal */}
-       <Dialog>
-  <DialogTrigger asChild>
-    <Button variant="outline" className="flex items-center gap-2">
-      <PieChart className="w-4 h-4 text-primary" />
-      Ver Dashboard Financeiro
-    </Button>
-  </DialogTrigger>
-  <DialogContent 
-    className="max-w-5xl border-slate-800 text-slate-100 p-0 max-h-[90vh] overflow-hidden shadow-2xl !bg-[#0f172a] !opacity-100"
-    style={{ backgroundColor: "#0f172a", opacity: 1 }}
-  >
-    <div className="relative w-full h-full p-6 overflow-y-auto bg-[#0f172a] z-50">
-      <DialogHeader className="mb-4">
-        <DialogTitle className="text-slate-100">Painel de Desempenho Financeiro</DialogTitle>
-      </DialogHeader>
-      <DashboardFinanceiro lancamentos={lancamentosFiltrados} />
-    </div>
-  </DialogContent>
-</Dialog>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-primary" />
+              Ver Dashboard Financeiro
+            </Button>
+          </DialogTrigger>
+          <DialogContent 
+            className="max-w-5xl border-slate-800 text-slate-100 p-0 max-h-[90vh] overflow-hidden shadow-2xl !bg-[#0f172a] !opacity-100"
+            style={{ backgroundColor: "#0f172a", opacity: 1 }}
+          >
+            <div className="relative w-full h-full p-6 overflow-y-auto bg-[#0f172a] z-50">
+              <DialogHeader className="mb-4">
+                <DialogTitle className="text-slate-100">Painel de Desempenho Financeiro</DialogTitle>
+              </DialogHeader>
+              <DashboardFinanceiro lancamentos={lancamentosFiltrados} />
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Filtros */}
@@ -845,13 +844,13 @@ function CustosPage() {
                         item.tipo === "Receita" ? "text-emerald-600" : "text-rose-600"
                       }`}
                     >
-                      {item.tipo === "Receita" ? "+" : "-"} {formatBRL(item.valor)}
+                      {formatBRL(item.valor)}
                     </td>
                     <td className="p-3 text-center">
                       <Button
-                        variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
+                        variant="ghost"
+                        className="h-8 w-8 text-rose-600 hover:bg-rose-50"
                         onClick={() => handleDeletar(item.id)}
                       >
                         <Trash2 className="w-4 h-4" />
