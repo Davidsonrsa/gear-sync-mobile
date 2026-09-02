@@ -4,20 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  ClipboardList,
-  Printer,
-  Calendar,
-  Save,
-  Trash2,
-  Plus,
-  ArrowLeft,
-  FileSpreadsheet
-} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Printer, Save, Plus } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/medicoes/")({
-  component: MedicoesPage,
+export const Route = createFileRoute("/_authenticated/custos/")({
+  component: MedicoesCustosPage,
 });
 
 interface MedicaoDiaRow {
@@ -31,14 +22,14 @@ interface MedicaoDiaRow {
   observacao: string;
 }
 
-function MedicoesPage() {
+function MedicoesCustosPage() {
   const [contratos, setContratos] = useState<any[]>([]);
   const [contratoSelecionado, setContratoSelecionado] = useState<string>("");
   const [equipamentoSelecionado, setEquipamentoSelecionado] = useState<string>("RE 21");
   const [novoEquipamento, setNovoEquipamento] = useState<string>("");
-  const [listaEquipamentos, setListaEquipamentos] = useState<string[]>(["RE 21", "RE 53", "TA 02"]);
+  const [listaEquipamentos, setListaEquipamentos] = useState<string[]>(["RE 21", "RE 53", "TA 02", "TE", "CB 03", "RC 07"]);
   
-  const [mesSelecionado, setMesSelecionado] = useState<string>("2026-08"); // YYYY-MM
+  const [mesSelecionado, setMesSelecionado] = useState<string>("2026-08");
   const [operador, setOperador] = useState<string>("LUIZ");
   const [contratante, setContratante] = useState<string>("PREFEITURA MUNICIPAL DE NOVA SERRANA");
   const [valorHora, setValorHora] = useState<number>(193.62);
@@ -51,7 +42,6 @@ function MedicoesPage() {
     fetchContratos();
   }, []);
 
-  // Gerar dias do mês selecionado automaticamente
   useEffect(() => {
     if (!mesSelecionado) return;
     const [ano, mes] = mesSelecionado.split("-").map(Number);
@@ -129,7 +119,6 @@ function MedicoesPage() {
     }
   }
 
-  // Calcular horas trabalhadas por dia (subtotais) e totais gerais
   const calcularHoras = (inicio: string, fim: string) => {
     if (!inicio || !fim) return 0;
     const [hi, mi] = inicio.split(":").map(Number);
@@ -162,11 +151,10 @@ function MedicoesPage() {
     return totalGeralHoras * valorHora;
   }, [totalGeralHoras, valorHora]);
 
-  async function handleSalvarTodasMedicoes() {
+  async function handleSalvarMedicoes() {
     setSaving(true);
     setMensagem(null);
     try {
-      // Remover registros antigos do mês/equipamento/contrato para atualizar
       await supabase
         .from("medicoes_diarias")
         .delete()
@@ -175,7 +163,6 @@ function MedicoesPage() {
         .gte("data", `${mesSelecionado}-01`)
         .lte("data", `${mesSelecionado}-31`);
 
-      // Inserir apenas dias que tiveram movimentação ou observação
       const payload = diasComCalculos
         .filter((d) => d.manhaInicio || d.manhaFinal || d.tardeInicio || d.tardeFinal || d.observacao)
         .map((d) => ({
@@ -219,20 +206,19 @@ function MedicoesPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
-      {/* Cabeçalho e Ações (Oculto na Impressão) */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Lançamento de Medição Diária por Equipamento</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Resumo de Medição Diária</h1>
           <p className="text-sm text-muted-foreground">
-            Gerencie os horários diários, calcule valores e imprima relatórios idênticos ao modelo Excel.
+            Controle mensal por equipamento, cálculo automático de horas e valores.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Button onClick={handleImprimir} variant="outline" className="flex items-center gap-2">
             <Printer className="w-4 h-4" /> Imprimir Relatório
           </Button>
-          <Button onClick={handleSalvarMedicao} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2">
-            <Save className="w-4 h-4" /> {saving ? "Salvando..." : "Salvar Alterações"}
+          <Button onClick={handleSalvarMedicoes} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2">
+            <Save className="w-4 h-4" /> {saving ? "Salvando..." : "Salvar Medição"}
           </Button>
         </div>
       </div>
@@ -243,7 +229,6 @@ function MedicoesPage() {
         </div>
       )}
 
-      {/* Filtros de Seleção (Oculto na Impressão) */}
       <Card className="bg-white shadow-sm print:hidden">
         <CardContent className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-1">
@@ -272,21 +257,19 @@ function MedicoesPage() {
 
           <div className="space-y-1">
             <Label className="text-xs font-semibold">Equipamento</Label>
-            <div className="flex gap-2">
-              <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={equipamentoSelecionado}
-                onChange={(e) => setEquipamentoSelecionado(e.target.value)}
-              >
-                {listaEquipamentos.map((eq, i) => (
-                  <option key={i} value={eq}>{eq}</option>
-                ))}
-              </select>
-            </div>
+            <select
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={equipamentoSelecionado}
+              onChange={(e) => setEquipamentoSelecionado(e.target.value)}
+            >
+              {listaEquipamentos.map((eq, i) => (
+                <option key={i} value={eq}>{eq}</option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs font-semibold">Adicionar Novo Equipamento</Label>
+            <Label className="text-xs font-semibold">Novo Equipamento</Label>
             <div className="flex gap-2">
               <Input
                 placeholder="Ex: PC 03"
@@ -311,9 +294,7 @@ function MedicoesPage() {
         </CardContent>
       </Card>
 
-      {/* PLANILHA ESTILO EXCEL (FORMATO DE IMPRESSÃO) */}
       <div className="bg-white p-6 rounded-lg shadow-sm border text-slate-900 print:shadow-none print:border-none print:p-0">
-        {/* Cabeçalho da Planilha */}
         <div className="border-2 border-slate-800 p-4 mb-4 space-y-3">
           <div className="flex justify-between items-center border-b border-slate-800 pb-2">
             <span className="font-extrabold text-lg tracking-wider">SPH - GESTÃO INTEGRADA</span>
@@ -345,7 +326,7 @@ function MedicoesPage() {
               />
             </div>
             <div>
-              <span className="font-semibold">VALOR DA HORA (R$):</span>{" "}
+              <span className="font-semibold">VALOR HORA (R$):</span>{" "}
               <input
                 type="number"
                 step="0.01"
@@ -357,7 +338,6 @@ function MedicoesPage() {
           </div>
         </div>
 
-        {/* Tabela de Lançamentos Diários */}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse border border-slate-400 text-xs text-center">
             <thead>
@@ -387,7 +367,6 @@ function MedicoesPage() {
                   </td>
                   <td className="border border-slate-400 p-1 capitalize text-slate-600">{row.diaSemana}</td>
                   
-                  {/* Manhã Início */}
                   <td className="border border-slate-400 p-1">
                     <input
                       type="time"
@@ -396,7 +375,6 @@ function MedicoesPage() {
                       onChange={(e) => atualizarDia(index, "manhaInicio", e.target.value)}
                     />
                   </td>
-                  {/* Manhã Final */}
                   <td className="border border-slate-400 p-1">
                     <input
                       type="time"
@@ -405,12 +383,10 @@ function MedicoesPage() {
                       onChange={(e) => atualizarDia(index, "manhaFinal", e.target.value)}
                     />
                   </td>
-                  {/* Sub Total Manhã */}
                   <td className="border border-slate-400 p-1 font-mono">
                     {row.subManha > 0 ? row.subManha.toFixed(2) : "0"}
                   </td>
 
-                  {/* Tarde Início */}
                   <td className="border border-slate-400 p-1">
                     <input
                       type="time"
@@ -419,7 +395,6 @@ function MedicoesPage() {
                       onChange={(e) => atualizarDia(index, "tardeInicio", e.target.value)}
                     />
                   </td>
-                  {/* Tarde Final */}
                   <td className="border border-slate-400 p-1">
                     <input
                       type="time"
@@ -428,22 +403,18 @@ function MedicoesPage() {
                       onChange={(e) => atualizarDia(index, "tardeFinal", e.target.value)}
                     />
                   </td>
-                  {/* Sub Total Tarde */}
                   <td className="border border-slate-400 p-1 font-mono">
                     {row.subTarde > 0 ? row.subTarde.toFixed(2) : "0"}
                   </td>
 
-                  {/* Total Horas Dia */}
                   <td className="border border-slate-400 p-1 font-bold font-mono bg-slate-50">
                     {row.totalHorasDia > 0 ? row.totalHorasDia.toFixed(2) : "0"}
                   </td>
 
-                  {/* Valor Total Dia */}
                   <td className="border border-slate-400 p-1 font-semibold font-mono text-emerald-700 bg-slate-50">
                     {row.valorDia > 0 ? row.valorDia.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "R$ 0,00"}
                   </td>
 
-                  {/* Observação */}
                   <td className="border border-slate-400 p-1">
                     <input
                       type="text"
@@ -456,7 +427,6 @@ function MedicoesPage() {
                 </tr>
               ))}
             </tbody>
-            {/* Rodapé da Tabela com Totais Gerais */}
             <tfoot>
               <tr className="bg-slate-800 text-white font-bold text-sm">
                 <td colSpan={8} className="border border-slate-700 p-2 text-right">TOTAL GERAL DO MÊS:</td>
