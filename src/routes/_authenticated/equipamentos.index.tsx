@@ -461,21 +461,26 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
         .order("created_at", { ascending: false });
 
       if (error) {
-        // Se a tabela não existir ainda no banco, retorna array vazio para evitar crash
-        console.warn("Aviso ao buscar pendências (tabela pode não existir):", error);
+        console.warn("Aviso ao buscar pendências:", error);
         return [];
       }
       return data ?? [];
     },
   });
 
-  const temPendencias = pendencias.length > 0;
+  // Filtra apenas as pendências que estão com status PENDENTE
+  const pendenciasAbertas = useMemo(() => {
+    return pendencias.filter((p: any) => !p.status || p.status === "PENDENTE");
+  }, [pendencias]);
+
+  const temPendenciasAbertas = pendenciasAbertas.length > 0;
 
   const handleSalvar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!novaDescricao.trim()) return;
 
     const nomeUsuario = user?.email || "Usuário Sistema";
+    const statusInicial = executadoPor.trim() ? "CONCLUIDO" : "PENDENTE";
 
     const { error } = await supabase.from("manutencao_pendencias").insert([
       {
@@ -483,12 +488,12 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
         descricao: novaDescricao,
         registrado_por: nomeUsuario,
         executado_por: executadoPor.trim() || null,
-        status: executadoPor.trim() ? "CONCLUIDO" : "PENDENTE",
+        status: statusInicial,
       },
     ]);
 
     if (error) {
-      alert("Erro ao salvar pendência. Verifique se a tabela 'manutencao_pendencias' foi criada no Supabase.");
+      alert("Erro ao salvar pendência.");
       console.error(error);
       return;
     }
@@ -509,12 +514,13 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
   };
 
   const handleAtualizar = async (id: string) => {
+    const novoStatus = editExecutado.trim() ? "CONCLUIDO" : "PENDENTE";
     const { error } = await supabase
       .from("manutencao_pendencias")
       .update({
         descricao: editDescricao,
         executado_por: editExecutado.trim() || null,
-        status: editExecutado.trim() ? "CONCLUIDO" : "PENDENTE",
+        status: novoStatus,
       })
       .eq("id", id);
 
@@ -532,16 +538,18 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
       <Button
         size="sm"
         variant="destructive"
-        className={`h-7 px-2.5 text-[11px] gap-1 font-bold shadow-sm transition-all ${
-          temPendencias ? "bg-red-600 hover:bg-red-700 text-white animate-pulse" : "bg-slate-200 hover:bg-slate-300 text-slate-700"
+        className={`h-7 px-2.5 text-[11px] gap-1 font-bold shadow-sm transition-all border ${
+          temPendenciasAbertas 
+            ? "bg-red-600 hover:bg-red-700 text-white border-red-700 animate-pulse" 
+            : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300"
         }`}
         onClick={(e) => {
-          e.preventDefault(); // Impede o clique de abrir a rota do card
+          e.preventDefault();
           setOpen(true);
         }}
       >
-        <AlertCircle className={`w-3.5 h-3.5 ${temPendencias ? "text-white animate-bounce" : "text-slate-500"}`} />
-        <span>{temPendencias ? `Pendências (${pendencias.length})` : "Pendências"}</span>
+        <AlertCircle className={`w-3.5 h-3.5 ${temPendenciasAbertas ? "text-white animate-bounce" : "text-slate-500"}`} />
+        <span>{temPendenciasAbertas ? `Pendências (${pendenciasAbertas.length})` : "Pendências"}</span>
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -558,14 +566,13 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
           </DialogHeader>
 
           <div className="p-4 max-h-[75vh] overflow-y-auto space-y-4 bg-white">
-            {/* Formulário para Nova Pendência */}
             <form onSubmit={handleSalvar} className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
               <p className="text-xs font-bold text-slate-800">Registrar Nova Pendência</p>
               <Textarea
                 placeholder="Descreva a pendência ou manutenção necessária..."
                 value={novaDescricao}
                 onChange={(e) => setNovaDescricao(e.target.value)}
-                className="text-xs bg-white border-slate-300 min-h-[60px]"
+                className="text-xs bg-white border-slate-300 min-h-[60px] text-slate-900"
                 required
               />
               <div className="flex gap-2">
@@ -573,7 +580,7 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
                   placeholder="Executado por (opcional se concluído)"
                   value={executadoPor}
                   onChange={(e) => setExecutadoPor(e.target.value)}
-                  className="text-xs h-8 bg-white border-slate-300 flex-1"
+                  className="text-xs h-8 bg-white border-slate-300 flex-1 text-slate-900"
                 />
                 <Button type="submit" size="sm" className="h-8 bg-blue-600 hover:bg-blue-700 text-xs text-white">
                   Salvar
@@ -581,7 +588,6 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
               </div>
             </form>
 
-            {/* Lista de Pendências */}
             <div className="space-y-2">
               <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Histórico de Pendências</p>
               {pendencias.length === 0 ? (
@@ -596,13 +602,13 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
                         <Textarea
                           value={editDescricao}
                           onChange={(e) => setEditDescricao(e.target.value)}
-                          className="text-xs bg-white border-slate-300"
+                          className="text-xs bg-white border-slate-300 text-slate-900"
                         />
                         <Input
                           placeholder="Executado por"
                           value={editExecutado}
                           onChange={(e) => setEditExecutado(e.target.value)}
-                          className="text-xs h-8 bg-white border-slate-300"
+                          className="text-xs h-8 bg-white border-slate-300 text-slate-900"
                         />
                         <div className="flex justify-end gap-2">
                           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditandoId(null)}>
@@ -666,7 +672,6 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
     </>
   );
 }
-
 // ----------------------------------------------------
 // TELA PRINCIPAL
 // ----------------------------------------------------
