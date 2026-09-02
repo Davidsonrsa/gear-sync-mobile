@@ -56,7 +56,7 @@ export function MedicoesPage() {
     { id: 'm1', contratoId: '1', nome: 'Setembro', ano: 2026, mesIndex: 8 }
   ]);
 
-  const gerarDiasDoMes = (ano: number, mesIndex: number) => {
+  const gerarDiasDoMesEmBranco = (ano: number, mesIndex: number) => {
     const quantidadeDias = new Date(ano, mesIndex + 1, 0).getDate();
     const diasSemanaNomes = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
     const mesesCurtos = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -66,16 +66,15 @@ export function MedicoesPage() {
       const dataObj = new Date(ano, mesIndex, diaNum);
       const diaSemana = diasSemanaNomes[dataObj.getDay()];
       const dataStr = `${diaNum}-${mesesCurtos[mesIndex]}-${String(ano).slice(2)}`;
-      const isFDS = dataObj.getDay() === 0 || dataObj.getDay() === 6;
 
       return {
         dia: diaNum,
         dataStr,
         diaSemana,
-        manhaInicio: isFDS ? '' : '07:00',
-        manhaFim: isFDS ? '' : '11:00',
-        tardeInicio: isFDS ? '' : '12:00',
-        tardeFim: isFDS ? '' : '17:00',
+        manhaInicio: '',
+        manhaFim: '',
+        tardeInicio: '',
+        tardeFim: '',
         observacao: '',
       };
     });
@@ -92,13 +91,14 @@ export function MedicoesPage() {
       dataAprovacao: '2026-09-30',
       assinaturaResponsavel: 'Responsável Técnico',
       assinaturaContratante: 'Fiscal da Prefeitura',
-      dias: gerarDiasDoMes(2026, 8)
+      dias: gerarDiasDoMesEmBranco(2026, 8)
     }
   ]);
 
   const [contratoSelecionado, setContratoSelecionado] = useState<Contrato | null>(null);
   const [mesSelecionado, setMesSelecionado] = useState<MesAno | null>(null);
   const [maquinaSelecionada, setMaquinaSelecionada] = useState<MaquinaMedicao | null>(null);
+  const [mensagemSucesso, setMensagemSucesso] = useState('');
 
   const [modalContratoAberto, setModalContratoAberto] = useState(false);
   const [contratoEditando, setContratoEditando] = useState<Contrato | null>(null);
@@ -147,7 +147,7 @@ export function MedicoesPage() {
         dataAprovacao: new Date().toISOString().split('T')[0],
         assinaturaResponsavel: 'Responsável Técnico',
         assinaturaContratante: 'Fiscal',
-        dias: gerarDiasDoMes(mesSelecionado.ano, mesSelecionado.mesIndex)
+        dias: gerarDiasDoMesEmBranco(mesSelecionado.ano, mesSelecionado.mesIndex)
       };
       setMaquinas([...maquinas, nova]);
     }
@@ -202,6 +202,11 @@ export function MedicoesPage() {
     return totalMes;
   };
 
+  const handleSalvarMedicao = () => {
+    setMensagemSucesso('Medição salva com sucesso!');
+    setTimeout(() => setMensagemSucesso(''), 3000);
+  };
+
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 print:p-0 print:m-0 print:max-w-none">
       <style>{`
@@ -253,6 +258,12 @@ export function MedicoesPage() {
           )}
         </div>
       </div>
+
+      {mensagemSucesso && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl text-sm flex items-center justify-between print:hidden">
+          <span>{mensagemSucesso}</span>
+        </div>
+      )}
 
       {visao === 'contratos' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -320,6 +331,9 @@ export function MedicoesPage() {
           <div className="flex justify-between items-center border-b pb-3 print:hidden">
             <h2 className="text-lg font-bold text-gray-800">Apontamento - {mesSelecionado.nome} de {mesSelecionado.ano}</h2>
             <div className="flex gap-2">
+              <button onClick={handleSalvarMedicao} className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">
+                <Save size={16} /> Salvar Medição
+              </button>
               <button onClick={() => {
                 setMaquinaEditando(null);
                 setFormCodigo('');
