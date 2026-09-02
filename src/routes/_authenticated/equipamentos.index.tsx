@@ -533,9 +533,86 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
     refetch();
   };
 
+  // Função para Enviar via WhatsApp
+  const handleEnviarWhatsApp = () => {
+    if (pendencias.length === 0) {
+      alert("Não há pendências para enviar.");
+      return;
+    }
+
+    let texto = `📋 *RELATÓRIO DE PENDÊNCIAS — EQUIPAMENTO: ${numeroEquipamento}*\n\n`;
+    
+    pendencias.forEach((p: any, index: number) => {
+      texto.ريك;
+      texto += `${index + 1}. *${p.descricao}*\n`;
+      texto += `   • Status: ${p.status || "PENDENTE"}\n`;
+      texto += `   • Registrado por: ${p.registrado_por || "N/I"}\n`;
+      texto += `   • Executado por: ${p.executado_por || "Pendente"}\n\n`;
+    });
+
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
+    window.open(url, "_blank");
+  };
+
+  // Função para Imprimir Relatório
+  const handleImprimir = () => {
+    const janelaImpressao = window.open("", "", "width=800,height=600");
+    if (!janelaImpressao) return;
+
+    const html = `
+      <html>
+        <head>
+          <title>Relatório de Pendências - ${numeroEquipamento}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+            h2 { border-bottom: 2px solid #333; padding-bottom: 8px; }
+            .item { border: 1px solid #ddd; padding: 12px; margin-bottom: 10px; border-radius: 6px; background: #f9f9f9; }
+            .pendente { color: #dc2626; font-weight: bold; }
+            .concluido { color: #16a34a; font-weight: bold; }
+            .meta { font-size: 12px; color: #666; margin-top: 6px; }
+          </style>
+        </head>
+        <body>
+          <h2>Relatório de Manutenção — Equipamento: ${numeroEquipamento}</h2>
+          <p>Data de emissão: ${new Date().toLocaleString("pt-BR")}</p>
+          <hr />
+          ${
+            pendencias.length === 0
+              ? "<p>Nenhuma pendência registrada.</p>"
+              : pendencias
+                  .map(
+                    (p: any) => `
+                <div class="item">
+                  <strong>${p.descricao}</strong> 
+                  <span class="${p.status === "CONCLUIDO" ? "concluido" : "pendente"}">
+                    [${p.status || "PENDENTE"}]
+                  </span>
+                  <div class="meta">
+                    Registrado por: ${p.registrado_por || "Não informado"} | 
+                    Executado por: ${p.executado_por || "Pendente"} | 
+                    Data: ${new Date(p.created_at).toLocaleString("pt-BR")}
+                  </div>
+                </div>
+              `
+                  )
+                  .join("")
+          }
+        </body>
+      </html>
+    `;
+
+    janelaImpressao.document.write(html);
+    janelaImpressao.document.close();
+    janelaImpressao.focus();
+    setTimeout(() => {
+      janelaImpressao.print();
+      janelaImpressao.close();
+    }, 500);
+  };
+
   return (
     <>
-    <Button
+      <Button
         size="sm"
         className={`h-7 px-2.5 text-[11px] gap-1 font-bold shadow-sm transition-all border ${
           temPendenciasAbertas 
@@ -555,17 +632,39 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
         <AlertCircle className={`w-3.5 h-3.5 ${temPendenciasAbertas ? "text-white animate-bounce" : "text-slate-500"}`} />
         <span>{temPendenciasAbertas ? `Pendências (${pendenciasAbertas.length})` : "Pendências"}</span>
       </Button>
+
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           style={{ backgroundColor: "#ffffff", opacity: 1 }}
           className="sm:max-w-lg text-slate-900 border border-slate-300 shadow-2xl p-0 overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
-          <DialogHeader className="p-4 pb-3 border-b border-slate-200 bg-slate-50">
+          <DialogHeader className="p-4 pb-3 border-b border-slate-200 bg-slate-50 flex flex-row items-center justify-between">
             <DialogTitle className="text-slate-900 font-bold text-base flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-red-600" />
-              Pendências de Manutenção — {numeroEquipamento}
+              Pendências — {numeroEquipamento}
             </DialogTitle>
+
+            {/* BOTÕES DE AÇÃO RÁPIDA (IMPRESSÃO E WHATSAPP) */}
+            <div className="flex items-center gap-1.5 mr-6">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs bg-white border-slate-300 text-slate-800 hover:bg-slate-100 gap-1"
+                onClick={handleImprimir}
+                title="Imprimir Relatório"
+              >
+                🖨️ Imprimir
+              </Button>
+              <Button
+                size="sm"
+                className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
+                onClick={handleEnviarWhatsApp}
+                title="Enviar via WhatsApp"
+              >
+                💬 WhatsApp
+              </Button>
+            </div>
           </DialogHeader>
 
           <div className="p-4 max-h-[75vh] overflow-y-auto space-y-4 bg-white">
