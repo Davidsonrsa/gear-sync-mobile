@@ -169,6 +169,39 @@ export function MedicoesPage() {
     return totalMin > 0 ? totalMin / 60 : 0;
   };
 
+  const formatarHoraInput = (valor: string): string => {
+    const limpo = valor.replace(/\D/g, '');
+    if (!limpo) return '';
+    
+    if (limpo.length <= 2) {
+      const hora = limpo.padStart(2, '0');
+      return `${hora}:00`;
+    } else if (limpo.length === 3) {
+      const hora = limpo.slice(0, 1).padStart(2, '0');
+      const min = limpo.slice(1, 3);
+      return `${hora}:${min}`;
+    } else {
+      const hora = limpo.slice(0, 2);
+      const min = limpo.slice(2, 4);
+      return `${hora}:${min}`;
+    }
+  };
+
+  const calcularTotalMes = (mesId: string) => {
+    const maquinasDoMes = maquinas.filter(m => m.mesId === mesId);
+    let totalMes = 0;
+
+    maquinasDoMes.forEach(maq => {
+      maq.dias.forEach(d => {
+        const subM = calcularSubtotal(d.manhaInicio, d.manhaFim);
+        const subT = calcularSubtotal(d.tardeInicio, d.tardeFim);
+        totalMes += (subM + subT) * maq.valorHora;
+      });
+    });
+
+    return totalMes;
+  };
+
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 print:p-0 print:m-0 print:max-w-none">
       <style>{`
@@ -255,20 +288,29 @@ export function MedicoesPage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {meses.filter(m => m.contratoId === contratoSelecionado.id).map(m => (
-              <div key={m.id} onClick={() => { setMesSelecionado(m); setVisao('maquina'); }} className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:border-orange-500 cursor-pointer flex items-center justify-between group">
-                <div className="flex items-center gap-2">
-                  <Calendar className="text-orange-500" size={20} />
-                  <div>
-                    <h4 className="font-bold text-gray-800 text-sm">{m.nome} / {m.ano}</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {meses.filter(m => m.contratoId === contratoSelecionado.id).map(m => {
+              const totalMesValor = calcularTotalMes(m.id);
+              return (
+                <div key={m.id} onClick={() => { setMesSelecionado(m); setVisao('maquina'); }} className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:border-orange-500 cursor-pointer flex flex-col justify-between group gap-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="text-orange-500" size={20} />
+                      <div>
+                        <h4 className="font-bold text-gray-800 text-sm">{m.nome} / {m.ano}</h4>
+                      </div>
+                    </div>
+                    <button onClick={(e) => { e.stopPropagation(); if(confirm('Excluir mês?')) { setMeses(meses.filter(x => x.id !== m.id)); } }} className="text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <div className="bg-orange-50/60 p-2.5 rounded-lg border border-orange-100 flex justify-between items-center">
+                    <span className="text-xs font-semibold text-gray-600">Total Medição:</span>
+                    <span className="text-sm font-bold text-orange-700">R$ {totalMesValor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); if(confirm('Excluir mês?')) { setMeses(meses.filter(x => x.id !== m.id)); } }} className="text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100">
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -425,6 +467,10 @@ export function MedicoesPage() {
                                   const val = e.target.value;
                                   setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dias: m.dias.map((di, idx) => idx === i ? { ...di, manhaInicio: val } : di) } : m));
                                 }} 
+                                onBlur={e => {
+                                  const formatado = formatarHoraInput(e.target.value);
+                                  setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dias: m.dias.map((di, idx) => idx === i ? { ...di, manhaInicio: formatado } : di) } : m));
+                                }}
                                 className="w-12 p-0.5 text-center border rounded bg-white text-[10px] print:border-none print:bg-transparent" 
                               />
                             </td>
@@ -436,6 +482,10 @@ export function MedicoesPage() {
                                   const val = e.target.value;
                                   setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dias: m.dias.map((di, idx) => idx === i ? { ...di, manhaFim: val } : di) } : m));
                                 }} 
+                                onBlur={e => {
+                                  const formatado = formatarHoraInput(e.target.value);
+                                  setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dias: m.dias.map((di, idx) => idx === i ? { ...di, manhaFim: formatado } : di) } : m));
+                                }}
                                 className="w-12 p-0.5 text-center border rounded bg-white text-[10px] print:border-none print:bg-transparent" 
                               />
                             </td>
@@ -448,6 +498,10 @@ export function MedicoesPage() {
                                   const val = e.target.value;
                                   setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dias: m.dias.map((di, idx) => idx === i ? { ...di, tardeInicio: val } : di) } : m));
                                 }} 
+                                onBlur={e => {
+                                  const formatado = formatarHoraInput(e.target.value);
+                                  setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dias: m.dias.map((di, idx) => idx === i ? { ...di, tardeInicio: formatado } : di) } : m));
+                                }}
                                 className="w-12 p-0.5 text-center border rounded bg-white text-[10px] print:border-none print:bg-transparent" 
                               />
                             </td>
@@ -459,6 +513,10 @@ export function MedicoesPage() {
                                   const val = e.target.value;
                                   setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dias: m.dias.map((di, idx) => idx === i ? { ...di, tardeFim: val } : di) } : m));
                                 }} 
+                                onBlur={e => {
+                                  const formatado = formatarHoraInput(e.target.value);
+                                  setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dias: m.dias.map((di, idx) => idx === i ? { ...di, tardeFim: formatado } : di) } : m));
+                                }}
                                 className="w-12 p-0.5 text-center border rounded bg-white text-[10px] print:border-none print:bg-transparent" 
                               />
                             </td>
