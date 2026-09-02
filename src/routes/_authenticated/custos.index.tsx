@@ -26,6 +26,7 @@ import {
   Briefcase,
   Pencil,
   Settings,
+  ClipboardList,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/custos/")({
@@ -56,19 +57,35 @@ export interface ItemFinanceiro {
   data: string;
 }
 
+export interface MedicaoDiariaItem {
+  id: string;
+  contrato: string;
+  contrato_id?: string;
+  equipamento: string;
+  operador: string;
+  data: string;
+  manha_inicio: string;
+  manha_final: string;
+  tarde_inicio: string;
+  tarde_final: string;
+  valor_hora: number;
+  observacao: string;
+}
+
 function CustosPage() {
   const [lancamentos, setLancamentos] = useState<ItemFinanceiro[]>([]);
+  const [medicoes, setMedicoes] = useState<MedicaoDiariaItem[]>([]);
   const [contratos, setContratos] = useState<ContratoItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submittingMedicao, setSubmittingMedicao] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [msgMedicao, setMsgMedicao] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Form states
+  // Form states (Custos)
   const [contratoSelecionado, setContratoSelecionado] = useState<string>("");
   const [novoContratoNome, setNovoContratoNome] = useState<string>("");
   const [isCriandoContrato, setIsCriandoContrato] = useState<boolean>(false);
-
-  // Gerenciamento de Contratos (Edição)
   const [contratoEditando, setContratoEditando] = useState<ContratoItem | null>(null);
   const [novoNomeEditado, setNovoNomeEditado] = useState("");
 
@@ -76,6 +93,18 @@ function CustosPage() {
   const [description, setDescription] = useState("");
   const [value, setValue] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+
+  // Form states (Medições Diárias)
+  const [medContrato, setMedContrato] = useState("");
+  const [medEquipamento, setMedEquipamento] = useState("");
+  const [medOperador, setMedOperador] = useState("");
+  const [medData, setMedData] = useState(new Date().toISOString().split("T")[0]);
+  const [medManhaInicio, setMedManhaInicio] = useState("08:00");
+  const [medManhaFinal, setMedManhaFinal] = useState("12:00");
+  const [medTardeInicio, setMedTardeInicio] = useState("13:00");
+  const [medTardeFinal, setMedTardeFinal] = useState("17:00");
+  const [medValorHora, setMedValorHora] = useState("");
+  const [medObservacao, setMedObservacao] = useState("");
 
   // Filter states
   const [filtroMes, setFiltroMes] = useState<string>("TODOS");
@@ -91,14 +120,13 @@ function CustosPage() {
   useEffect(() => {
     fetchContratos();
     fetchData();
+    fetchMedicoes();
   }, []);
 
   async function fetchContratos() {
     try {
       const { data, error } = await supabase.from("contratos").select("*");
-
       if (error) throw error;
-
       if (data) {
         const lista: ContratoItem[] = data
           .map((c: any) => ({
@@ -108,13 +136,13 @@ function CustosPage() {
           .filter((c) => c.nome !== "");
 
         setContratos(lista);
-        if (lista.length > 0 && !contratoSelecionado) {
-          setContratoSelecionado(lista[0].nome);
+        if (lista.length > 0) {
+          if (!contratoSelecionado) setContratoSelecionado(lista[0].nome);
+          if (!medContrato) setMedContrato(lista[0].nome);
         }
       }
     } catch (err) {
       console.error("Erro ao carregar contratos:", err);
-      setContratos([]);
     }
   }
 
@@ -147,95 +175,124 @@ function CustosPage() {
     }
   }
 
+  async function fetchMedicoes() {
+    try {
+      const { data, error } = await supabase
+        .from("medicoes_diarias")
+        .select("*")
+        .order("data", { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const mappedMed: MedicaoDiariaItem[] = data.map((item: any) => ({
+          id: item.id?.toString() || crypto.randomUUID(),
+          contrato: item.contrato || "",
+          contrato_id: item.contrato_id ? String(item.contrato_id) : undefined,
+          equipamento: item.equipamento || "",
+          operador: item.operador || "",
+          data: item.data || new Date().toISOString().split("T")[0],
+          manha_inicio: item.manha_inicio || "",
+          manha_final: item.manha_final || "",
+          tarde_inicio: item.tarde_inicio || "",
+          tarde_final: item.tarde_final || "",
+          valor_hora: Number(item.valor_hora) || 0,
+          observacao: item.observacao || "",
+        }));
+        setMedicoes(mappedMed);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar medições:", err);
+    }
+  }
+
   const listaTodosContratos = useMemo(() => {
     const mapaContratos = new Map<string, ContratoItem>();
-
     contratos.forEach((c) => {
       if (c.nome && c.nome.trim()) {
         mapaContratos.set(c.nome.trim().toLowerCase(), { id: c.id, nome: c.nome.trim() });
       }
     });
-
     lancamentos.forEach((l) => {
       if (l.contrato && l.contrato.trim()) {
         const chave = l.contrato.trim().toLowerCase();
         if (!mapaContratos.has(chave)) {
-          mapaContratos.set(chave, {
-            id: l.contrato_id || `virtual-${l.contrato.trim()}`,
-            nome: l.contrato.trim(),
-          });
+          mapaContratos.set(chave, { id: l.contrato_id || `virtual-${l.contrato.trim()}`, nome: l.contrato.trim() });
         }
       }
     });
-
     return Array.from(mapaContratos.values()).sort((a, b) => a.nome.localeCompare(b.nome));
   }, [contratos, lancamentos]);
 
-  async function handleEditarContrato(item: ContratoItem) {
-    if (!novoNomeEditado.trim()) return;
+  async function handleSalvarMedicao(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmittingMedicao(true);
+    setMsgMedicao(null);
 
-    const nomeAntigo = item.nome;
-    const novoNome = novoNomeEditado.trim();
+    const valorHoraNum = parseFloat(medValorHora);
+    if (isNaN(valorHoraNum) || valorHoraNum < 0) {
+      setMsgMedicao({ type: "error", text: "Informe um valor por hora válido." });
+      setSubmittingMedicao(false);
+      return;
+    }
+
+    const contratoObj = contratos.find((c) => c.nome === medContrato);
 
     try {
-      if (!item.id.startsWith("virtual-")) {
-        const { error: errContrato } = await supabase
-          .from("contratos")
-          .update({ nome_contrato: novoNome })
-          .eq("id", item.id);
+      const payload = {
+        contrato: medContrato,
+        contrato_id: contratoObj?.id || null,
+        equipamento: medEquipamento,
+        operador: medOperador,
+        data: medData,
+        manha_inicio: medManhaInicio,
+        manha_final: medManhaFinal,
+        tarde_inicio: medTardeInicio,
+        tarde_final: medTardeFinal,
+        valor_hora: valorHoraNum,
+        observacao: medObservacao,
+      };
 
-        if (errContrato) throw errContrato;
-      }
+      const { data, error } = await supabase
+        .from("medicoes_diarias")
+        .insert([payload])
+        .select()
+        .single();
 
-      const { error: errCustos } = await supabase
-        .from("custos")
-        .update({ contrato: novoNome })
-        .eq("contrato", nomeAntigo);
+      if (error) throw error;
 
-      if (errCustos) throw errCustos;
+      const novaMedicao: MedicaoDiariaItem = {
+        id: data?.id?.toString() || crypto.randomUUID(),
+        ...payload,
+      };
 
-      setContratos((prev) =>
-        prev.map((c) => (c.nome === nomeAntigo ? { ...c, nome: novoNome } : c))
-      );
-      setLancamentos((prev) =>
-        prev.map((l) => (l.contrato === nomeAntigo ? { ...l, contrato: novoNome } : l))
-      );
+      setMedicoes((prev) => [novaMedicao, ...prev]);
+      setMsgMedicao({ type: "success", text: "Medição diária salva com sucesso!" });
 
-      if (contratoSelecionado === nomeAntigo) {
-        setContratoSelecionado(novoNome);
-      }
-
-      setContratoEditando(null);
-      setNovoNomeEditado("");
-    } catch (err) {
-      console.error("Erro ao editar contrato:", err);
+      // Limpar campos secundários
+      setMedEquipamento("");
+      setMedOperador("");
+      setMedObservacao("");
+      setMedValorHora("");
+    } catch (err: any) {
+      console.error("Erro ao salvar medição:", err);
+      setMsgMedicao({ type: "error", text: "Erro ao salvar medição no banco." });
+    } finally {
+      setSubmittingMedicao(false);
     }
   }
 
-  async function handleDeletarContrato(item: ContratoItem) {
-    if (!confirm(`Deseja realmente excluir o contrato "${item.nome}" e seus lançamentos?`)) return;
-
+  async function handleDeletarMedicao(id: string) {
     try {
-      if (!item.id.startsWith("virtual-")) {
-        const { error: errContratos } = await supabase.from("contratos").delete().eq("id", item.id);
-        if (errContratos) throw errContratos;
-      }
-
-      const { error: errCustos } = await supabase.from("custos").delete().eq("contrato", item.nome);
-      if (errCustos) throw errCustos;
-
-      setContratos((prev) => prev.filter((c) => c.nome !== item.nome));
-      setLancamentos((prev) => prev.filter((l) => l.contrato !== item.nome));
-
-      if (contratoSelecionado === item.nome) {
-        setContratoSelecionado("");
-      }
+      const { error } = await supabase.from("medicoes_diarias").delete().eq("id", id);
+      if (error) throw error;
+      setMedicoes((prev) => prev.filter((m) => m.id !== id));
     } catch (err) {
-      console.error("Erro ao deletar contrato:", err);
+      console.error("Erro ao deletar medição:", err);
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmitCusto(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setMessage(null);
@@ -248,7 +305,6 @@ function CustosPage() {
     }
 
     let nomeContratoFinal = contratoSelecionado;
-
     if (isCriandoContrato && novoContratoNome.trim() !== "") {
       nomeContratoFinal = novoContratoNome.trim();
       try {
@@ -259,16 +315,11 @@ function CustosPage() {
           .single();
 
         if (contractErr) throw contractErr;
-
         if (newContract) {
-          const novoObj = {
-            id: String(newContract.id),
-            nome: newContract.nome_contrato || nomeContratoFinal,
-          };
-          setContratos((prev) => [...prev, novoObj]);
+          setContratos((prev) => [...prev, { id: String(newContract.id), nome: nomeContratoFinal }]);
         }
       } catch (err) {
-        console.warn("Não foi possível salvar novo contrato no banco:", err);
+        console.warn("Erro ao salvar novo contrato:", err);
       }
     }
 
@@ -292,10 +343,8 @@ function CustosPage() {
 
       if (error) throw error;
 
-      const idGerado = data?.id?.toString() || Date.now().toString();
-
       const novoItem: ItemFinanceiro = {
-        id: idGerado,
+        id: data?.id?.toString() || Date.now().toString(),
         contrato: nomeContratoFinal,
         contrato_id: itemContratoObj?.id,
         tipo,
@@ -306,13 +355,11 @@ function CustosPage() {
 
       setLancamentos((prev) => [novoItem, ...prev]);
       setMessage({ type: "success", text: "Lançamento registrado com sucesso!" });
-
       setDescription("");
       setValue("");
       setNovoContratoNome("");
       setIsCriandoContrato(false);
-      setContratoSelecionado(nomeContratoFinal);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Erro ao salvar lançamento:", err);
       setMessage({ type: "error", text: "Erro ao salvar lançamento." });
     } finally {
@@ -320,11 +367,10 @@ function CustosPage() {
     }
   }
 
-  async function handleDeletar(id: string) {
+  async function handleDeletarCusto(id: string) {
     try {
       const { error } = await supabase.from("custos").delete().eq("id", id);
       if (error) throw error;
-
       setLancamentos((prev) => prev.filter((item) => item.id !== id));
     } catch (err) {
       console.error("Erro ao deletar registro:", err);
@@ -338,93 +384,203 @@ function CustosPage() {
       const matchContrato =
         filtroContrato === "TODOS" ||
         item.contrato.trim().toLowerCase() === filtroContrato.trim().toLowerCase();
-
       return matchMes && matchContrato;
     });
   }, [lancamentos, filtroMes, filtroContrato]);
 
   const resumos = useMemo(() => {
-    let receita = 0;
-    let impostos = 0;
-    let maoDeObra = 0;
-    let encargos = 0;
-    let manutencao = 0;
-    let transporte = 0;
-    let administrativas = 0;
-
+    let receita = 0, impostos = 0, maoDeObra = 0, encargos = 0, manutencao = 0, transporte = 0, administrativas = 0;
     lancamentosFiltrados.forEach((item) => {
       switch (item.tipo) {
-        case "Receita":
-          receita += item.valor;
-          break;
-        case "Impostos":
-          impostos += item.valor;
-          break;
-        case "Mão de Obra":
-          maoDeObra += item.valor;
-          break;
-        case "Encargos":
-          encargos += item.valor;
-          break;
-        case "Despesas de Manutenção":
-          manutencao += item.valor;
-          break;
-        case "Despesas de Transporte":
-          transporte += item.valor;
-          break;
-        case "Despesas Administrativas":
-          administrativas += item.valor;
-          break;
+        case "Receita": receita += item.valor; break;
+        case "Impostos": impostos += item.valor; break;
+        case "Mão de Obra": maoDeObra += item.valor; break;
+        case "Encargos": encargos += item.valor; break;
+        case "Despesas de Manutenção": manutencao += item.valor; break;
+        case "Despesas de Transporte": transporte += item.valor; break;
+        case "Despesas Administrativas": administrativas += item.valor; break;
       }
     });
-
     const despesasTotais = impostos + maoDeObra + encargos + manutencao + transporte + administrativas;
     const resultadoFinal = receita - despesasTotais;
     const margemLucro = receita > 0 ? (resultadoFinal / receita) * 100 : 0;
-
-    return {
-      receita,
-      impostos,
-      maoDeObra,
-      encargos,
-      manutencao,
-      transporte,
-      administrativas,
-      despesasTotais,
-      resultadoFinal,
-      margemLucro,
-    };
+    return { receita, impostos, maoDeObra, encargos, manutencao, transporte, administrativas, despesasTotais, resultadoFinal, margemLucro };
   }, [lancamentosFiltrados]);
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Gestão Financeira de Contratos</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Gestão Financeira e Medições</h1>
           <p className="text-sm text-muted-foreground">
-            Acompanhamento de receitas, impostos, custos operacionais e resultado líquido.
+            Acompanhamento de receitas, impostos, custos operacionais e medições diárias.
           </p>
         </div>
 
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-2">
-              <PieChart className="w-4 h-4 text-primary" />
-              Ver Dashboard Financeiro
-            </Button>
-          </DialogTrigger>
-          <DialogContent 
-            className="max-w-5xl border-slate-800 text-slate-100 p-0 max-h-[90vh] overflow-hidden shadow-2xl !bg-[#0f172a] !opacity-100"
-            style={{ backgroundColor: "#0f172a", opacity: 1 }}
-          >
-            <div className="relative w-full h-full p-6 overflow-y-auto bg-[#0f172a] z-50">
-              <DialogHeader className="mb-4">
-                <DialogTitle className="text-slate-100">Painel de Desempenho Financeiro</DialogTitle>
+        <div className="flex items-center gap-3">
+          {/* BOTÃO DE LANÇAMENTO DE MEDIÇÃO DIÁRIA */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+                <ClipboardList className="w-4 h-4" />
+                Lançar Medição Diária
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl bg-white text-slate-900 max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Formulário de Medição Diária</DialogTitle>
               </DialogHeader>
-              <DashboardFinanceiro lancamentos={lancamentosFiltrados} />
-            </div>
-          </DialogContent>
-        </Dialog>
+
+              <form onSubmit={handleSalvarMedicao} className="space-y-4 pt-2">
+                {msgMedicao && (
+                  <div
+                    className={`p-3 rounded-md text-sm ${
+                      msgMedicao.type === "success"
+                        ? "bg-green-100 text-green-800 border border-green-200"
+                        : "bg-red-100 text-red-800 border border-red-200"
+                    }`}
+                  >
+                    {msgMedicao.text}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="med-contrato">Contrato</Label>
+                    <select
+                      id="med-contrato"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={medContrato}
+                      onChange={(e) => setMedContrato(e.target.value)}
+                    >
+                      {listaTodosContratos.map((c) => (
+                        <option key={c.id} value={c.nome}>
+                          {c.nome}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="med-data">Data</Label>
+                    <Input
+                      id="med-data"
+                      type="date"
+                      value={medData}
+                      onChange={(e) => setMedData(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="med-equipamento">Equipamento</Label>
+                    <Input
+                      id="med-equipamento"
+                      type="text"
+                      placeholder="Ex: Escavadeira CAT 320"
+                      value={medEquipamento}
+                      onChange={(e) => setMedEquipamento(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="med-operador">Operador</Label>
+                    <Input
+                      id="med-operador"
+                      type="text"
+                      placeholder="Nome do Operador"
+                      value={medOperador}
+                      onChange={(e) => setMedOperador(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Turno da Manhã (Início - Fim)</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="time"
+                        value={medManhaInicio}
+                        onChange={(e) => setMedManhaInicio(e.target.value)}
+                      />
+                      <Input
+                        type="time"
+                        value={medManhaFinal}
+                        onChange={(e) => setMedManhaFinal(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Turno da Tarde (Início - Fim)</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="time"
+                        value={medTardeInicio}
+                        onChange={(e) => setMedTardeInicio(e.target.value)}
+                      />
+                      <Input
+                        type="time"
+                        value={medTardeFinal}
+                        onChange={(e) => setMedTardeFinal(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="med-valor">Valor Hora (R$)</Label>
+                    <Input
+                      id="med-valor"
+                      type="number"
+                      step="0.01"
+                      placeholder="0,00"
+                      value={medValorHora}
+                      onChange={(e) => setMedValorHora(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="med-obs">Observações</Label>
+                    <Input
+                      id="med-obs"
+                      type="text"
+                      placeholder="Detalhes ou ocorrências do dia"
+                      value={medObservacao}
+                      onChange={(e) => setMedObservacao(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <Button type="submit" disabled={submittingMedicao} className="bg-emerald-600 hover:bg-emerald-700">
+                    {submittingMedicao ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Salvar Medição Diária
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          {/* DASHBOARD MODAL */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <PieChart className="w-4 h-4 text-primary" />
+                Dashboard
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-5xl border-slate-800 text-slate-100 p-0 max-h-[90vh] overflow-hidden shadow-2xl !bg-[#0f172a]">
+              <div className="relative w-full h-full p-6 overflow-y-auto bg-[#0f172a]">
+                <DialogHeader className="mb-4">
+                  <DialogTitle className="text-slate-100">Painel de Desempenho Financeiro</DialogTitle>
+                </DialogHeader>
+                <DashboardFinanceiro lancamentos={lancamentosFiltrados} />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -434,31 +590,19 @@ function CustosPage() {
             <Filter className="w-4 h-4 text-primary" />
             Filtros:
           </div>
-
           <div className="flex items-center gap-2 min-w-[180px]">
             <Label className="text-xs whitespace-nowrap">Mês:</Label>
             <input
               type="month"
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
               value={filtroMes === "TODOS" ? "" : filtroMes}
               onChange={(e) => setFiltroMes(e.target.value || "TODOS")}
             />
-            {filtroMes !== "TODOS" && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setFiltroMes("TODOS")}
-                className="text-xs px-2 h-8"
-              >
-                Limpar
-              </Button>
-            )}
           </div>
-
           <div className="flex items-center gap-2 min-w-[220px]">
             <Label className="text-xs whitespace-nowrap">Contrato:</Label>
             <select
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
               value={filtroContrato}
               onChange={(e) => setFiltroContrato(e.target.value)}
             >
@@ -477,114 +621,48 @@ function CustosPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-white border-l-4 border-l-emerald-500 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">
-              Receita Bruta
-            </CardTitle>
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">Receita Bruta</CardTitle>
             <TrendingUp className="w-4 h-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">
-              {formatBRL(resumos.receita)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Entradas acumuladas</p>
+            <div className="text-2xl font-bold text-emerald-600">{formatBRL(resumos.receita)}</div>
           </CardContent>
         </Card>
 
         <Card className="bg-white border-l-4 border-l-amber-500 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">
-              Impostos (Deduções)
-            </CardTitle>
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">Impostos</CardTitle>
             <PieChart className="w-4 h-4 text-amber-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-600">
-              {formatBRL(resumos.impostos)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Impostos e tributações</p>
+            <div className="text-2xl font-bold text-amber-600">{formatBRL(resumos.impostos)}</div>
           </CardContent>
         </Card>
 
         <Card className="bg-white border-l-4 border-l-rose-500 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">
-              Custos / Despesas
-            </CardTitle>
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">Custos / Despesas</CardTitle>
             <TrendingDown className="w-4 h-4 text-rose-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-rose-600">
-              {formatBRL(resumos.despesasTotais - resumos.impostos)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">M.O, Encargos, Manut. e Transp.</p>
+            <div className="text-2xl font-bold text-rose-600">{formatBRL(resumos.despesasTotais - resumos.impostos)}</div>
           </CardContent>
         </Card>
 
-        <Card
-          className={`bg-white border-l-4 shadow-sm ${
-            resumos.resultadoFinal >= 0 ? "border-l-blue-600" : "border-l-red-600"
-          }`}
-        >
+        <Card className={`bg-white border-l-4 shadow-sm ${resumos.resultadoFinal >= 0 ? "border-l-blue-600" : "border-l-red-600"}`}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">
-              Resultado Final
-            </CardTitle>
-            <DollarSign
-              className={`w-4 h-4 ${
-                resumos.resultadoFinal >= 0 ? "text-blue-600" : "text-red-600"
-              }`}
-            />
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">Resultado Final</CardTitle>
+            <DollarSign className={`w-4 h-4 ${resumos.resultadoFinal >= 0 ? "text-blue-600" : "text-red-600"}`} />
           </CardHeader>
           <CardContent>
-            <div
-              className={`text-2xl font-bold ${
-                resumos.resultadoFinal >= 0 ? "text-blue-600" : "text-red-600"
-              }`}
-            >
+            <div className={`text-2xl font-bold ${resumos.resultadoFinal >= 0 ? "text-blue-600" : "text-red-600"}`}>
               {formatBRL(resumos.resultadoFinal)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Margem Líquida:{" "}
-              <span className="font-semibold">{resumos.margemLucro.toFixed(1)}%</span>
-            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Detalhamento de Custos Operacionais */}
-      <Card className="bg-white shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold uppercase text-muted-foreground">
-            Detalhamento de Custos Operacionais
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 text-center">
-            <div className="p-3 bg-white rounded-lg border">
-              <span className="text-xs text-muted-foreground block">Mão de Obra</span>
-              <span className="text-sm font-bold">{formatBRL(resumos.maoDeObra)}</span>
-            </div>
-            <div className="p-3 bg-white rounded-lg border">
-              <span className="text-xs text-muted-foreground block">Encargos</span>
-              <span className="text-sm font-bold">{formatBRL(resumos.encargos)}</span>
-            </div>
-            <div className="p-3 bg-white rounded-lg border">
-              <span className="text-xs text-muted-foreground block">Manutenção</span>
-              <span className="text-sm font-bold">{formatBRL(resumos.manutencao)}</span>
-            </div>
-            <div className="p-3 bg-white rounded-lg border">
-              <span className="text-xs text-muted-foreground block">Transporte</span>
-              <span className="text-sm font-bold">{formatBRL(resumos.transporte)}</span>
-            </div>
-            <div className="p-3 bg-white rounded-lg border col-span-2 sm:col-span-1">
-              <span className="text-xs text-muted-foreground block">Administrativas</span>
-              <span className="text-sm font-bold">{formatBRL(resumos.administrativas)}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Formulário */}
+      {/* Formulário de Custos Financeiros */}
       <Card className="bg-white shadow-sm">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
@@ -593,144 +671,34 @@ function CustosPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmitCusto} className="space-y-4">
             {message && (
-              <div
-                className={`p-3 rounded-md text-sm ${
-                  message.type === "success"
-                    ? "bg-green-100 text-green-800 border border-green-200"
-                    : "bg-red-100 text-red-800 border border-red-200"
-                }`}
-              >
+              <div className={`p-3 rounded-md text-sm ${message.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
                 {message.text}
               </div>
             )}
-
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="contrato" className="flex items-center gap-1">
-                    <Briefcase className="w-3.5 h-3.5 text-muted-foreground" /> Contrato
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <button
-                          type="button"
-                          className="text-xs text-muted-foreground hover:text-primary flex items-center gap-0.5"
-                          title="Gerenciar Contratos"
-                        >
-                          <Settings className="w-3 h-3" /> Gerenciar
-                        </button>
-                      </DialogTrigger>
-                      <DialogContent className="bg-white sm:max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Gerenciar Contratos Cadastrados</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-3 py-2 max-h-[60vh] overflow-y-auto">
-                          {listaTodosContratos.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">Nenhum contrato cadastrado.</p>
-                          ) : (
-                            listaTodosContratos.map((c) => (
-                              <div
-                                key={c.id}
-                                className="flex items-center justify-between p-2 rounded border bg-muted/20"
-                              >
-                                {contratoEditando?.id === c.id ? (
-                                  <div className="flex items-center gap-2 w-full mr-2">
-                                    <Input
-                                      value={novoNomeEditado}
-                                      onChange={(e) => setNovoNomeEditado(e.target.value)}
-                                      className="h-8 text-sm"
-                                    />
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleEditarContrato(c)}
-                                      className="h-8 px-2"
-                                    >
-                                      Salvar
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => setContratoEditando(null)}
-                                      className="h-8 px-2"
-                                    >
-                                      Cancelar
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <>
-                                    <span className="text-sm font-medium">{c.nome}</span>
-                                    <div className="flex items-center gap-1">
-                                      <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        className="h-7 w-7 text-blue-600"
-                                        onClick={() => {
-                                          setContratoEditando(c);
-                                          setNovoNomeEditado(c.nome);
-                                        }}
-                                      >
-                                        <Pencil className="w-3.5 h-3.5" />
-                                      </Button>
-                                      <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        className="h-7 w-7 text-rose-600"
-                                        onClick={() => handleDeletarContrato(c)}
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </Button>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-
-                    <button
-                      type="button"
-                      onClick={() => setIsCriandoContrato(!isCriandoContrato)}
-                      className="text-xs text-primary underline focus:outline-none"
-                    >
-                      {isCriandoContrato ? "Selecionar" : "+ Criar Novo"}
-                    </button>
-                  </div>
-                </div>
-
-                {isCriandoContrato ? (
-                  <Input
-                    type="text"
-                    placeholder="Ex: COPASA VARGINHA -24/3415"
-                    value={novoContratoNome}
-                    onChange={(e) => setNovoContratoNome(e.target.value)}
-                    required
-                  />
-                ) : (
-                  <select
-                    id="contrato"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    value={contratoSelecionado}
-                    onChange={(e) => setContratoSelecionado(e.target.value)}
-                  >
-                    {listaTodosContratos.map((c) => (
-                      <option key={c.id} value={c.nome}>
-                        {c.nome}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                <Label htmlFor="contrato">Contrato</Label>
+                <select
+                  id="contrato"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={contratoSelecionado}
+                  onChange={(e) => setContratoSelecionado(e.target.value)}
+                >
+                  {listaTodosContratos.map((c) => (
+                    <option key={c.id} value={c.nome}>
+                      {c.nome}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="tipo">Classificação Financeira</Label>
                 <select
                   id="tipo"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={tipo}
                   onChange={(e) => setTipo(e.target.value as TipoLancamento)}
                 >
@@ -745,7 +713,7 @@ function CustosPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="valor">Valor Em Reais (R$)</Label>
+                <Label htmlFor="valor">Valor (R$)</Label>
                 <Input
                   id="valor"
                   type="number"
@@ -758,11 +726,11 @@ function CustosPage() {
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="descricao">Descrição / Detalhes</Label>
+                <Label htmlFor="descricao">Descrição</Label>
                 <Input
                   id="descricao"
                   type="text"
-                  placeholder="Ex: Faturamento medição, Abastecimento comboio, Folha mensal, etc."
+                  placeholder="Detalhes do lançamento"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   required
@@ -770,9 +738,7 @@ function CustosPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="data" className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-muted-foreground" /> Data
-                </Label>
+                <Label htmlFor="data">Data</Label>
                 <Input
                   id="data"
                   type="date"
@@ -783,29 +749,21 @@ function CustosPage() {
               </div>
             </div>
 
-            <div className="pt-2 flex justify-end">
-              <Button type="submit" disabled={submitting} className="w-full md:w-auto">
-                {submitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Salvando Lançamento...
-                  </>
-                ) : (
-                  "Salvar Lançamento"
-                )}
+            <div className="flex justify-end pt-2">
+              <Button type="submit" disabled={submitting}>
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Salvar Lançamento
               </Button>
             </div>
           </form>
         </CardContent>
       </Card>
 
-      {/* Tabela de Lançamentos */}
+      {/* Histórico de Medições Diárias Cadastradas */}
       <Card className="bg-white shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Histórico de Lançamentos</CardTitle>
-          <span className="text-xs text-muted-foreground">
-            {lancamentosFiltrados.length} registro(s) encontrado(s)
-          </span>
+          <CardTitle className="text-lg">Medições Diárias Registradas</CardTitle>
+          <span className="text-xs text-muted-foreground">{medicoes.length} registro(s)</span>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-sm text-left">
@@ -813,45 +771,37 @@ function CustosPage() {
               <tr>
                 <th className="p-3">Data</th>
                 <th className="p-3">Contrato</th>
-                <th className="p-3">Classificação</th>
-                <th className="p-3">Descrição</th>
-                <th className="p-3 text-right">Valor</th>
+                <th className="p-3">Equipamento</th>
+                <th className="p-3">Operador</th>
+                <th className="p-3">Manhã</th>
+                <th className="p-3">Tarde</th>
+                <th className="p-3 text-right">Vlr/Hora</th>
                 <th className="p-3 text-center">Ações</th>
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {medicoes.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-4 text-center">
-                    <Loader2 className="w-5 h-5 animate-spin mx-auto text-primary" />
-                  </td>
-                </tr>
-              ) : lancamentosFiltrados.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-4 text-center text-muted-foreground">
-                    Nenhum lançamento encontrado.
+                  <td colSpan={8} className="p-4 text-center text-muted-foreground">
+                    Nenhuma medição diária registrada.
                   </td>
                 </tr>
               ) : (
-                lancamentosFiltrados.map((item) => (
-                  <tr key={item.id} className="border-b hover:bg-muted/30">
-                    <td className="p-3 whitespace-nowrap">{item.data}</td>
-                    <td className="p-3 font-medium">{item.contrato}</td>
-                    <td className="p-3">{item.tipo}</td>
-                    <td className="p-3">{item.descricao}</td>
-                    <td
-                      className={`p-3 text-right font-semibold ${
-                        item.tipo === "Receita" ? "text-emerald-600" : "text-rose-600"
-                      }`}
-                    >
-                      {formatBRL(item.valor)}
-                    </td>
+                medicoes.map((m) => (
+                  <tr key={m.id} className="border-b hover:bg-muted/30">
+                    <td className="p-3 whitespace-nowrap">{m.data}</td>
+                    <td className="p-3 font-medium">{m.contrato}</td>
+                    <td className="p-3">{m.equipamento}</td>
+                    <td className="p-3">{m.operador}</td>
+                    <td className="p-3 text-xs">{m.manha_inicio} às {m.manha_final}</td>
+                    <td className="p-3 text-xs">{m.tarde_inicio} às {m.tarde_final}</td>
+                    <td className="p-3 text-right font-semibold">{formatBRL(m.valor_hora)}</td>
                     <td className="p-3 text-center">
                       <Button
                         size="icon"
                         variant="ghost"
                         className="h-8 w-8 text-rose-600 hover:bg-rose-50"
-                        onClick={() => handleDeletar(item.id)}
+                        onClick={() => handleDeletarMedicao(m.id)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
