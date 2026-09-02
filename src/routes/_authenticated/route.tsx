@@ -1,4 +1,3 @@
-
 import { createFileRoute, redirect, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -11,6 +10,7 @@ import {
   Settings,
   LogOut,
   ClipboardList,
+  Clock,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -33,12 +33,13 @@ function AuthenticatedLayout() {
   }
 
   const navItems = [
-  { to: "/equipamentos", label: "Frota", icon: Truck },
-  { to: "/custos", label: "Custos", icon: DollarSign },
-  { to: "/cotacoes", label: "Cotações", icon: ClipboardList },
-  { to: "/notas-fiscais", label: "Notas Fiscais", icon: FileText },
-  { to: "/admin", label: "Admin", icon: Settings },
-];
+    { to: "/equipamentos", label: "Frota", icon: Truck },
+    { to: "/medicoes", label: "Medições", icon: Clock },
+    { to: "/custos", label: "Custos", icon: DollarSign },
+    { to: "/cotacoes", label: "Cotações", icon: ClipboardList },
+    { to: "/notas-fiscais", label: "Notas Fiscais", icon: FileText },
+    { to: "/admin", label: "Admin", icon: Settings },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50">
