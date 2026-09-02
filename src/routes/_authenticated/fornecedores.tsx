@@ -29,6 +29,10 @@ interface FornecedorItem {
   cidade: string | null;
   estado: string | null;
   observacoes: string | null;
+  banco: string | null;
+  agencia: string | null;
+  conta: string | null;
+  pix: string | null;
 }
 
 function FornecedoresPage() {
@@ -48,6 +52,10 @@ function FornecedoresPage() {
   const [cidade, setCidade] = useState("");
   const [estado, setEstado] = useState("");
   const [observacoes, setObservacoes] = useState("");
+  const [banco, setBanco] = useState("");
+  const [agencia, setAgencia] = useState("");
+  const [conta, setConta] = useState("");
+  const [pix, setPix] = useState("");
 
   const fetchFornecedores = async () => {
     setLoading(true);
@@ -79,6 +87,10 @@ function FornecedoresPage() {
     setCidade("");
     setEstado("");
     setObservacoes("");
+    setBanco("");
+    setAgencia("");
+    setConta("");
+    setPix("");
     setFornecedorEditando(null);
   };
 
@@ -92,6 +104,10 @@ function FornecedoresPage() {
     setCidade(f.cidade || "");
     setEstado(f.estado || "");
     setObservacoes(f.observacoes || "");
+    setBanco(f.banco || "");
+    setAgencia(f.agencia || "");
+    setConta(f.conta || "");
+    setPix(f.pix || "");
     setOpenModal(true);
   };
 
@@ -108,6 +124,10 @@ function FornecedoresPage() {
         cidade: cidade.trim() || null,
         estado: estado.trim() || null,
         observacoes: observacoes.trim() || null,
+        banco: banco.trim() || null,
+        agencia: agencia.trim() || null,
+        conta: conta.trim() || null,
+        pix: pix.trim() || null,
       };
 
       if (fornecedorEditando) {
@@ -204,6 +224,29 @@ function FornecedoresPage() {
                   <Input value={estado} onChange={(e) => setEstado(e.target.value)} maxLength={2} placeholder="Ex: SP" />
                 </div>
               </div>
+              
+              {/* Dados de Pagamento */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <Label>Banco</Label>
+                  <Input value={banco} onChange={(e) => setBanco(e.target.value)} placeholder="Nome ou código do banco" />
+                </div>
+                <div>
+                  <Label>Agência</Label>
+                  <Input value={agencia} onChange={(e) => setAgencia(e.target.value)} placeholder="0000" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <Label>Conta</Label>
+                  <Input value={conta} onChange={(e) => setConta(e.target.value)} placeholder="00000-0" />
+                </div>
+                <div>
+                  <Label>Chave PIX</Label>
+                  <Input value={pix} onChange={(e) => setPix(e.target.value)} placeholder="CPF, CNPJ, E-mail ou Telefone" />
+                </div>
+              </div>
+
               <div>
                 <Label>Observações</Label>
                 <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} placeholder="Informações adicionais sobre o fornecedor..." />
