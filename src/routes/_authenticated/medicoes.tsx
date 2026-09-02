@@ -97,7 +97,7 @@ export function MedicoesPage() {
 
   const [contratoSelecionado, setContratoSelecionado] = useState<Contrato | null>(null);
   const [mesSelecionado, setMesSelecionado] = useState<MesAno | null>(null);
-  const [maquinaSelecionada, setMaquinaSelecionada] = useState<MaquinaMedicao | null>(null);
+  const [maquinaSelecionadaId, setMaquinaSelecionadaId] = useState<string | null>(null);
   const [mensagemSucesso, setMensagemSucesso] = useState('');
 
   const [modalContratoAberto, setModalContratoAberto] = useState(false);
@@ -137,8 +137,9 @@ export function MedicoesPage() {
         valorHora: Number(formValorHora)
       } : m));
     } else {
+      const novoId = String(Date.now());
       const nova: MaquinaMedicao = {
-        id: String(Date.now()),
+        id: novoId,
         mesId: mesSelecionado.id,
         codigo: formCodigo,
         tipo: formTipo,
@@ -150,6 +151,7 @@ export function MedicoesPage() {
         dias: gerarDiasDoMesEmBranco(mesSelecionado.ano, mesSelecionado.mesIndex)
       };
       setMaquinas([...maquinas, nova]);
+      setMaquinaSelecionadaId(novoId);
     }
     setModalMaquinaAberto(false);
   };
@@ -374,37 +376,40 @@ export function MedicoesPage() {
 
           <div className="flex justify-between items-center print:hidden">
             <div className="flex gap-2 overflow-x-auto pb-1 flex-wrap">
-              {maquinas.filter(eq => eq.mesId === mesSelecionado.id).map((eq, index) => (
-                <div key={eq.id} className="flex items-center gap-1 bg-gray-50 border px-2 py-1 rounded-lg">
-                  <button onClick={() => setMaquinaSelecionada(eq)} className={`px-2 py-1 rounded text-sm font-medium ${ (maquinaSelecionada?.id === eq.id) || (!maquinaSelecionada && index === 0) ? 'bg-orange-600 text-white' : 'text-gray-700 hover:bg-gray-200'}`}>
-                    {eq.codigo} - {eq.tipo}
-                  </button>
-                  <button onClick={() => {
-                    setMaquinaEditando(eq);
-                    setFormCodigo(eq.codigo);
-                    setFormTipo(eq.tipo);
-                    setFormOperador(eq.operador);
-                    setFormValorHora(String(eq.valorHora));
-                    setModalMaquinaAberto(true);
-                  }} className="p-1 text-gray-500 hover:text-blue-600" title="Editar Equipamento">
-                    <Edit size={14} />
-                  </button>
-                  <button onClick={() => {
-                    if(confirm(`Deseja excluir o equipamento ${eq.codigo}?`)) {
-                      setMaquinas(maquinas.filter(m => m.id !== eq.id));
-                      setMaquinaSelecionada(null);
-                    }
-                  }} className="p-1 text-gray-500 hover:text-red-600" title="Excluir Equipamento">
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
+              {maquinas.filter(eq => eq.mesId === mesSelecionado.id).map((eq, index) => {
+                const ativa = maquinaSelecionadaId ? eq.id === maquinaSelecionadaId : index === 0;
+                return (
+                  <div key={eq.id} className="flex items-center gap-1 bg-gray-50 border px-2 py-1 rounded-lg">
+                    <button onClick={() => setMaquinaSelecionadaId(eq.id)} className={`px-2 py-1 rounded text-sm font-medium ${ativa ? 'bg-orange-600 text-white' : 'text-gray-700 hover:bg-gray-200'}`}>
+                      {eq.codigo} - {eq.tipo}
+                    </button>
+                    <button onClick={() => {
+                      setMaquinaEditando(eq);
+                      setFormCodigo(eq.codigo);
+                      setFormTipo(eq.tipo);
+                      setFormOperador(eq.operador);
+                      setFormValorHora(String(eq.valorHora));
+                      setModalMaquinaAberto(true);
+                    }} className="p-1 text-gray-500 hover:text-blue-600" title="Editar Equipamento">
+                      <Edit size={14} />
+                    </button>
+                    <button onClick={() => {
+                      if(confirm(`Deseja excluir o equipamento ${eq.codigo}?`)) {
+                        setMaquinas(maquinas.filter(m => m.id !== eq.id));
+                        setMaquinaSelecionadaId(null);
+                      }
+                    }} className="p-1 text-gray-500 hover:text-red-600" title="Excluir Equipamento">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
           {(() => {
             const listaMes = maquinas.filter(eq => eq.mesId === mesSelecionado.id);
-            const maqAtiva = maquinaSelecionada || listaMes[0];
+            const maqAtiva = listaMes.find(eq => eq.id === maquinaSelecionadaId) || listaMes[0];
             if (!maqAtiva) return (
               <div className="text-center py-8 space-y-3 print:hidden">
                 <p className="text-gray-500">Nenhum equipamento cadastrado neste mês.</p>
