@@ -217,23 +217,25 @@ export default function ListaCotacoesPage() {
                     <td className="p-3 font-semibold text-slate-800">
                       {cot.valor_total ? brl(cot.valor_total) : "R$ 0,00"}
                     </td>
-                    <td className="p-3 text-center space-x-1">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => navigate({ to: `/cotacoes/${cot.id}` })}
-                        className="h-8 px-2 text-blue-600 border-blue-200 hover:bg-blue-50"
-                      >
-                        <Eye className="w-3.5 h-3.5 mr-1" /> Detalhes
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(cot.id)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
+                    <td className="p-3 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => navigate({ to: `/cotacoes/${cot.id}` })}
+                          className="h-8 px-2 text-blue-600 border-blue-200 hover:bg-blue-50"
+                        >
+                          <Eye className="w-3.5 h-3.5 mr-1" /> Detalhes
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handleDelete(cot.id)}
+                          className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))
