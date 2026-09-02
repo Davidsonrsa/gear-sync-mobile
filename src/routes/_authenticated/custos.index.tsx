@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Printer, Save, Plus } from "lucide-react";
+import { Printer, Save, Plus, ArrowLeft, FileText } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/custos/")({
   component: MedicoesCustosPage,
@@ -23,6 +23,7 @@ interface MedicaoDiaRow {
 }
 
 function MedicoesCustosPage() {
+  const [visualizatingMode, setVisualizatingMode] = useState<"lista" | "detalhe">("lista");
   const [contratos, setContratos] = useState<any[]>([]);
   const [contratoSelecionado, setContratoSelecionado] = useState<string>("");
   const [equipamentoSelecionado, setEquipamentoSelecionado] = useState<string>("RE 21");
@@ -133,13 +134,7 @@ function MedicoesCustosPage() {
       const subTarde = calcularHoras(item.tardeInicio, item.tardeFinal);
       const totalHorasDia = subManha + subTarde;
       const valorDia = totalHorasDia * valorHora;
-      return {
-        ...item,
-        subManha,
-        subTarde,
-        totalHorasDia,
-        valorDia,
-      };
+      return { ...item, subManha, subTarde, totalHorasDia, valorDia };
     });
   }, [diasMedicao, valorHora]);
 
@@ -192,10 +187,6 @@ function MedicoesCustosPage() {
     }
   }
 
-  const handleImprimir = () => {
-    window.print();
-  };
-
   const atualizarDia = (index: number, campo: keyof MedicaoDiaRow, valor: string) => {
     setDiasMedicao((prev) => {
       const copia = [...prev];
@@ -204,17 +195,69 @@ function MedicoesCustosPage() {
     });
   };
 
+  // TELA 1: LISTA / RESUMO GERAL DOS CONTRATOS
+  if (visualizatingMode === "lista") {
+    return (
+      <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Resumo de Contratos e Medições</h1>
+            <p className="text-sm text-muted-foreground">
+              Selecione um contrato e equipamento para gerenciar as medições diárias ou visualizar o relatório geral.
+            </p>
+          </div>
+          <Button 
+            onClick={() => setVisualizatingMode("detalhe")}
+            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+          >
+            <FileText className="w-4 h-4" /> Abrir Planilha de Medição Diária
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {contratos.map((c, idx) => (
+            <Card key={idx} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => {
+              setContratoSelecionado(c.nome_contrato || c.nome);
+              setVisualizatingMode("detalhe");
+            }}>
+              <CardContent className="p-6 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold px-2 py-1 bg-blue-100 text-blue-800 rounded">Contrato</span>
+                  <FileText className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <h3 className="font-bold text-lg text-slate-900">{c.nome_contrato || c.nome}</h3>
+                <p className="text-xs text-muted-foreground">{c.descricao || "Clique para gerenciar medições deste contrato."}</p>
+                <div className="pt-2 border-t flex justify-between items-center text-sm font-medium text-blue-600">
+                  <span>Acessar Medições</span>
+                  <span>→</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // TELA 2: PLANILHA DETALHADA DE MEDIÇÃO POR EQUIPAMENTO
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Resumo de Medição Diária</h1>
-          <p className="text-sm text-muted-foreground">
-            Controle mensal por equipamento, cálculo automático de horas e valores.
-          </p>
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            onClick={() => setVisualizatingMode("lista")}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" /> Voltar aos Contratos
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Resumo de Medição Diária</h1>
+            <p className="text-sm text-muted-foreground">Controle mensal por equipamento e contrato.</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button onClick={handleImprimir} variant="outline" className="flex items-center gap-2">
+          <Button onClick={() => window.print()} variant="outline" className="flex items-center gap-2">
             <Printer className="w-4 h-4" /> Imprimir Relatório
           </Button>
           <Button onClick={handleSalvarMedicoes} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2">
