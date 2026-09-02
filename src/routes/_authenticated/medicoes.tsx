@@ -85,9 +85,9 @@ export function MedicoesPage() {
     {
       id: 'eq1',
       mesId: 'm1',
-      codigo: 'RE01',
+      codigo: 'RE23',
       tipo: 'Retroescavadeira',
-      operador: 'Não informado',
+      operador: 'Pedro',
       valorHora: 193.62,
       dataAprovacao: '2026-09-30',
       assinaturaResponsavel: 'Responsável Técnico',
@@ -155,16 +155,22 @@ export function MedicoesPage() {
   };
 
   const calcularSubtotal = (inicio: string, fim: string) => {
-    if (!inicio || !fim || !inicio.includes(':') || !fim.includes(':')) return 0;
-    const [hIn, mIn] = inicio.split(':').map(Number);
-    const [hFim, mFim] = fim.split(':').map(Number);
+    if (!inicio || !fim) return 0;
+    const partesIn = inicio.split(':');
+    const partesFim = fim.split(':');
+    if (partesIn.length < 2 || partesFim.length < 2) return 0;
+    
+    const hIn = Number(partesIn[0]) || 0;
+    const mIn = Number(partesIn[1]) || 0;
+    const hFim = Number(partesFim[0]) || 0;
+    const mFim = Number(partesFim[1]) || 0;
+
     const totalMin = (hFim * 60 + mFim) - (hIn * 60 + mIn);
     return totalMin > 0 ? totalMin / 60 : 0;
   };
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 print:p-0 print:m-0 print:max-w-none">
-      {/* Estilo injetado para forçar a supressão de cabeçalho e rodapé do navegador na impressão A4 */}
       <style>{`
         @media print {
           @page {
@@ -175,12 +181,19 @@ export function MedicoesPage() {
             background-color: white !important;
             color: black !important;
             -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
           header, nav, footer, .print\\:hidden {
             display: none !important;
           }
           .print\\:block {
             display: block !important;
+          }
+          .bg-gray-100 {
+            background-color: #f3f4f6 !important;
+          }
+          .bg-gray-200 {
+            background-color: #e5e7eb !important;
           }
         }
       `}</style>
@@ -282,10 +295,10 @@ export function MedicoesPage() {
           </div>
 
           <div className="flex justify-between items-center print:hidden">
-            <div className="flex gap-2 overflow-x-auto pb-1">
+            <div className="flex gap-2 overflow-x-auto pb-1 flex-wrap">
               {maquinas.filter(eq => eq.mesId === mesSelecionado.id).map((eq, index) => (
-                <div key={eq.id} className="flex items-center gap-1">
-                  <button onClick={() => setMaquinaSelecionada(eq)} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${ (maquinaSelecionada?.id === eq.id) || (!maquinaSelecionada && index === 0) ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-700'}`}>
+                <div key={eq.id} className="flex items-center gap-1 bg-gray-50 border px-2 py-1 rounded-lg">
+                  <button onClick={() => setMaquinaSelecionada(eq)} className={`px-2 py-1 rounded text-sm font-medium ${ (maquinaSelecionada?.id === eq.id) || (!maquinaSelecionada && index === 0) ? 'bg-orange-600 text-white' : 'text-gray-700 hover:bg-gray-200'}`}>
                     {eq.codigo} - {eq.tipo}
                   </button>
                   <button onClick={() => {
@@ -335,7 +348,6 @@ export function MedicoesPage() {
 
             return (
               <div className="space-y-2 print:space-y-1">
-                {/* Cabeçalho compacto otimizado para caber em 1 folha A4 com folga */}
                 <div className="border border-gray-800 text-[10px] print:text-[8px]">
                   <div className="bg-gray-200 text-center font-bold py-1 border-b border-gray-800 uppercase">
                     CONTROLE DE MEDIÇÃO DE HORAS - {mesSelecionado.nome.toUpperCase()} / {mesSelecionado.ano}
@@ -406,38 +418,63 @@ export function MedicoesPage() {
                             <td className="p-0.5 border-r border-gray-300">{d.dataStr}</td>
                             <td className="p-0.5 border-r border-gray-300">{d.diaSemana}</td>
                             <td className="p-0.5 border-r border-gray-300">
-                              <input type="text" value={d.manhaInicio} onChange={e => {
-                                const val = e.target.value;
-                                setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dias: m.dias.map((di, idx) => idx === i ? { ...di, manhaInicio: val } : di) } : m));
-                              }} className="w-12 p-0.5 text-center border rounded bg-white text-[10px] print:border-none" />
+                              <input 
+                                type="text" 
+                                value={d.manhaInicio} 
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dias: m.dias.map((di, idx) => idx === i ? { ...di, manhaInicio: val } : di) } : m));
+                                }} 
+                                className="w-12 p-0.5 text-center border rounded bg-white text-[10px] print:border-none print:bg-transparent" 
+                              />
                             </td>
                             <td className="p-0.5 border-r border-gray-300">
-                              <input type="text" value={d.manhaFim} onChange={e => {
-                                const val = e.target.value;
-                                setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dias: m.dias.map((di, idx) => idx === i ? { ...di, manhaFim: val } : di) } : m));
-                              }} className="w-12 p-0.5 text-center border rounded bg-white text-[10px] print:border-none" />
+                              <input 
+                                type="text" 
+                                value={d.manhaFim} 
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dias: m.dias.map((di, idx) => idx === i ? { ...di, manhaFim: val } : di) } : m));
+                                }} 
+                                className="w-12 p-0.5 text-center border rounded bg-white text-[10px] print:border-none print:bg-transparent" 
+                              />
                             </td>
                             <td className="p-0.5 border-r border-gray-300">{subManha > 0 ? subManha.toFixed(2) : ''}</td>
                             <td className="p-0.5 border-r border-gray-300">
-                              <input type="text" value={d.tardeInicio} onChange={e => {
-                                const val = e.target.value;
-                                setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dias: m.dias.map((di, idx) => idx === i ? { ...di, tardeInicio: val } : di) } : m));
-                              }} className="w-12 p-0.5 text-center border rounded bg-white text-[10px] print:border-none" />
+                              <input 
+                                type="text" 
+                                value={d.tardeInicio} 
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dias: m.dias.map((di, idx) => idx === i ? { ...di, tardeInicio: val } : di) } : m));
+                                }} 
+                                className="w-12 p-0.5 text-center border rounded bg-white text-[10px] print:border-none print:bg-transparent" 
+                              />
                             </td>
                             <td className="p-0.5 border-r border-gray-300">
-                              <input type="text" value={d.tardeFim} onChange={e => {
-                                const val = e.target.value;
-                                setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dias: m.dias.map((di, idx) => idx === i ? { ...di, tardeFim: val } : di) } : m));
-                              }} className="w-12 p-0.5 text-center border rounded bg-white text-[10px] print:border-none" />
+                              <input 
+                                type="text" 
+                                value={d.tardeFim} 
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dias: m.dias.map((di, idx) => idx === i ? { ...di, tardeFim: val } : di) } : m));
+                                }} 
+                                className="w-12 p-0.5 text-center border rounded bg-white text-[10px] print:border-none print:bg-transparent" 
+                              />
                             </td>
                             <td className="p-0.5 border-r border-gray-300">{subTarde > 0 ? subTarde.toFixed(2) : ''}</td>
                             <td className="p-0.5 border-r border-gray-300 font-bold">{totalHorasDia > 0 ? totalHorasDia.toFixed(2) : ''}</td>
                             <td className="p-0.5 border-r border-gray-300 text-green-700">{valorTotalDia > 0 ? valorTotalDia.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : ''}</td>
                             <td className="p-0.5">
-                              <input type="text" value={d.observacao} onChange={e => {
-                                const val = e.target.value;
-                                setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dias: m.dias.map((di, idx) => idx === i ? { ...di, observacao: val } : di) } : m));
-                              }} className="w-full p-0.5 border rounded text-[10px] bg-white print:border-none" />
+                              <input 
+                                type="text" 
+                                value={d.observacao} 
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  setMaquinas(maquinas.map(m => m.id === maqAtiva.id ? { ...m, dias: m.dias.map((di, idx) => idx === i ? { ...di, observacao: val } : di) } : m));
+                                }} 
+                                className="w-full p-0.5 border rounded text-[10px] bg-white print:border-none print:bg-transparent" 
+                              />
                             </td>
                           </tr>
                         );
@@ -457,8 +494,7 @@ export function MedicoesPage() {
                   </table>
                 </div>
 
-                {/* Bloco de Assinaturas e Data de Aprovação */}
-                <div className="mt-2 pt-2 border border-gray-800 p-2 text-[10px] print:text-[9px] space-y-4 bg-gray-50">
+                <div className="mt-2 pt-2 border border-gray-800 p-2 text-[10px] print:text-[9px] space-y-4 bg-gray-50 print:bg-white">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <span className="font-bold">DATA DE APROVAÇÃO:</span>
@@ -506,7 +542,6 @@ export function MedicoesPage() {
         </div>
       )}
 
-      {/* Modal Contrato */}
       {modalContratoAberto && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
@@ -524,7 +559,6 @@ export function MedicoesPage() {
         </div>
       )}
 
-      {/* Modal Equipamento (Criar / Editar) */}
       {modalMaquinaAberto && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
@@ -533,8 +567,8 @@ export function MedicoesPage() {
             </h3>
             <form onSubmit={handleSalvarMaquina} className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Código (Ex: RE01)</label>
-                <input type="text" value={formCodigo} onChange={e => setFormCodigo(e.target.value)} required className="w-full p-2 border rounded text-sm" placeholder="RE01" />
+                <label className="block text-xs font-medium text-gray-700 mb-1">Código (Ex: RE23)</label>
+                <input type="text" value={formCodigo} onChange={e => setFormCodigo(e.target.value)} required className="w-full p-2 border rounded text-sm" placeholder="RE23" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Tipo de Equipamento (Ex: Retroescavadeira)</label>
