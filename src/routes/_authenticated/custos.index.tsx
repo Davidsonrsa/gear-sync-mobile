@@ -23,6 +23,9 @@ import {
   Filter,
   Trash2,
   ClipboardList,
+  Edit2,
+  Check,
+  X,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/custos/")({
@@ -78,6 +81,14 @@ function CustosPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [msgMedicao, setMsgMedicao] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // Estados de Edição de Medição
+  const [editandoMedicaoId, setEditandoMedicaoId] = useState<string | null>(null);
+  const [medEditando, setMedEditando] = useState<Partial<MedicaoDiariaItem>>({});
+
+  // Filtros específicos para Medições
+  const [filtroMedContrato, setFiltroMedContrato] = useState<string>("TODOS");
+  const [filtroMedMes, setFiltroMedMes] = useState<string>("TODOS");
+
   // Form states (Custos)
   const [contratoSelecionado, setContratoSelecionado] = useState<string>("");
   const [novoContratoNome, setNovoContratoNome] = useState<string>("");
@@ -100,7 +111,7 @@ function CustosPage() {
   const [medValorHora, setMedValorHora] = useState("");
   const [medObservacao, setMedObservacao] = useState("");
 
-  // Filter states
+  // Filter states (Financeiro)
   const [filtroMes, setFiltroMes] = useState<string>("TODOS");
   const [filtroContrato, setFiltroContrato] = useState<string>("TODOS");
 
@@ -215,8 +226,16 @@ function CustosPage() {
         }
       }
     });
+    medicoes.forEach((m) => {
+      if (m.contrato && m.contrato.trim()) {
+        const chave = m.contrato.trim().toLowerCase();
+        if (!mapaContratos.has(chave)) {
+          mapaContratos.set(chave, { id: m.contrato_id || `virtual-${m.contrato.trim()}`, nome: m.contrato.trim() });
+        }
+      }
+    });
     return Array.from(mapaContratos.values()).sort((a, b) => a.nome.localeCompare(b.nome));
-  }, [contratos, lancamentos]);
+  }, [contratos, lancamentos, medicoes]);
 
   async function handleSalvarMedicao(e: React.FormEvent) {
     e.preventDefault();
@@ -282,6 +301,43 @@ function CustosPage() {
       setMedicoes((prev) => prev.filter((m) => m.id !== id));
     } catch (err) {
       console.error("Erro ao deletar medição:", err);
+    }
+  }
+
+  function iniciarEdicaoMedicao(m: MedicaoDiariaItem) {
+    setEditandoMedicaoId(m.id);
+    setMedEditando({ ...m });
+  }
+
+  async function salvarEdicaoMedicao(id: string) {
+    try {
+      const payload = {
+        contrato: medEditando.contrato,
+        equipamento: medEditando.equipamento,
+        operador: medEditando.operador,
+        data: medEditando.data,
+        manha_inicio: medEditando.manha_inicio,
+        manha_final: medEditando.manha_final,
+        tarde_inicio: medEditando.tarde_inicio,
+        tarde_final: medEditando.tarde_final,
+        valor_hora: Number(medEditando.valor_hora) || 0,
+        observacao: medEditando.observacao,
+      };
+
+      const { error } = await supabase
+        .from("medicoes_diarias")
+        .update(payload)
+        .eq("id", id);
+
+      if (error) throw error;
+
+      setMedicoes((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, ...payload } : item))
+      );
+      setEditandoMedicaoId(null);
+      setMedEditando({});
+    } catch (err) {
+      console.error("Erro ao atualizar medição:", err);
     }
   }
 
@@ -370,6 +426,17 @@ function CustosPage() {
       return matchMes && matchContrato;
     });
   }, [lancamentos, filtroMes, filtroContrato]);
+
+  const medicoesFiltradas = useMemo(() => {
+    return medicoes.filter((item) => {
+      const mesItem = item.data ? item.data.substring(0, 7) : "";
+      const matchMes = filtroMedMes === "TODOS" || mesItem === filtroMedMes;
+      const matchContrato =
+        filtroMedContrato === "TODOS" ||
+        item.contrato.trim().toLowerCase() === filtroMedContrato.trim().toLowerCase();
+      return matchMes && matchContrato;
+    });
+  }, [medicoes, filtroMedMes, filtroMedContrato]);
 
   const resumos = useMemo(() => {
     let receita = 0, impostos = 0, maoDeObra = 0, encargos = 0, manutencao = 0, transporte = 0, administrativas = 0;
@@ -546,7 +613,7 @@ function CustosPage() {
         <CardContent className="p-4 flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2 text-sm font-medium">
             <Filter className="w-4 h-4 text-primary" />
-            Filtros:
+            Filtros Financeiros:
           </div>
           <div className="flex items-center gap-2 min-w-[180px]">
             <Label className="text-xs whitespace-nowrap">Mês:</Label>
@@ -717,11 +784,43 @@ function CustosPage() {
         </CardContent>
       </Card>
 
-      {/* Histórico de Medições Diárias Cadastradas */}
+      {/* Gerenciamento de Medições Diárias por Contrato e Mês */}
       <Card className="bg-white shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Medições Diárias Registradas</CardTitle>
-          <span className="text-xs text-muted-foreground">{medicoes.length} registro(s)</span>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-emerald-600" />
+              Medições Diárias por Contrato e Equipamento
+            </CardTitle>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-muted-foreground">Contrato:</span>
+                <select
+                  className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                  value={filtroMedContrato}
+                  onChange={(e) => setFiltroMedContrato(e.target.value)}
+                >
+                  <option value="TODOS">Todos</option>
+                  {listaTodosContratos.map((c) => (
+                    <option key={c.id} value={c.nome}>
+                      {c.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-muted-foreground">Mês:</span>
+                <input
+                  type="month"
+                  className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                  value={filtroMedMes === "TODOS" ? "" : filtroMedMes}
+                  onChange={(e) => setFiltroMedMes(e.target.value || "TODOS")}
+                />
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-sm text-left">
@@ -731,41 +830,148 @@ function CustosPage() {
                 <th className="p-3">Contrato</th>
                 <th className="p-3">Equipamento</th>
                 <th className="p-3">Operador</th>
-                <th className="p-3">Manhã</th>
-                <th className="p-3">Tarde</th>
+                <th className="p-3">Turno Manhã</th>
+                <th className="p-3">Turno Tarde</th>
                 <th className="p-3 text-right">Vlr/Hora</th>
                 <th className="p-3 text-center">Ações</th>
               </tr>
             </thead>
             <tbody>
-              {medicoes.length === 0 ? (
+              {medicoesFiltradas.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-4 text-center text-muted-foreground">
-                    Nenhuma medição diária registrada.
+                  <td colSpan={8} className="p-6 text-center text-muted-foreground">
+                    Nenhuma medição encontrada para os filtros selecionados.
                   </td>
                 </tr>
               ) : (
-                medicoes.map((m) => (
-                  <tr key={m.id} className="border-b hover:bg-muted/30">
-                    <td className="p-3 whitespace-nowrap">{m.data}</td>
-                    <td className="p-3 font-medium">{m.contrato}</td>
-                    <td className="p-3">{m.equipamento}</td>
-                    <td className="p-3">{m.operador}</td>
-                    <td className="p-3 text-xs">{m.manha_inicio} às {m.manha_final}</td>
-                    <td className="p-3 text-xs">{m.tarde_inicio} às {m.tarde_final}</td>
-                    <td className="p-3 text-right font-semibold">{formatBRL(m.valor_hora)}</td>
-                    <td className="p-3 text-center">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-rose-600 hover:bg-rose-50"
-                        onClick={() => handleDeletarMedicao(m.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))
+                medicoesFiltradas.map((m) => {
+                  const isEditing = editandoMedicaoId === m.id;
+
+                  if (isEditing) {
+                    return (
+                      <tr key={m.id} className="border-b bg-muted/20">
+                        <td className="p-2">
+                          <Input
+                            type="date"
+                            className="h-8 text-xs"
+                            value={medEditando.data || ""}
+                            onChange={(e) => setMedEditando({ ...medEditando, data: e.target.value })}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <Input
+                            className="h-8 text-xs"
+                            value={medEditando.contrato || ""}
+                            onChange={(e) => setMedEditando({ ...medEditando, contrato: e.target.value })}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <Input
+                            className="h-8 text-xs"
+                            value={medEditando.equipamento || ""}
+                            onChange={(e) => setMedEditando({ ...medEditando, equipamento: e.target.value })}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <Input
+                            className="h-8 text-xs"
+                            value={medEditando.operador || ""}
+                            onChange={(e) => setMedEditando({ ...medEditando, operador: e.target.value })}
+                          />
+                        </td>
+                        <td className="p-2 text-xs">
+                          <div className="flex gap-1">
+                            <Input
+                              type="time"
+                              className="h-7 text-xs w-20"
+                              value={medEditando.manha_inicio || ""}
+                              onChange={(e) => setMedEditando({ ...medEditando, manha_inicio: e.target.value })}
+                            />
+                            <Input
+                              type="time"
+                              className="h-7 text-xs w-20"
+                              value={medEditando.manha_final || ""}
+                              onChange={(e) => setMedEditando({ ...medEditando, manha_final: e.target.value })}
+                            />
+                          </div>
+                        </td>
+                        <td className="p-2 text-xs">
+                          <div className="flex gap-1">
+                            <Input
+                              type="time"
+                              className="h-7 text-xs w-20"
+                              value={medEditando.tarde_inicio || ""}
+                              onChange={(e) => setMedEditando({ ...medEditando, tarde_inicio: e.target.value })}
+                            />
+                            <Input
+                              type="time"
+                              className="h-7 text-xs w-20"
+                              value={medEditando.tarde_final || ""}
+                              onChange={(e) => setMedEditando({ ...medEditando, tarde_final: e.target.value })}
+                            />
+                          </div>
+                        </td>
+                        <td className="p-2 text-right">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            className="h-8 text-xs w-24 ml-auto text-right"
+                            value={medEditando.valor_hora || 0}
+                            onChange={(e) => setMedEditando({ ...medEditando, valor_hora: parseFloat(e.target.value) })}
+                          />
+                        </td>
+                        <td className="p-2 text-center whitespace-nowrap">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-green-600 hover:bg-green-50"
+                            onClick={() => salvarEdicaoMedicao(m.id)}
+                          >
+                            <Check className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-gray-500 hover:bg-gray-100"
+                            onClick={() => setEditandoMedicaoId(null)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  return (
+                    <tr key={m.id} className="border-b hover:bg-muted/30">
+                      <td className="p-3 whitespace-nowrap">{m.data}</td>
+                      <td className="p-3 font-medium">{m.contrato}</td>
+                      <td className="p-3">{m.equipamento}</td>
+                      <td className="p-3">{m.operador}</td>
+                      <td className="p-3 text-xs">{m.manha_inicio} às {m.manha_final}</td>
+                      <td className="p-3 text-xs">{m.tarde_inicio} às {m.tarde_final}</td>
+                      <td className="p-3 text-right font-semibold">{formatBRL(m.valor_hora)}</td>
+                      <td className="p-3 text-center whitespace-nowrap">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+                          onClick={() => iniciarEdicaoMedicao(m)}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-rose-600 hover:bg-rose-50"
+                          onClick={() => handleDeletarMedicao(m.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
