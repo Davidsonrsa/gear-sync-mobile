@@ -5,10 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, ChevronRight, Plus, Gauge, ShieldCheck, AlertTriangle, Calendar } from "lucide-react";
+import { Search, ChevronRight, Plus, Gauge, ShieldCheck, AlertTriangle, Calendar, AlertCircle, Trash2, Edit3, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Notificacoes } from "@/components/Notificacoes";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -438,6 +439,235 @@ function BotaoSeguro() {
 }
 
 // ----------------------------------------------------
+// COMPONENTE: MODAL DE PENDÊNCIAS DE MANUTENÇÃO POR EQUIPAMENTO
+// ----------------------------------------------------
+function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamentoId: string; numeroEquipamento: string }) {
+  const [open, setOpen] = useState(false);
+  const [novaDescricao, setNovaDescricao] = useState("");
+  const [executadoPor, setExecutadoPor] = useState("");
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [editDescricao, setEditDescricao] = useState("");
+  const [editExecutado, setEditExecutado] = useState("");
+  const { user } = useAuth();
+
+  // Buscar pendências do equipamento
+  const { data: pendencias = [], refetch } = useQuery({
+    queryKey: ["manutencao-pendencias", equipamentoId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("manutencao_pendencias")
+        .select("*")
+        .eq("equipamento_id", equipamentoId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        // Se a tabela não existir ainda no banco, retorna array vazio para evitar crash
+        console.warn("Aviso ao buscar pendências (tabela pode não existir):", error);
+        return [];
+      }
+      return data ?? [];
+    },
+  });
+
+  const temPendencias = pendencias.length > 0;
+
+  const handleSalvar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!novaDescricao.trim()) return;
+
+    const nomeUsuario = user?.email || "Usuário Sistema";
+
+    const { error } = await supabase.from("manutencao_pendencias").insert([
+      {
+        equipamento_id: equipamentoId,
+        descricao: novaDescricao,
+        registrado_por: nomeUsuario,
+        executado_por: executadoPor.trim() || null,
+        status: executadoPor.trim() ? "CONCLUIDO" : "PENDENTE",
+      },
+    ]);
+
+    if (error) {
+      alert("Erro ao salvar pendência. Verifique se a tabela 'manutencao_pendencias' foi criada no Supabase.");
+      console.error(error);
+      return;
+    }
+
+    setNovaDescricao("");
+    setExecutadoPor("");
+    refetch();
+  };
+
+  const handleDeletar = async (id: string) => {
+    if (!confirm("Deseja realmente excluir esta pendência?")) return;
+    const { error } = await supabase.from("manutencao_pendencias").delete().eq("id", id);
+    if (error) {
+      alert("Erro ao excluir.");
+      return;
+    }
+    refetch();
+  };
+
+  const handleAtualizar = async (id: string) => {
+    const { error } = await supabase
+      .from("manutencao_pendencias")
+      .update({
+        descricao: editDescricao,
+        executado_por: editExecutado.trim() || null,
+        status: editExecutado.trim() ? "CONCLUIDO" : "PENDENTE",
+      })
+      .eq("id", id);
+
+    if (error) {
+      alert("Erro ao atualizar.");
+      return;
+    }
+
+    setEditandoId(null);
+    refetch();
+  };
+
+  return (
+    <>
+      <Button
+        size="sm"
+        variant="destructive"
+        className={`h-7 px-2.5 text-[11px] gap-1 font-bold shadow-sm transition-all ${
+          temPendencias ? "bg-red-600 hover:bg-red-700 text-white animate-pulse" : "bg-slate-200 hover:bg-slate-300 text-slate-700"
+        }`}
+        onClick={(e) => {
+          e.preventDefault(); // Impede o clique de abrir a rota do card
+          setOpen(true);
+        }}
+      >
+        <AlertCircle className={`w-3.5 h-3.5 ${temPendencias ? "text-white animate-bounce" : "text-slate-500"}`} />
+        <span>{temPendencias ? `Pendências (${pendencias.length})` : "Pendências"}</span>
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent
+          style={{ backgroundColor: "#ffffff", opacity: 1 }}
+          className="sm:max-w-lg text-slate-900 border border-slate-300 shadow-2xl p-0 overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <DialogHeader className="p-4 pb-3 border-b border-slate-200 bg-slate-50">
+            <DialogTitle className="text-slate-900 font-bold text-base flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+              Pendências de Manutenção — {numeroEquipamento}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="p-4 max-h-[75vh] overflow-y-auto space-y-4 bg-white">
+            {/* Formulário para Nova Pendência */}
+            <form onSubmit={handleSalvar} className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+              <p className="text-xs font-bold text-slate-800">Registrar Nova Pendência</p>
+              <Textarea
+                placeholder="Descreva a pendência ou manutenção necessária..."
+                value={novaDescricao}
+                onChange={(e) => setNovaDescricao(e.target.value)}
+                className="text-xs bg-white border-slate-300 min-h-[60px]"
+                required
+              />
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Executado por (opcional se concluído)"
+                  value={executadoPor}
+                  onChange={(e) => setExecutadoPor(e.target.value)}
+                  className="text-xs h-8 bg-white border-slate-300 flex-1"
+                />
+                <Button type="submit" size="sm" className="h-8 bg-blue-600 hover:bg-blue-700 text-xs text-white">
+                  Salvar
+                </Button>
+              </div>
+            </form>
+
+            {/* Lista de Pendências */}
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Histórico de Pendências</p>
+              {pendencias.length === 0 ? (
+                <p className="text-xs text-slate-500 text-center py-6 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                  Nenhuma pendência registrada para este equipamento.
+                </p>
+              ) : (
+                pendencias.map((item: any) => (
+                  <div key={item.id} className="p-3 rounded-lg border border-slate-200 bg-white shadow-sm space-y-2 text-xs">
+                    {editandoId === item.id ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={editDescricao}
+                          onChange={(e) => setEditDescricao(e.target.value)}
+                          className="text-xs bg-white border-slate-300"
+                        />
+                        <Input
+                          placeholder="Executado por"
+                          value={editExecutado}
+                          onChange={(e) => setEditExecutado(e.target.value)}
+                          className="text-xs h-8 bg-white border-slate-300"
+                        />
+                        <div className="flex justify-end gap-2">
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditandoId(null)}>
+                            Cancelar
+                          </Button>
+                          <Button size="sm" className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleAtualizar(item.id)}>
+                            Atualizar
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between items-start gap-2">
+                          <p className="font-semibold text-slate-900 flex-1">{item.descricao}</p>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              item.status === "CONCLUIDO" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {item.status || "PENDENTE"}
+                          </span>
+                        </div>
+
+                        <div className="text-[11px] text-slate-500 space-y-0.5 border-t border-slate-100 pt-1.5">
+                          <p>👤 <strong>Registrado por:</strong> {item.registrado_por || "Não informado"}</p>
+                          <p>🛠️ <strong>Executado por:</strong> {item.executado_por || "Pendente de execução"}</p>
+                          <p className="text-[10px] text-slate-400">📅 {new Date(item.created_at).toLocaleString("pt-BR")}</p>
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-1 border-t border-slate-100">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            onClick={() => {
+                              setEditandoId(item.id);
+                              setEditDescricao(item.descricao);
+                              setEditExecutado(item.executado_por || "");
+                            }}
+                          >
+                            <Edit3 className="w-3 h-3 mr-1" /> Editar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleDeletar(item.id)}
+                          >
+                            <Trash2 className="w-3 h-3 mr-1" /> Deletar
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// ----------------------------------------------------
 // TELA PRINCIPAL
 // ----------------------------------------------------
 function EquipamentosList() {
@@ -655,9 +885,9 @@ function EquipamentosList() {
                   </div>
                 </div>
 
-                <div className="mt-3 space-y-1.5">
-                  {!overdue && (
-                    <div className="flex items-center">
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    {!overdue && (
                       <span
                         className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
                           e.status === "Em manutenção" || e.status === "Manutenção"
@@ -667,8 +897,13 @@ function EquipamentosList() {
                       >
                         {e.status || "Operacional"}
                       </span>
+                    )}
+
+                    {/* BOTÃO DE PENDÊNCIAS EM ALERTA NO CARD */}
+                    <div className="ml-auto">
+                      <BotaoPendenciasCard equipamentoId={e.id} numeroEquipamento={e.numero} />
                     </div>
-                  )}
+                  </div>
 
                   <div className="flex items-center gap-2">
                     <div className="flex-1 bg-slate-200 h-2 rounded-full overflow-hidden">
@@ -685,7 +920,7 @@ function EquipamentosList() {
                     </span>
                   </div>
 
-                  <div className="flex justify-between items-center text-xs]">
+                  <div className="flex justify-between items-center text-xs">
                     <span className={overdue ? "text-red-700 font-semibold" : "text-slate-400"}>
                       Hr rodado: {hrRodado}h
                     </span>
