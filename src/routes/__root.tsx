@@ -248,13 +248,13 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <div className="min-h-screen bg-gray-100 text-gray-900 antialiased">
 
-        {/* Menu principal */}
-        <nav className="flex items-center border-b bg-white px-4 shadow-sm">
+        {/* Menu principal integrado no estilo do topo */}
+        <nav className="flex items-center gap-4 bg-[#f97316] px-4 py-2 text-white shadow-sm">
           <Link
             to="/medicoes"
-            className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-orange-600 font-medium"
+            className="flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium hover:bg-black/10 transition-colors"
           >
-            <Clock size={18} />
+            <Clock size={16} />
             Medições
           </Link>
         </nav>
