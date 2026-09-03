@@ -51,10 +51,10 @@ interface MaquinaMedicao {
 const MEDICOES_RASCUNHO_KEY = "gear-sync-medicoes-rascunho";
 const MESES_RASCUNHO_KEY = "gear-sync-meses-rascunho";
 
-function lerRascunho<T>(valorPadrao: T): T {
+function lerRascunho<T>(chave: string, valorPadrao: T): T {
   if (typeof window === "undefined") return valorPadrao;
   try {
-    const salvo = window.localStorage.getItem(MEDICOES_RASCUNHO_KEY);
+    const salvo = window.localStorage.getItem(chave);
     return salvo ? (JSON.parse(salvo) as T) : valorPadrao;
   } catch {
     return valorPadrao;
@@ -67,7 +67,7 @@ export function MedicoesPage() {
   const [contratos, setContratos] = useState<Contrato[]>([]);
 
   const [meses, setMeses] = useState<MesAno[]>(() =>
-    lerRascunho<MesAno[]>([
+    lerRascunho<MesAno[]>(MESES_RASCUNHO_KEY, [
       { id: "m1", contratoId: "1", nome: "Setembro", ano: 2026, mesIndex: 8 },
     ]),
   );
@@ -152,7 +152,7 @@ export function MedicoesPage() {
   const [rascunhoCarregado, setRascunhoCarregado] = useState(false);
 
   useEffect(() => {
-    const rascunho = lerRascunho<MaquinaMedicao[] | null>(null);
+    const rascunho = lerRascunho<MaquinaMedicao[] | null>(MEDICOES_RASCUNHO_KEY, null);
     if (rascunho) setMaquinas(rascunho);
     setRascunhoCarregado(true);
   }, []);
