@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/cotacoes/$id")({
+export const Route = createFileRoute("/_authenticated/cotacoes/$id/")({
   component: DetalheCotacaoPage,
 });
 

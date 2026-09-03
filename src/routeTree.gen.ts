@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedMedicoesRouteImport } from './routes/_authenticated/medicoes'
+import { Route as AuthenticatedFornecedoresRouteImport } from './routes/_authenticated/fornecedores'
 import { Route as AuthenticatedCotacoesRouteImport } from './routes/_authenticated/cotacoes'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedNotasFiscaisIndexRouteImport } from './routes/_authenticated/notas-fiscais.index'
@@ -25,6 +27,7 @@ import { Route as AuthenticatedCotacoesIdIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedEquipamentosIdManutencaoRouteImport } from './routes/_authenticated/equipamentos.$id.manutencao'
 import { Route as AuthenticatedEquipamentosIdHistoricoRouteImport } from './routes/_authenticated/equipamentos.$id.historico'
 import { Route as AuthenticatedEquipamentosIdHistoricoHistIdRouteImport } from './routes/_authenticated/equipamentos.$id.historico.$histId'
+import { Route as AuthenticatedSrcRoutesAuthenticatedFornecedoresNovoRouteImport } from './routes/_authenticated/src/routes/_authenticated/fornecedores/novo'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -40,6 +43,17 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedMedicoesRoute = AuthenticatedMedicoesRouteImport.update({
+  id: '/medicoes',
+  path: '/medicoes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFornecedoresRoute =
+  AuthenticatedFornecedoresRouteImport.update({
+    id: '/fornecedores',
+    path: '/fornecedores',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCotacoesRoute = AuthenticatedCotacoesRouteImport.update({
   id: '/cotacoes',
   path: '/cotacoes',
@@ -116,12 +130,20 @@ const AuthenticatedEquipamentosIdHistoricoHistIdRoute =
     path: '/$histId',
     getParentRoute: () => AuthenticatedEquipamentosIdHistoricoRoute,
   } as any)
+const AuthenticatedSrcRoutesAuthenticatedFornecedoresNovoRoute =
+  AuthenticatedSrcRoutesAuthenticatedFornecedoresNovoRouteImport.update({
+    id: '/src/routes/_authenticated/fornecedores/novo',
+    path: '/src/routes/fornecedores/novo',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/cotacoes': typeof AuthenticatedCotacoesRouteWithChildren
+  '/fornecedores': typeof AuthenticatedFornecedoresRoute
+  '/medicoes': typeof AuthenticatedMedicoesRoute
   '/equipamentos/$id': typeof AuthenticatedEquipamentosIdRouteWithChildren
   '/cotacoes/': typeof AuthenticatedCotacoesIndexRoute
   '/custos/': typeof AuthenticatedCustosIndexRoute
@@ -133,11 +155,14 @@ export interface FileRoutesByFullPath {
   '/equipamentos/$id/': typeof AuthenticatedEquipamentosIdIndexRoute
   '/notas-fiscais/$id/': typeof AuthenticatedNotasFiscaisIdIndexRoute
   '/equipamentos/$id/historico/$histId': typeof AuthenticatedEquipamentosIdHistoricoHistIdRoute
+  '/src/routes/fornecedores/novo': typeof AuthenticatedSrcRoutesAuthenticatedFornecedoresNovoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/fornecedores': typeof AuthenticatedFornecedoresRoute
+  '/medicoes': typeof AuthenticatedMedicoesRoute
   '/cotacoes': typeof AuthenticatedCotacoesIndexRoute
   '/custos': typeof AuthenticatedCustosIndexRoute
   '/equipamentos': typeof AuthenticatedEquipamentosIndexRoute
@@ -148,6 +173,7 @@ export interface FileRoutesByTo {
   '/equipamentos/$id': typeof AuthenticatedEquipamentosIdIndexRoute
   '/notas-fiscais/$id': typeof AuthenticatedNotasFiscaisIdIndexRoute
   '/equipamentos/$id/historico/$histId': typeof AuthenticatedEquipamentosIdHistoricoHistIdRoute
+  '/src/routes/fornecedores/novo': typeof AuthenticatedSrcRoutesAuthenticatedFornecedoresNovoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -156,6 +182,8 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/cotacoes': typeof AuthenticatedCotacoesRouteWithChildren
+  '/_authenticated/fornecedores': typeof AuthenticatedFornecedoresRoute
+  '/_authenticated/medicoes': typeof AuthenticatedMedicoesRoute
   '/_authenticated/equipamentos/$id': typeof AuthenticatedEquipamentosIdRouteWithChildren
   '/_authenticated/cotacoes/': typeof AuthenticatedCotacoesIndexRoute
   '/_authenticated/custos/': typeof AuthenticatedCustosIndexRoute
@@ -167,6 +195,7 @@ export interface FileRoutesById {
   '/_authenticated/equipamentos/$id/': typeof AuthenticatedEquipamentosIdIndexRoute
   '/_authenticated/notas-fiscais/$id/': typeof AuthenticatedNotasFiscaisIdIndexRoute
   '/_authenticated/equipamentos/$id/historico/$histId': typeof AuthenticatedEquipamentosIdHistoricoHistIdRoute
+  '/_authenticated/src/routes/_authenticated/fornecedores/novo': typeof AuthenticatedSrcRoutesAuthenticatedFornecedoresNovoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -175,6 +204,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin'
     | '/cotacoes'
+    | '/fornecedores'
+    | '/medicoes'
     | '/equipamentos/$id'
     | '/cotacoes/'
     | '/custos/'
@@ -186,11 +217,14 @@ export interface FileRouteTypes {
     | '/equipamentos/$id/'
     | '/notas-fiscais/$id/'
     | '/equipamentos/$id/historico/$histId'
+    | '/src/routes/fornecedores/novo'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/admin'
+    | '/fornecedores'
+    | '/medicoes'
     | '/cotacoes'
     | '/custos'
     | '/equipamentos'
@@ -201,6 +235,7 @@ export interface FileRouteTypes {
     | '/equipamentos/$id'
     | '/notas-fiscais/$id'
     | '/equipamentos/$id/historico/$histId'
+    | '/src/routes/fornecedores/novo'
   id:
     | '__root__'
     | '/'
@@ -208,6 +243,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/admin'
     | '/_authenticated/cotacoes'
+    | '/_authenticated/fornecedores'
+    | '/_authenticated/medicoes'
     | '/_authenticated/equipamentos/$id'
     | '/_authenticated/cotacoes/'
     | '/_authenticated/custos/'
@@ -219,6 +256,7 @@ export interface FileRouteTypes {
     | '/_authenticated/equipamentos/$id/'
     | '/_authenticated/notas-fiscais/$id/'
     | '/_authenticated/equipamentos/$id/historico/$histId'
+    | '/_authenticated/src/routes/_authenticated/fornecedores/novo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -249,6 +287,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/medicoes': {
+      id: '/_authenticated/medicoes'
+      path: '/medicoes'
+      fullPath: '/medicoes'
+      preLoaderRoute: typeof AuthenticatedMedicoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fornecedores': {
+      id: '/_authenticated/fornecedores'
+      path: '/fornecedores'
+      fullPath: '/fornecedores'
+      preLoaderRoute: typeof AuthenticatedFornecedoresRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/cotacoes': {
       id: '/_authenticated/cotacoes'
@@ -341,6 +393,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEquipamentosIdHistoricoHistIdRouteImport
       parentRoute: typeof AuthenticatedEquipamentosIdHistoricoRoute
     }
+    '/_authenticated/src/routes/_authenticated/fornecedores/novo': {
+      id: '/_authenticated/src/routes/_authenticated/fornecedores/novo'
+      path: '/src/routes/fornecedores/novo'
+      fullPath: '/src/routes/fornecedores/novo'
+      preLoaderRoute: typeof AuthenticatedSrcRoutesAuthenticatedFornecedoresNovoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -398,22 +457,29 @@ const AuthenticatedEquipamentosIdRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedCotacoesRoute: typeof AuthenticatedCotacoesRouteWithChildren
+  AuthenticatedFornecedoresRoute: typeof AuthenticatedFornecedoresRoute
+  AuthenticatedMedicoesRoute: typeof AuthenticatedMedicoesRoute
   AuthenticatedEquipamentosIdRoute: typeof AuthenticatedEquipamentosIdRouteWithChildren
   AuthenticatedCustosIndexRoute: typeof AuthenticatedCustosIndexRoute
   AuthenticatedEquipamentosIndexRoute: typeof AuthenticatedEquipamentosIndexRoute
   AuthenticatedNotasFiscaisIndexRoute: typeof AuthenticatedNotasFiscaisIndexRoute
   AuthenticatedNotasFiscaisIdIndexRoute: typeof AuthenticatedNotasFiscaisIdIndexRoute
+  AuthenticatedSrcRoutesAuthenticatedFornecedoresNovoRoute: typeof AuthenticatedSrcRoutesAuthenticatedFornecedoresNovoRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedCotacoesRoute: AuthenticatedCotacoesRouteWithChildren,
+  AuthenticatedFornecedoresRoute: AuthenticatedFornecedoresRoute,
+  AuthenticatedMedicoesRoute: AuthenticatedMedicoesRoute,
   AuthenticatedEquipamentosIdRoute:
     AuthenticatedEquipamentosIdRouteWithChildren,
   AuthenticatedCustosIndexRoute: AuthenticatedCustosIndexRoute,
   AuthenticatedEquipamentosIndexRoute: AuthenticatedEquipamentosIndexRoute,
   AuthenticatedNotasFiscaisIndexRoute: AuthenticatedNotasFiscaisIndexRoute,
   AuthenticatedNotasFiscaisIdIndexRoute: AuthenticatedNotasFiscaisIdIndexRoute,
+  AuthenticatedSrcRoutesAuthenticatedFornecedoresNovoRoute:
+    AuthenticatedSrcRoutesAuthenticatedFornecedoresNovoRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

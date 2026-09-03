@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/cotacoes/nova")({
+export const Route = createFileRoute("/_authenticated/src/routes/_authenticated/fornecedores/novo")({
   component: NovaCotacaoPage,
 });
 
