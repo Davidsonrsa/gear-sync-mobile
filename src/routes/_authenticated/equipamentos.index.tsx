@@ -593,7 +593,7 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
     e.preventDefault();
     if (!novaDescricao.trim()) return;
 
-    const nomeUsuario = user?.email || "Usuário Sistema";
+    const nomeUsuario = fullName || "Usuário Sistema";
     const statusInicial = executadoPor.trim() ? "CONCLUIDO" : "PENDENTE";
 
     const { error } = await supabase.from("manutencao_pendencias").insert([
