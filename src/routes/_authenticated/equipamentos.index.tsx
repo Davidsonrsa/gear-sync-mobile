@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -57,6 +58,14 @@ function calcularDiasVencimento(dataVencimentoStr: string): number | null {
   const diffTempo = dataVenc.getTime() - hoje.getTime();
   return Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
 }
+
+const STATUS_EQUIPAMENTO = [
+  "Em manutenção",
+  "Disponível para venda",
+  "Aguardando peças",
+  "Operacional",
+  "Em trânsito",
+] as const;
 
 // ----------------------------------------------------
 // COMPONENTE: TACOGRAFO
@@ -892,6 +901,7 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
 // ----------------------------------------------------
 function EquipamentosList() {
   const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
   const [q, setQ] = useState("");
   const [cl, setCl] = useState<string>("__all");
   const [onlyOverdue, setOnlyOverdue] = useState(false);
@@ -967,6 +977,24 @@ function EquipamentosList() {
       return true;
     });
   }, [data, q, cl, onlyOverdue]);
+
+  async function handleStatusChange(equipamentoId: string, status: string) {
+    queryClient.setQueryData<Equip[]>(["equipamentos"], (equipamentos) =>
+      equipamentos?.map((equipamento) =>
+        equipamento.id === equipamentoId ? { ...equipamento, status } : equipamento,
+      ),
+    );
+
+    const { error } = await supabase
+      .from("equipamentos")
+      .update({ status })
+      .eq("id", equipamentoId);
+
+    if (error) {
+      queryClient.invalidateQueries({ queryKey: ["equipamentos"] });
+      console.error("Erro ao atualizar status do equipamento:", error);
+    }
+  }
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto w-full space-y-4">
@@ -1108,15 +1136,27 @@ function EquipamentosList() {
                 <div className="mt-3 space-y-2">
                   <div className="flex items-center justify-between">
                     {!overdue && (
-                      <span
+                      <select
+                        value={e.status || "Operacional"}
+                        disabled={!isAdmin}
+                        onClick={(event) => event.preventDefault()}
+                        onChange={(event) => {
+                          event.preventDefault();
+                          void handleStatusChange(e.id, event.target.value);
+                        }}
                         className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
                           e.status === "Em manutenção" || e.status === "Manutenção"
                             ? "bg-amber-100 text-amber-800 border-amber-300"
                             : "bg-emerald-50 text-emerald-700 border-emerald-200"
                         }`}
+                        aria-label={`Status do equipamento ${e.numero}`}
                       >
-                        {e.status || "Operacional"}
-                      </span>
+                        {STATUS_EQUIPAMENTO.map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </select>
                     )}
 
                     {/* BOTÃO DE PENDÊNCIAS EM ALERTA NO CARD */}
