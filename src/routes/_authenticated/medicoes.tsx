@@ -47,6 +47,7 @@ interface MaquinaMedicao {
 }
 
 const MEDICOES_RASCUNHO_KEY = "gear-sync-medicoes-rascunho";
+const MESES_RASCUNHO_KEY = "gear-sync-meses-rascunho";
 
 function lerRascunho<T>(valorPadrao: T): T {
   if (typeof window === "undefined") return valorPadrao;
@@ -63,9 +64,11 @@ export function MedicoesPage() {
 
   const [contratos, setContratos] = useState<Contrato[]>([]);
 
-  const [meses, setMeses] = useState<MesAno[]>([
-    { id: "m1", contratoId: "1", nome: "Setembro", ano: 2026, mesIndex: 8 },
-  ]);
+  const [meses, setMeses] = useState<MesAno[]>(() =>
+    lerRascunho<MesAno[]>([
+      { id: "m1", contratoId: "1", nome: "Setembro", ano: 2026, mesIndex: 8 },
+    ]),
+  );
 
   const gerarDiasDoMesEmBranco = (ano: number, mesIndex: number): DiaMedicao[] => {
     const quantidadeDias = new Date(ano, mesIndex + 1, 0).getDate();
@@ -156,6 +159,10 @@ export function MedicoesPage() {
     if (!rascunhoCarregado) return;
     window.localStorage.setItem(MEDICOES_RASCUNHO_KEY, JSON.stringify(maquinas));
   }, [maquinas, rascunhoCarregado]);
+
+  useEffect(() => {
+    window.localStorage.setItem(MESES_RASCUNHO_KEY, JSON.stringify(meses));
+  }, [meses]);
 
   useEffect(() => {
     async function carregarDados() {
@@ -308,9 +315,10 @@ export function MedicoesPage() {
   };
 
   const handleSalvarMedicao = async () => {
-    if (!contratoSelecionado || !mesSelecionado || !maquinaSelecionadaId) return;
+    if (!contratoSelecionado || !mesSelecionado) return;
 
-    const maquina = maquinas.find((item) => item.id === maquinaSelecionadaId);
+    const maquina = maquinas.find((item) => item.id === maquinaSelecionadaId) ??
+      maquinas.find((item) => item.mesId === mesSelecionado.id);
     if (!maquina) return;
 
     const converterHora = (valor: string) => {
