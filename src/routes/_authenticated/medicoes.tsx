@@ -197,6 +197,72 @@ export function MedicoesPage() {
           };
         }),
       );
+
+      const { data: dadosMedicoes, error: erroMedicoes } = await supabase
+        .from("medicoes_diarias")
+        .select("*")
+        .order("data");
+      if (erroMedicoes) {
+        console.error("Erro ao carregar medições:", erroMedicoes);
+        return;
+      }
+
+      setMaquinas((atuais) => {
+        const persistidas = new Map<string, MaquinaMedicao>();
+        (dadosMedicoes ?? []).forEach((item) => {
+          const dataItem = new Date(`${item.data}T00:00:00`);
+          const mes = meses.find(
+            (itemMes) =>
+              itemMes.ano === dataItem.getFullYear() &&
+              itemMes.mesIndex === dataItem.getMonth() &&
+              (item.contrato_id ? itemMes.contratoId === item.contrato_id : true),
+          );
+          const mesId = mes?.id;
+          if (!mesId) return;
+
+          const chave = `${item.contrato_id ?? item.contrato}:${mesId}:${item.equipamento}:${item.operador}:${item.valor_hora}`;
+          let maquina = persistidas.get(chave);
+          if (!maquina) {
+            const atual = atuais.find(
+              (itemAtual) => itemAtual.id === chave ||
+                (itemAtual.mesId === mesId && itemAtual.codigo === item.equipamento),
+            );
+            maquina = atual ?? {
+              id: chave,
+              mesId,
+              codigo: item.equipamento,
+              tipo: item.equipamento,
+              operador: item.operador,
+              valorHora: item.valor_hora,
+              dataAprovacao: "",
+              assinaturaResponsavel: "",
+              assinaturaContratante: "",
+              dias: gerarDiasDoMesEmBranco(mes.ano, mes.mesIndex),
+            };
+            maquina = { ...maquina, dias: maquina.dias.map((dia) => ({ ...dia })) };
+            persistidas.set(chave, maquina);
+          }
+
+          const dia = maquina.dias[dataItem.getDate() - 1];
+          if (!dia) return;
+          const formatarHora = (valor: number | null) =>
+            valor == null
+              ? ""
+              : `${String(Math.floor(valor)).padStart(2, "0")}:${String(Math.round((valor % 1) * 60)).padStart(2, "0")}`;
+          dia.manhaInicio = formatarHora(item.manha_inicio);
+          dia.manhaFim = formatarHora(item.manha_final);
+          dia.tardeInicio = formatarHora(item.tarde_inicio);
+          dia.tardeFim = formatarHora(item.tarde_final);
+          dia.observacao = item.observacao ?? "";
+        });
+
+        return [
+          ...atuais.filter(
+            (atual) => ![...persistidas.values()].some((item) => item.id === atual.id),
+          ),
+          ...persistidas.values(),
+        ];
+      });
     }
     void carregarDados();
   }, []);
