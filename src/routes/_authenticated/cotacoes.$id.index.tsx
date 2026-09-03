@@ -151,6 +151,17 @@ export default function DetalheCotacaoPage() {
         setItens([]);
         setFornecedoresCotacao([]);
         setRespostas([]);
+
+        const { data: cotacoesExistentes, error: numerosErr } = await supabase
+          .from("cotacoes")
+          .select("numero");
+        if (numerosErr) throw numerosErr;
+
+        const maiorNumero = (cotacoesExistentes || []).reduce((maior, item) => {
+          const numero = Number.parseInt(String(item.numero).match(/\d+/)?.[0] || "0", 10);
+          return Number.isNaN(numero) ? maior : Math.max(maior, numero);
+        }, 0);
+        setNovaNumero(String(maiorNumero + 1).padStart(4, "0"));
         
         const { data: allForn, error: allFornErr } = await supabase
           .from("fornecedores")
