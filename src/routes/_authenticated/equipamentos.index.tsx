@@ -506,14 +506,40 @@ function BotaoSeguro() {
                         </p>
                       </div>
 
-                      <div className="text-right">
-                        <p className="text-slate-500 font-medium text-[10px]">Vencimento:</p>
-                        <p className="font-bold font-mono text-slate-900">
-                          {item.dataVal
-                            ? new Date(item.dataVal + "T00:00:00").toLocaleDateString("pt-BR")
-                            : "-"}
-                        </p>
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <p className="text-slate-500 font-medium text-[10px]">Vencimento:</p>
+                          <p className="font-bold font-mono text-slate-900">
+                            {item.dataVal
+                              ? new Date(item.dataVal + "T00:00:00").toLocaleDateString("pt-BR")
+                              : "-"}
+                          </p>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => {
+                            setEditandoId(item.id);
+                            setForm({
+                              veiculo_equipamento: item.veiculo_equipamento ?? "",
+                              seguradora: item.seguradora ?? "",
+                              data_vencimento: item.dataVal ?? "",
+                            });
+                          }}
+                        >
+                          <Edit3 className="w-3.5 h-3.5 text-blue-700" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => excluirSeguro(item.id)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                        </Button>
                       </div>
+
                     </div>
                   );
                 })}
