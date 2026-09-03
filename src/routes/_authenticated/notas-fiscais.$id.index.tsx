@@ -359,7 +359,7 @@ function NotaFiscalDetail() {
                         <AlertDialogTitle>Deletar Nota Fiscal?</AlertDialogTitle>
                         <AlertDialogDescription>
                           Tem certeza que deseja deletar a nota fiscal NF{" "}
-                          {nota.nf || nota.numero_nf}? Esta ação não pode ser
+                          {nota.nf}? Esta ação não pode ser
                           desfeita.
                         </AlertDialogDescription>
                       </AlertDialogHeader>

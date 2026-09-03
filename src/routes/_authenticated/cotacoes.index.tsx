@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_authenticated/cotacoes/")({
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-const formatarData = (dataStr?: string) => {
+const formatarData = (dataStr?: string | null) => {
   if (!dataStr) return "—";
   const partes = dataStr.split("T")[0].split("-");
   if (partes.length === 3) {
