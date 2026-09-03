@@ -406,6 +406,51 @@ function BotaoSeguro() {
               </div>
             )}
 
+            <div className="p-3 rounded-lg border border-slate-200 bg-slate-50 space-y-2">
+              <p className="text-xs font-bold text-slate-900">
+                {editandoId ? "Editar seguro" : "Cadastrar seguro"}
+              </p>
+              <Input
+                placeholder="Veículo / Equipamento *"
+                value={form.veiculo_equipamento}
+                onChange={(e) => setForm({ ...form, veiculo_equipamento: e.target.value })}
+                className="h-8 text-xs bg-white border-slate-300 text-slate-900"
+              />
+              <Input
+                placeholder="Seguradora *"
+                value={form.seguradora}
+                onChange={(e) => setForm({ ...form, seguradora: e.target.value })}
+                className="h-8 text-xs bg-white border-slate-300 text-slate-900"
+              />
+              <Input
+                type="date"
+                value={form.data_vencimento}
+                onChange={(e) => setForm({ ...form, data_vencimento: e.target.value })}
+                className="h-8 text-xs bg-white border-slate-300 text-slate-900"
+              />
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={salvarSeguro}
+                  disabled={salvando}
+                  className="h-8 text-xs flex-1 bg-blue-700 hover:bg-blue-600 text-white"
+                >
+                  {salvando ? "Salvando..." : editandoId ? "Salvar alterações" : "Cadastrar"}
+                </Button>
+                {editandoId && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={limpar}
+                    className="h-8 text-xs border-slate-300 text-slate-700"
+                  >
+                    Cancelar
+                  </Button>
+                )}
+              </div>
+            </div>
+
+
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <Input
