@@ -562,7 +562,7 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [editDescricao, setEditDescricao] = useState("");
   const [editExecutado, setEditExecutado] = useState("");
-  const { user } = useAuth();
+  const { fullName } = useAuth();
 
   // Buscar pendências do equipamento
   const { data: pendencias = [], refetch } = useQuery({
@@ -657,7 +657,6 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
     let texto = `📋 *RELATÓRIO DE PENDÊNCIAS — EQUIPAMENTO: ${numeroEquipamento}*\n\n`;
     
     pendencias.forEach((p: any, index: number) => {
-      texto.ريك;
       texto += `${index + 1}. *${p.descricao}*\n`;
       texto += `   • Status: ${p.status || "PENDENTE"}\n`;
       texto += `   • Registrado por: ${p.registrado_por || "N/I"}\n`;
