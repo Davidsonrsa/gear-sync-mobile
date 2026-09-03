@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus, Edit, Trash2, Save, Calendar, ArrowLeft, Clock, Printer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { requireAdmin } from "@/lib/route-guards";
 
 export const Route = createFileRoute("/_authenticated/medicoes")({
+  beforeLoad: requireAdmin,
   component: MedicoesPage,
 });
 
@@ -347,7 +349,7 @@ export function MedicoesPage() {
 
     if (error) {
       console.error("Erro ao salvar medição:", error);
-      setMensagemSucesso("Não foi possível salvar a medição.");
+      setMensagemSucesso(`Não foi possível salvar: ${error.message}`);
       return;
     }
 
@@ -527,6 +529,7 @@ export function MedicoesPage() {
                     key={m.id}
                     onClick={() => {
                       setMesSelecionado(m);
+                      setMaquinaSelecionadaId(null);
                       setVisao("maquina");
                     }}
                     className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:border-orange-500 cursor-pointer flex flex-col justify-between group gap-3"
