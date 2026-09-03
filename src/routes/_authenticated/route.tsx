@@ -72,7 +72,7 @@ function AuthenticatedLayout() {
           </div>
 
           <nav className="flex items-center gap-1.5 overflow-x-auto py-1 bg-transparent">
-            {navItems.map(({ to, label, icon: Icon }) => (
+            {navItems.filter(({ to }) => isAdmin || !["/medicoes", "/custos", "/cotacoes", "/notas-fiscais", "/admin"].includes(to)).map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
                 to={to}

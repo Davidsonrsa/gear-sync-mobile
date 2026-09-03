@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { UserPlus, Plus, Trash2, ShieldCheck, User } from "lucide-react";
 import { ImportEquipamentos } from "@/components/ImportEquipamentos";
 import { emailToMat } from "@/lib/mat";
+import { requireAdmin } from "@/lib/route-guards";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin")({
+  beforeLoad: requireAdmin,
   component: AdminPage,
 });
 

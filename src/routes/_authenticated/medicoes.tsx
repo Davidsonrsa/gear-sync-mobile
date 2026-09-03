@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { Plus, Edit, Trash2, Save, Calendar, ArrowLeft, Clock, Printer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { requireAdmin } from '@/lib/route-guards';
 
 export const Route = createFileRoute('/_authenticated/medicoes')({
+  beforeLoad: requireAdmin,
   component: MedicoesPage,
 });
 

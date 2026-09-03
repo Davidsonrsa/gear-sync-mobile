@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardFinanceiro } from "@/components/DashboardFinanceiro";
+import { requireAdmin } from "@/lib/route-guards";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +31,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/custos/")({
+  beforeLoad: requireAdmin,
   component: CustosPage,
 });
 

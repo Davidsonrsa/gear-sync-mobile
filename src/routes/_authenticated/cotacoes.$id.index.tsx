@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { requireAdmin } from "@/lib/route-guards";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +26,7 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/cotacoes/$id/")({
+  beforeLoad: requireAdmin,
   component: DetalheCotacaoPage,
 });
 

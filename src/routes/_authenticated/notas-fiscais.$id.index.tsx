@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { requireAdmin } from "@/lib/route-guards";
 import { toast } from "sonner";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import {
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/notas-fiscais/$id/")({
+  beforeLoad: requireAdmin,
   component: NotaFiscalDetail,
 });
 
