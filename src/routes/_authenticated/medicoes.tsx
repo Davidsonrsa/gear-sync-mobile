@@ -347,7 +347,33 @@ export function MedicoesPage() {
       .from("medicoes_diarias")
       .upsert(lancamentos, { onConflict: "contrato,equipamento,data" });
 
-    if (error) {
+    if (error?.code === "42P10") {
+      for (const lancamento of lancamentos) {
+        const { data: existente, error: erroBusca } = await supabase
+          .from("medicoes_diarias")
+          .select("id")
+          .eq("contrato", lancamento.contrato)
+          .eq("equipamento", lancamento.equipamento)
+          .eq("data", lancamento.data)
+          .maybeSingle();
+
+        if (erroBusca) {
+          console.error("Erro ao localizar medição:", erroBusca);
+          setMensagemSucesso(`Não foi possível salvar: ${erroBusca.message}`);
+          return;
+        }
+
+        const resultado = existente
+          ? await supabase.from("medicoes_diarias").update(lancamento).eq("id", existente.id)
+          : await supabase.from("medicoes_diarias").insert(lancamento);
+
+        if (resultado.error) {
+          console.error("Erro ao salvar medição:", resultado.error);
+          setMensagemSucesso(`Não foi possível salvar: ${resultado.error.message}`);
+          return;
+        }
+      }
+    } else if (error) {
       console.error("Erro ao salvar medição:", error);
       setMensagemSucesso(`Não foi possível salvar: ${error.message}`);
       return;
