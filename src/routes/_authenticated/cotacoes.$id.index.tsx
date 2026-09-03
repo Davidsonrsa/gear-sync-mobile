@@ -133,12 +133,12 @@ export default function DetalheCotacaoPage() {
         // Tenta buscar nome do perfil se houver tabela profiles, senão pega do metadata ou email
         const { data: profile } = await supabase
           .from("profiles")
-          .select("nome")
+          .select("full_name")
           .eq("id", user.id)
           .single();
         
-        if (profile?.nome) {
-          setUsuarioNome(profile.nome);
+        if (profile?.full_name) {
+          setUsuarioNome(profile.full_name);
         } else if (user.user_metadata?.name) {
           setUsuarioNome(user.user_metadata.name);
         } else if (user.email) {
