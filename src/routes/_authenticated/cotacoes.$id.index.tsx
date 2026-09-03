@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/cotacoes/$id/")({
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-const formatarData = (dataStr?: string) => {
+const formatarData = (dataStr?: string | null) => {
   if (!dataStr) return "—";
   const partes = dataStr.split("T")[0].split("-");
   if (partes.length === 3) {
@@ -333,7 +333,7 @@ export default function DetalheCotacaoPage() {
     }
   }
 
-  async function handleDeleteItem(itemId: string | number) {
+  async function handleDeleteItem(itemId: string) {
     if (!confirm("Deseja excluir este item?")) return;
     try {
       await supabase.from("cotacao_itens").delete().eq("id", itemId);
@@ -685,8 +685,9 @@ export default function DetalheCotacaoPage() {
                           (r) => String(r.fornecedor_id).trim() === String(fornId).trim() && 
                                  String(r.cotacao_item_id).trim() === String(item.id).trim()
                         );
-                        const subtotalForn = resp && resp.preco > 0 ? resp.preco * (item.quantidade || 1) : 0;
-                        const isMenor = menorInfo && resp && resp.preco === menorInfo.menorUnitario;
+                        const precoResp = resp?.preco ?? 0;
+                        const subtotalForn = precoResp > 0 ? precoResp * (item.quantidade || 1) : 0;
+                        const isMenor = menorInfo && resp && precoResp === menorInfo.menorUnitario;
 
                         return (
                           <td
@@ -696,7 +697,7 @@ export default function DetalheCotacaoPage() {
                             {subtotalForn > 0 ? (
                               <div>
                                 <div>{brl(subtotalForn)}</div>
-                                <div className="text-[10px] text-slate-500 font-normal">Unit: {brl(resp.preco)} {resp.marca ? `(${resp.marca})` : ""}</div>
+                                <div className="text-[10px] text-slate-500 font-normal">Unit: {brl(precoResp)} {resp?.marca ? `(${resp.marca})` : ""}</div>
                               </div>
                             ) : (
                               <span className="text-slate-300">—</span>
@@ -742,8 +743,8 @@ export default function DetalheCotacaoPage() {
                       (r) => String(r.fornecedor_id).trim() === String(fornId).trim() && 
                              String(r.cotacao_item_id).trim() === String(item.id).trim()
                     );
-                    if (resp && resp.preco > 0) {
-                      totalForn += resp.preco * (item.quantidade || 1);
+                    if (resp && (resp.preco ?? 0) > 0) {
+                      totalForn += (resp.preco ?? 0) * (item.quantidade || 1);
                     }
                   });
                   return (
