@@ -162,6 +162,7 @@ function Usuarios() {
   const qc = useQueryClient();
 
   const { data: users, isLoading } = useQuery({ queryKey: ["admin-users"], queryFn: () => list() });
+  const { userId } = useAuth();
 
   const [f, setF] = useState({
     matricula: "",
@@ -303,6 +304,7 @@ function Usuarios() {
               <Badge variant={u.isAdmin ? "default" : "secondary"} className="text-[10px]">
                 {u.isAdmin ? "Admin" : "Colab"}
               </Badge>
+              {u.id !== userId && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button size="icon" variant="ghost" className="h-8 w-8">
@@ -324,6 +326,7 @@ function Usuarios() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+              )}
             </li>
           ))}
         </ul>

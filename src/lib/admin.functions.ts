@@ -3,12 +3,18 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 const DOMAIN = "sphjhm.app";
+const SUPER_ADMIN_MATRICULA = "0001";
+
 function matToEmail(mat: string) {
   const m = mat
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "");
   return `mat-${m}@${DOMAIN}`;
+}
+
+function isSuperAdmin(email: string | undefined) {
+  return email?.toLowerCase() === matToEmail(SUPER_ADMIN_MATRICULA);
 }
 
 const createUserSchema = z.object({
@@ -23,6 +29,11 @@ export const adminCreateUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => createUserSchema.parse(data))
   .handler(async ({ data, context }) => {
+    const { data: currentUser } = await context.supabase.auth.getUser();
+    if (!isSuperAdmin(currentUser.user?.email)) {
+      throw new Error("Acesso negado: somente o administrador principal pode criar usuários.");
+    }
+
     const { data: adminRole, error: roleError } = await context.supabase
       .from("user_roles")
       .select("role")
@@ -59,6 +70,11 @@ export const adminCreateUser = createServerFn({ method: "POST" })
 export const adminListUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { data: currentUser } = await context.supabase.auth.getUser();
+    if (!isSuperAdmin(currentUser.user?.email)) {
+      throw new Error("Acesso negado: somente o administrador principal pode listar usuários.");
+    }
+
     const { data: adminRole, error: roleError } = await context.supabase
       .from("user_roles")
       .select("role")
@@ -83,6 +99,11 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ userId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
+    const { data: currentUser } = await context.supabase.auth.getUser();
+    if (!isSuperAdmin(currentUser.user?.email)) {
+      throw new Error("Acesso negado: somente o administrador principal pode remover usuários.");
+    }
+
     const { data: adminRole, error: roleError } = await context.supabase
       .from("user_roles")
       .select("role")
