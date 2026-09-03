@@ -697,11 +697,20 @@ function EquipamentoDetail() {
             />
           </Field>
           <Field label="Status">
-            <Input
+            <select
               value={form.status ?? ""}
               readOnly={ro}
               onChange={(e) => setForm({ ...form, status: e.target.value })}
-            />
+              disabled={ro}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Selecione o status</option>
+              <option value="Em manutenção">Em manutenção</option>
+              <option value="Disponível para venda">Disponível para venda</option>
+              <option value="Aguardando peças">Aguardando peças</option>
+              <option value="Operacional">Operacional</option>
+              <option value="Em trânsito">Em trânsito</option>
+            </select>
           </Field>
         </div>
 
