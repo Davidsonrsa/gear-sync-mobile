@@ -715,18 +715,18 @@ export function MedicoesPage() {
                       key={eq.id}
                       className={`flex items-stretch gap-1.5 rounded-xl border p-1.5 transition ${
                         ativa
-                          ? "border-orange-400 bg-orange-50 shadow-sm ring-1 ring-orange-200"
-                          : "border-gray-200 bg-gray-50 hover:border-orange-300 hover:bg-white"
+                          ? "border-gray-700 bg-white shadow-sm ring-1 ring-gray-300"
+                          : "border-gray-200 bg-gray-50 hover:border-gray-400 hover:bg-white"
                       }`}
                     >
                       <button
                         onClick={() => setMaquinaSelecionadaId(eq.id)}
                         className="min-w-0 flex-1 rounded-lg px-2.5 py-2 text-left"
                       >
-                        <span className={`block truncate text-sm font-extrabold ${ativa ? "text-orange-800" : "text-gray-800"}`}>
+                        <span className="block truncate text-sm font-extrabold text-gray-900">
                           {eq.codigo}
                         </span>
-                        <span className={`block truncate text-[11px] font-medium uppercase ${ativa ? "text-orange-600" : "text-gray-500"}`}>
+                        <span className="block truncate text-[11px] font-medium uppercase text-gray-700">
                           {eq.tipo}
                         </span>
                       </button>
@@ -751,7 +751,7 @@ export function MedicoesPage() {
                             setMaquinaSelecionadaId(null);
                           }
                         }}
-                        className="self-center rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                        className="self-center rounded-md p-1.5 text-red-600 hover:bg-red-50 hover:text-red-700"
                         title="Excluir Equipamento"
                       >
                         <Trash2 size={14} />
