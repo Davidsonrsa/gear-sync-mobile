@@ -370,7 +370,7 @@ export default function DetalheCotacaoPage() {
     }
   }
 
-  async function handleRemoverFornecedor(fornecedorId: string | number) {
+  async function handleRemoverFornecedor(fornecedorId: string) {
     if (!confirm("Remover fornecedor desta cotação e seus preços?")) return;
     try {
       await supabase.from("cotacao_respostas").delete().eq("cotacao_id", id).eq("fornecedor_id", fornecedorId);

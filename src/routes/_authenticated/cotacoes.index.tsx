@@ -125,7 +125,7 @@ export default function ListaCotacoesPage() {
           </Button>
 
           <Button
-            onClick={() => navigate({ to: "/cotacoes/nova" })}
+            onClick={() => navigate({ to: "/cotacoes/$id", params: { id: "nova" } })}
             className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
           >
             <Plus className="w-4 h-4" /> Nova Cotação
