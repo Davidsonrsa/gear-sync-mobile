@@ -253,8 +253,11 @@ function BotaoTacografo() {
 function BotaoSeguro() {
   const [open, setOpen] = useState(false);
   const [filtro, setFiltro] = useState("");
+  const [form, setForm] = useState({ veiculo_equipamento: "", seguradora: "", data_vencimento: "" });
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [salvando, setSalvando] = useState(false);
 
-  const { data: seguros, isLoading } = useQuery({
+  const { data: seguros, isLoading, refetch } = useQuery({
     queryKey: ["seguros-vencimentos"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -268,6 +271,46 @@ function BotaoSeguro() {
       return data ?? [];
     },
   });
+
+  function limpar() {
+    setForm({ veiculo_equipamento: "", seguradora: "", data_vencimento: "" });
+    setEditandoId(null);
+  }
+
+  async function salvarSeguro() {
+    if (!form.veiculo_equipamento.trim() || !form.seguradora.trim() || !form.data_vencimento) {
+      alert("Preencha equipamento, seguradora e data de vencimento.");
+      return;
+    }
+    setSalvando(true);
+    const payload = {
+      veiculo_equipamento: form.veiculo_equipamento.trim(),
+      seguradora: form.seguradora.trim(),
+      data_vencimento: form.data_vencimento,
+    };
+    const { error } = editandoId
+      ? await supabase.from("seguros").update(payload).eq("id", editandoId)
+      : await supabase.from("seguros").insert(payload);
+    setSalvando(false);
+    if (error) {
+      alert("Erro ao salvar seguro: " + error.message);
+      return;
+    }
+    limpar();
+    refetch();
+  }
+
+  async function excluirSeguro(id: string) {
+    if (!confirm("Excluir este seguro?")) return;
+    const { error } = await supabase.from("seguros").delete().eq("id", id);
+    if (error) {
+      alert("Erro ao excluir: " + error.message);
+      return;
+    }
+    if (editandoId === id) limpar();
+    refetch();
+  }
+
 
   const segurosVencidos = useMemo(() => {
     if (!seguros) return [];
@@ -363,6 +406,51 @@ function BotaoSeguro() {
               </div>
             )}
 
+            <div className="p-3 rounded-lg border border-slate-200 bg-slate-50 space-y-2">
+              <p className="text-xs font-bold text-slate-900">
+                {editandoId ? "Editar seguro" : "Cadastrar seguro"}
+              </p>
+              <Input
+                placeholder="Veículo / Equipamento *"
+                value={form.veiculo_equipamento}
+                onChange={(e) => setForm({ ...form, veiculo_equipamento: e.target.value })}
+                className="h-8 text-xs bg-white border-slate-300 text-slate-900"
+              />
+              <Input
+                placeholder="Seguradora *"
+                value={form.seguradora}
+                onChange={(e) => setForm({ ...form, seguradora: e.target.value })}
+                className="h-8 text-xs bg-white border-slate-300 text-slate-900"
+              />
+              <Input
+                type="date"
+                value={form.data_vencimento}
+                onChange={(e) => setForm({ ...form, data_vencimento: e.target.value })}
+                className="h-8 text-xs bg-white border-slate-300 text-slate-900"
+              />
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={salvarSeguro}
+                  disabled={salvando}
+                  className="h-8 text-xs flex-1 bg-blue-700 hover:bg-blue-600 text-white"
+                >
+                  {salvando ? "Salvando..." : editandoId ? "Salvar alterações" : "Cadastrar"}
+                </Button>
+                {editandoId && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={limpar}
+                    className="h-8 text-xs border-slate-300 text-slate-700"
+                  >
+                    Cancelar
+                  </Button>
+                )}
+              </div>
+            </div>
+
+
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <Input
@@ -418,14 +506,40 @@ function BotaoSeguro() {
                         </p>
                       </div>
 
-                      <div className="text-right">
-                        <p className="text-slate-500 font-medium text-[10px]">Vencimento:</p>
-                        <p className="font-bold font-mono text-slate-900">
-                          {item.dataVal
-                            ? new Date(item.dataVal + "T00:00:00").toLocaleDateString("pt-BR")
-                            : "-"}
-                        </p>
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <p className="text-slate-500 font-medium text-[10px]">Vencimento:</p>
+                          <p className="font-bold font-mono text-slate-900">
+                            {item.dataVal
+                              ? new Date(item.dataVal + "T00:00:00").toLocaleDateString("pt-BR")
+                              : "-"}
+                          </p>
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => {
+                            setEditandoId(item.id);
+                            setForm({
+                              veiculo_equipamento: item.veiculo_equipamento ?? "",
+                              seguradora: item.seguradora ?? "",
+                              data_vencimento: item.dataVal ?? "",
+                            });
+                          }}
+                        >
+                          <Edit3 className="w-3.5 h-3.5 text-blue-700" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => excluirSeguro(item.id)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                        </Button>
                       </div>
+
                     </div>
                   );
                 })}
@@ -448,7 +562,7 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [editDescricao, setEditDescricao] = useState("");
   const [editExecutado, setEditExecutado] = useState("");
-  const { user } = useAuth();
+  const { fullName } = useAuth();
 
   // Buscar pendências do equipamento
   const { data: pendencias = [], refetch } = useQuery({
@@ -479,7 +593,7 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
     e.preventDefault();
     if (!novaDescricao.trim()) return;
 
-    const nomeUsuario = user?.email || "Usuário Sistema";
+    const nomeUsuario = fullName || "Usuário Sistema";
     const statusInicial = executadoPor.trim() ? "CONCLUIDO" : "PENDENTE";
 
     const { error } = await supabase.from("manutencao_pendencias").insert([
@@ -543,7 +657,6 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
     let texto = `📋 *RELATÓRIO DE PENDÊNCIAS — EQUIPAMENTO: ${numeroEquipamento}*\n\n`;
     
     pendencias.forEach((p: any, index: number) => {
-      texto.ريك;
       texto += `${index + 1}. *${p.descricao}*\n`;
       texto += `   • Status: ${p.status || "PENDENTE"}\n`;
       texto += `   • Registrado por: ${p.registrado_por || "N/I"}\n`;

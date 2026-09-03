@@ -50,7 +50,7 @@ export interface ContratoItem {
 export interface ItemFinanceiro {
   id: string;
   contrato: string;
-  contrato_id?: string;
+  contrato_id?: string | null;
   tipo: TipoLancamento;
   descricao: string;
   valor: number;
@@ -60,7 +60,7 @@ export interface ItemFinanceiro {
 export interface MedicaoDiariaItem {
   id: string;
   contrato: string;
-  contrato_id?: string;
+  contrato_id?: string | null;
   equipamento: string;
   operador: string;
   data: string;
@@ -239,6 +239,7 @@ function CustosPage() {
     const contratoObj = contratos.find((c) => c.nome === medContrato);
 
     try {
+      const num = (v: string) => (v === "" || v === null ? null : Number(v));
       const payload = {
         contrato: medContrato,
         contrato_id: contratoObj?.id || null,
@@ -255,7 +256,15 @@ function CustosPage() {
 
       const { data, error } = await supabase
         .from("medicoes_diarias")
-        .insert([payload])
+        .insert([
+          {
+            ...payload,
+            manha_inicio: num(medManhaInicio),
+            manha_final: num(medManhaFinal),
+            tarde_inicio: num(medTardeInicio),
+            tarde_final: num(medTardeFinal),
+          },
+        ])
         .select()
         .single();
 
@@ -284,7 +293,7 @@ function CustosPage() {
 
   async function handleDeletarMedicao(id: string) {
     try {
-      const { error } = await supabase.from("medicoes_diarias").delete().eq("id", id);
+      const { error } = await supabase.from("medicoes_diarias").delete().eq("id", Number(id));
       if (error) throw error;
       setMedicoes((prev) => prev.filter((m) => m.id !== id));
     } catch (err) {

@@ -24,14 +24,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/cotacoes/$id")({
+export const Route = createFileRoute("/_authenticated/cotacoes/$id/")({
   component: DetalheCotacaoPage,
 });
 
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-const formatarData = (dataStr?: string) => {
+const formatarData = (dataStr?: string | null) => {
   if (!dataStr) return "—";
   const partes = dataStr.split("T")[0].split("-");
   if (partes.length === 3) {
@@ -42,45 +42,45 @@ const formatarData = (dataStr?: string) => {
 };
 
 interface Cotacao {
-  id: string | number;
-  numero: string | number;
-  patrimonio?: string;
-  setor?: string;
-  data_cotacao?: string;
-  observacoes?: string;
+  id: string;
+  numero: string;
+  patrimonio?: string | null;
+  setor?: string | null;
+  data_cotacao?: string | null;
+  observacoes?: string | null;
 }
 
 interface ItemCotacao {
-  id: string | number;
-  cotacao_id: string | number;
-  codigo?: string;
+  id: string;
+  cotacao_id: string;
+  codigo?: string | null;
   descricao: string;
   quantidade: number;
   unidade: string;
 }
 
 interface Fornecedor {
-  id: string | number;
+  id: string;
   razao_social: string;
-  nome_fantasia?: string;
-  cnpj?: string;
-  telefone?: string;
-  email?: string;
+  nome_fantasia?: string | null;
+  cnpj?: string | null;
+  telefone?: string | null;
+  email?: string | null;
 }
 
 interface CotacaoFornecedor {
-  cotacao_id: string | number;
-  fornecedor_id: string | number;
+  cotacao_id: string;
+  fornecedor_id: string;
   fornecedores?: Fornecedor;
 }
 
 interface RespostaPreco {
-  id: string | number;
-  cotacao_id: string | number;
-  fornecedor_id: string | number;
-  cotacao_item_id: string | number;
-  preco: number;
-  marca?: string;
+  id: string;
+  cotacao_id: string;
+  fornecedor_id: string;
+  cotacao_item_id: string;
+  preco: number | null;
+  marca?: string | null;
 }
 
 export default function DetalheCotacaoPage() {
@@ -133,12 +133,12 @@ export default function DetalheCotacaoPage() {
         // Tenta buscar nome do perfil se houver tabela profiles, senão pega do metadata ou email
         const { data: profile } = await supabase
           .from("profiles")
-          .select("nome")
+          .select("full_name")
           .eq("id", user.id)
           .single();
         
-        if (profile?.nome) {
-          setUsuarioNome(profile.nome);
+        if (profile?.full_name) {
+          setUsuarioNome(profile.full_name);
         } else if (user.user_metadata?.name) {
           setUsuarioNome(user.user_metadata.name);
         } else if (user.email) {
@@ -333,7 +333,7 @@ export default function DetalheCotacaoPage() {
     }
   }
 
-  async function handleDeleteItem(itemId: string | number) {
+  async function handleDeleteItem(itemId: string) {
     if (!confirm("Deseja excluir este item?")) return;
     try {
       await supabase.from("cotacao_itens").delete().eq("id", itemId);
@@ -370,7 +370,7 @@ export default function DetalheCotacaoPage() {
     }
   }
 
-  async function handleRemoverFornecedor(fornecedorId: string | number) {
+  async function handleRemoverFornecedor(fornecedorId: string) {
     if (!confirm("Remover fornecedor desta cotação e seus preços?")) return;
     try {
       await supabase.from("cotacao_respostas").delete().eq("cotacao_id", id).eq("fornecedor_id", fornecedorId);
@@ -685,8 +685,9 @@ export default function DetalheCotacaoPage() {
                           (r) => String(r.fornecedor_id).trim() === String(fornId).trim() && 
                                  String(r.cotacao_item_id).trim() === String(item.id).trim()
                         );
-                        const subtotalForn = resp && resp.preco > 0 ? resp.preco * (item.quantidade || 1) : 0;
-                        const isMenor = menorInfo && resp && resp.preco === menorInfo.menorUnitario;
+                        const precoResp = resp?.preco ?? 0;
+                        const subtotalForn = precoResp > 0 ? precoResp * (item.quantidade || 1) : 0;
+                        const isMenor = menorInfo && resp && precoResp === menorInfo.menorUnitario;
 
                         return (
                           <td
@@ -696,7 +697,7 @@ export default function DetalheCotacaoPage() {
                             {subtotalForn > 0 ? (
                               <div>
                                 <div>{brl(subtotalForn)}</div>
-                                <div className="text-[10px] text-slate-500 font-normal">Unit: {brl(resp.preco)} {resp.marca ? `(${resp.marca})` : ""}</div>
+                                <div className="text-[10px] text-slate-500 font-normal">Unit: {brl(precoResp)} {resp?.marca ? `(${resp.marca})` : ""}</div>
                               </div>
                             ) : (
                               <span className="text-slate-300">—</span>
@@ -742,8 +743,8 @@ export default function DetalheCotacaoPage() {
                       (r) => String(r.fornecedor_id).trim() === String(fornId).trim() && 
                              String(r.cotacao_item_id).trim() === String(item.id).trim()
                     );
-                    if (resp && resp.preco > 0) {
-                      totalForn += resp.preco * (item.quantidade || 1);
+                    if (resp && (resp.preco ?? 0) > 0) {
+                      totalForn += (resp.preco ?? 0) * (item.quantidade || 1);
                     }
                   });
                   return (

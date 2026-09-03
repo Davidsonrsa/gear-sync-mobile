@@ -6,7 +6,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recha
 export interface ItemFinanceiro {
   id: string;
   contrato: string;
-  contrato_id?: string;
+  contrato_id?: string | null;
   tipo: string;
   descricao: string;
   valor: number;

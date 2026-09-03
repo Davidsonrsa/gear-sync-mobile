@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/cotacoes/nova")({
+export const Route = createFileRoute("/_authenticated/src/routes/_authenticated/fornecedores/novo")({
   component: NovaCotacaoPage,
 });
 
@@ -66,7 +66,7 @@ export default function NovaCotacaoPage() {
             numero: numero.trim(),
             patrimonio: patrimonio.trim() || null,
             setor: setor.trim() || null,
-            data_cotacao: dataCotacao || null,
+            data_cotacao: dataCotacao || new Date().toISOString().slice(0, 10),
             observacoes: observacoes.trim() || null,
             status: "RASCUNHO",
           },

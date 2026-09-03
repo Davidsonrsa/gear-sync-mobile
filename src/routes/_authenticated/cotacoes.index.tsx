@@ -6,14 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Search, Plus, Eye, Trash2, Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/cotacoes")({
+export const Route = createFileRoute("/_authenticated/cotacoes/")({
   component: ListaCotacoesPage,
 });
 
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-const formatarData = (dataStr?: string) => {
+const formatarData = (dataStr?: string | null) => {
   if (!dataStr) return "—";
   const partes = dataStr.split("T")[0].split("-");
   if (partes.length === 3) {
@@ -24,13 +24,13 @@ const formatarData = (dataStr?: string) => {
 };
 
 interface Cotacao {
-  id: string | number;
-  numero: string | number;
-  patrimonio?: string;
-  setor?: string;
-  data_cotacao?: string;
-  status?: string;
-  valor_total?: number;
+  id: string;
+  numero: string;
+  patrimonio?: string | null;
+  setor?: string | null;
+  data_cotacao?: string | null;
+  status?: string | null;
+  valor_total?: number | null;
 }
 
 export default function ListaCotacoesPage() {
@@ -86,7 +86,7 @@ export default function ListaCotacoesPage() {
     });
   }, [cotacoes, filtroNumero, filtroPatrimonio, filtroSetor, filtroStatus]);
 
-  async function handleDelete(id: string | number) {
+  async function handleDelete(id: string) {
     if (!confirm("Deseja realmente excluir esta cotação?")) return;
     try {
       const { error } = await supabase.from("cotacoes").delete().eq("id", id);
@@ -125,7 +125,7 @@ export default function ListaCotacoesPage() {
           </Button>
 
           <Button
-            onClick={() => navigate({ to: "/cotacoes/nova" })}
+            onClick={() => navigate({ to: "/cotacoes/$id", params: { id: "nova" } })}
             className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
           >
             <Plus className="w-4 h-4" /> Nova Cotação

@@ -322,6 +322,7 @@ export type Database = {
           marca: string | null
           observacoes: string | null
           prazo_entrega: number | null
+          preco: number | null
           preco_unitario: number
           quantidade: number
           total_item: number
@@ -345,6 +346,7 @@ export type Database = {
           marca?: string | null
           observacoes?: string | null
           prazo_entrega?: number | null
+          preco?: number | null
           preco_unitario?: number
           quantidade?: number
           total_item?: number
@@ -368,6 +370,7 @@ export type Database = {
           marca?: string | null
           observacoes?: string | null
           prazo_entrega?: number | null
+          preco?: number | null
           preco_unitario?: number
           quantidade?: number
           total_item?: number
@@ -420,6 +423,7 @@ export type Database = {
           subtotal: number
           total: number
           updated_at: string
+          valor_total: number | null
         }
         Insert: {
           created_at?: string
@@ -442,6 +446,7 @@ export type Database = {
           subtotal?: number
           total?: number
           updated_at?: string
+          valor_total?: number | null
         }
         Update: {
           created_at?: string
@@ -464,6 +469,7 @@ export type Database = {
           subtotal?: number
           total?: number
           updated_at?: string
+          valor_total?: number | null
         }
         Relationships: [
           {
@@ -785,13 +791,16 @@ export type Database = {
       }
       fornecedores: {
         Row: {
+          agencia: string | null
           ativo: boolean
           bairro: string | null
+          banco: string | null
           celular: string | null
           cep: string | null
           cidade: string | null
           cnpj: string | null
           complemento: string | null
+          conta: string | null
           created_at: string
           email: string | null
           estado: string | null
@@ -801,19 +810,23 @@ export type Database = {
           nome_fantasia: string | null
           numero: string | null
           observacoes: string | null
+          pix: string | null
           razao_social: string
           telefone: string | null
           updated_at: string
           whatsapp: string | null
         }
         Insert: {
+          agencia?: string | null
           ativo?: boolean
           bairro?: string | null
+          banco?: string | null
           celular?: string | null
           cep?: string | null
           cidade?: string | null
           cnpj?: string | null
           complemento?: string | null
+          conta?: string | null
           created_at?: string
           email?: string | null
           estado?: string | null
@@ -823,19 +836,23 @@ export type Database = {
           nome_fantasia?: string | null
           numero?: string | null
           observacoes?: string | null
+          pix?: string | null
           razao_social: string
           telefone?: string | null
           updated_at?: string
           whatsapp?: string | null
         }
         Update: {
+          agencia?: string | null
           ativo?: boolean
           bairro?: string | null
+          banco?: string | null
           celular?: string | null
           cep?: string | null
           cidade?: string | null
           cnpj?: string | null
           complemento?: string | null
+          conta?: string | null
           created_at?: string
           email?: string | null
           estado?: string | null
@@ -845,6 +862,7 @@ export type Database = {
           nome_fantasia?: string | null
           numero?: string | null
           observacoes?: string | null
+          pix?: string | null
           razao_social?: string
           telefone?: string | null
           updated_at?: string
@@ -909,6 +927,107 @@ export type Database = {
           },
         ]
       }
+      manutencao_pendencias: {
+        Row: {
+          created_at: string
+          descricao: string
+          equipamento_id: string | null
+          executado_por: string | null
+          id: string
+          registrado_por: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          descricao: string
+          equipamento_id?: string | null
+          executado_por?: string | null
+          id?: string
+          registrado_por?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          descricao?: string
+          equipamento_id?: string | null
+          executado_por?: string | null
+          id?: string
+          registrado_por?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manutencao_pendencias_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "equipamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manutencao_pendencias_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "tacografos_vencimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medicoes_diarias: {
+        Row: {
+          contrato: string
+          contrato_id: string | null
+          created_at: string
+          data: string
+          equipamento: string
+          id: number
+          manha_final: number | null
+          manha_inicio: number | null
+          observacao: string | null
+          operador: string
+          tarde_final: number | null
+          tarde_inicio: number | null
+          valor_hora: number
+        }
+        Insert: {
+          contrato: string
+          contrato_id?: string | null
+          created_at?: string
+          data: string
+          equipamento: string
+          id?: number
+          manha_final?: number | null
+          manha_inicio?: number | null
+          observacao?: string | null
+          operador: string
+          tarde_final?: number | null
+          tarde_inicio?: number | null
+          valor_hora?: number
+        }
+        Update: {
+          contrato?: string
+          contrato_id?: string | null
+          created_at?: string
+          data?: string
+          equipamento?: string
+          id?: number
+          manha_final?: number | null
+          manha_inicio?: number | null
+          observacao?: string | null
+          operador?: string
+          tarde_final?: number | null
+          tarde_inicio?: number | null
+          valor_hora?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicoes_diarias_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notas_fiscais: {
         Row: {
           cl: string | null
@@ -916,6 +1035,7 @@ export type Database = {
           created_by: string | null
           data: string | null
           descricao_produto: string | null
+          equipamento: string | null
           equipamento_id: string | null
           fornecedor: string | null
           id: string
@@ -924,6 +1044,12 @@ export type Database = {
           observacao: string | null
           updated_at: string
           valor: number | null
+          valor_total: number | null
+          venc_01: string | null
+          venc_02: string | null
+          venc_03: string | null
+          venc_04: string | null
+          venc_05: string | null
           venc01: string | null
           venc02: string | null
           venc03: string | null
@@ -936,6 +1062,7 @@ export type Database = {
           created_by?: string | null
           data?: string | null
           descricao_produto?: string | null
+          equipamento?: string | null
           equipamento_id?: string | null
           fornecedor?: string | null
           id?: string
@@ -944,6 +1071,12 @@ export type Database = {
           observacao?: string | null
           updated_at?: string
           valor?: number | null
+          valor_total?: number | null
+          venc_01?: string | null
+          venc_02?: string | null
+          venc_03?: string | null
+          venc_04?: string | null
+          venc_05?: string | null
           venc01?: string | null
           venc02?: string | null
           venc03?: string | null
@@ -956,6 +1089,7 @@ export type Database = {
           created_by?: string | null
           data?: string | null
           descricao_produto?: string | null
+          equipamento?: string | null
           equipamento_id?: string | null
           fornecedor?: string | null
           id?: string
@@ -964,6 +1098,12 @@ export type Database = {
           observacao?: string | null
           updated_at?: string
           valor?: number | null
+          valor_total?: number | null
+          venc_01?: string | null
+          venc_02?: string | null
+          venc_03?: string | null
+          venc_04?: string | null
+          venc_05?: string | null
           venc01?: string | null
           venc02?: string | null
           venc03?: string | null
@@ -1235,12 +1375,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1264,11 +1404,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1289,11 +1429,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1314,11 +1454,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1331,11 +1471,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
