@@ -253,8 +253,11 @@ function BotaoTacografo() {
 function BotaoSeguro() {
   const [open, setOpen] = useState(false);
   const [filtro, setFiltro] = useState("");
+  const [form, setForm] = useState({ veiculo_equipamento: "", seguradora: "", data_vencimento: "" });
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [salvando, setSalvando] = useState(false);
 
-  const { data: seguros, isLoading } = useQuery({
+  const { data: seguros, isLoading, refetch } = useQuery({
     queryKey: ["seguros-vencimentos"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -268,6 +271,46 @@ function BotaoSeguro() {
       return data ?? [];
     },
   });
+
+  function limpar() {
+    setForm({ veiculo_equipamento: "", seguradora: "", data_vencimento: "" });
+    setEditandoId(null);
+  }
+
+  async function salvarSeguro() {
+    if (!form.veiculo_equipamento.trim() || !form.seguradora.trim() || !form.data_vencimento) {
+      alert("Preencha equipamento, seguradora e data de vencimento.");
+      return;
+    }
+    setSalvando(true);
+    const payload = {
+      veiculo_equipamento: form.veiculo_equipamento.trim(),
+      seguradora: form.seguradora.trim(),
+      data_vencimento: form.data_vencimento,
+    };
+    const { error } = editandoId
+      ? await supabase.from("seguros").update(payload).eq("id", editandoId)
+      : await supabase.from("seguros").insert(payload);
+    setSalvando(false);
+    if (error) {
+      alert("Erro ao salvar seguro: " + error.message);
+      return;
+    }
+    limpar();
+    refetch();
+  }
+
+  async function excluirSeguro(id: string) {
+    if (!confirm("Excluir este seguro?")) return;
+    const { error } = await supabase.from("seguros").delete().eq("id", id);
+    if (error) {
+      alert("Erro ao excluir: " + error.message);
+      return;
+    }
+    if (editandoId === id) limpar();
+    refetch();
+  }
+
 
   const segurosVencidos = useMemo(() => {
     if (!seguros) return [];
