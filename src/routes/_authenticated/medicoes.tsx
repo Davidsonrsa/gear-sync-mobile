@@ -56,7 +56,7 @@ export function MedicoesPage() {
     { id: 'm1', contratoId: '1', nome: 'Setembro', ano: 2026, mesIndex: 8 }
   ]);
 
-  const gerarDiasDoMesEmBranco = (ano: number, mesIndex: number) => {
+  const gerarDiasDoMesEmBranco = (ano: number, mesIndex: number): DiaMedicao[] => {
     const quantidadeDias = new Date(ano, mesIndex + 1, 0).getDate();
     const diasSemanaNomes = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
     const mesesCurtos = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -106,7 +106,6 @@ export function MedicoesPage() {
   const [formContratante, setFormContratante] = useState('');
   const [formObjeto, setFormObjeto] = useState('');
 
-  // Modal Máquina
   const [modalMaquinaAberto, setModalMaquinaAberto] = useState(false);
   const [maquinaEditando, setMaquinaEditando] = useState<MaquinaMedicao | null>(null);
   const [formCodigo, setFormCodigo] = useState('');
@@ -641,60 +640,58 @@ export function MedicoesPage() {
         </div>
       )}
 
+      {/* Modal Contrato */}
       {modalContratoAberto && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-800">
-              {contratoEditando ? 'Editar Contrato' : 'Novo Contrato'}
-            </h3>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 print:hidden">
+          <div className="bg-white p-6 rounded-xl max-w-md w-full space-y-4">
+            <h3 className="text-lg font-bold">{contratoEditando ? 'Editar Contrato' : 'Novo Contrato'}</h3>
             <form onSubmit={handleSalvarContrato} className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Número do Contrato</label>
-                <input type="text" value={formNumero} onChange={e => setFormNumero(e.target.value)} required className="w-full p-2 border rounded text-sm" placeholder="Ex: 48/2022" />
+                <label className="text-xs font-semibold">Número do Contrato</label>
+                <input type="text" value={formNumero} onChange={e => setFormNumero(e.target.value)} required className="w-full border p-2 rounded text-sm" placeholder="Ex: 48/2022" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Contratante</label>
-                <input type="text" value={formContratante} onChange={e => setFormContratante(e.target.value)} required className="w-full p-2 border rounded text-sm" placeholder="Ex: Prefeitura" />
+                <label className="text-xs font-semibold">Contratante</label>
+                <input type="text" value={formContratante} onChange={e => setFormContratante(e.target.value)} required className="w-full border p-2 rounded text-sm" placeholder="Nome da Prefeitura/Órgão" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Objeto</label>
-                <input type="text" value={formObjeto} onChange={e => setFormObjeto(e.target.value)} className="w-full p-2 border rounded text-sm" placeholder="Objeto do contrato" />
+                <label className="text-xs font-semibold">Objeto</label>
+                <input type="text" value={formObjeto} onChange={e => setFormObjeto(e.target.value)} required className="w-full border p-2 rounded text-sm" placeholder="Ex: Locação de Maquinário Pesado" />
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setModalContratoAberto(false)} className="px-3 py-1.5 bg-gray-100 rounded text-sm">Cancelar</button>
-                <button type="submit" className="px-3 py-1.5 bg-orange-600 text-white rounded text-sm">Salvar</button>
+                <button type="button" onClick={() => setModalContratoAberto(false)} className="px-4 py-2 border rounded text-sm">Cancelar</button>
+                <button type="submit" className="px-4 py-2 bg-orange-600 text-white rounded text-sm">Salvar</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
+      {/* Modal Máquina */}
       {modalMaquinaAberto && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-800">
-              {maquinaEditando ? 'Editar Equipamento' : 'Novo Equipamento'}
-            </h3>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 print:hidden">
+          <div className="bg-white p-6 rounded-xl max-w-md w-full space-y-4">
+            <h3 className="text-lg font-bold">{maquinaEditando ? 'Editar Equipamento' : 'Novo Equipamento'}</h3>
             <form onSubmit={handleSalvarMaquina} className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Código (Ex: RE23)</label>
-                <input type="text" value={formCodigo} onChange={e => setFormCodigo(e.target.value)} required className="w-full p-2 border rounded text-sm" placeholder="RE23" />
+                <label className="text-xs font-semibold">Código (Ex: RE23)</label>
+                <input type="text" value={formCodigo} onChange={e => setFormCodigo(e.target.value)} required className="w-full border p-2 rounded text-sm" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Tipo de Equipamento (Ex: Retroescavadeira)</label>
-                <input type="text" value={formTipo} onChange={e => setFormTipo(e.target.value)} required className="w-full p-2 border rounded text-sm" placeholder="Retroescavadeira" />
+                <label className="text-xs font-semibold">Tipo (Ex: Retroescavadeira)</label>
+                <input type="text" value={formTipo} onChange={e => setFormTipo(e.target.value)} required className="w-full border p-2 rounded text-sm" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Nome do Operador</label>
-                <input type="text" value={formOperador} onChange={e => setFormOperador(e.target.value)} className="w-full p-2 border rounded text-sm" placeholder="Nome do operador" />
+                <label className="text-xs font-semibold">Operador</label>
+                <input type="text" value={formOperador} onChange={e => setFormOperador(e.target.value)} className="w-full border p-2 rounded text-sm" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Valor da Hora (R$)</label>
-                <input type="number" step="0.01" value={formValorHora} onChange={e => setFormValorHora(e.target.value)} required className="w-full p-2 border rounded text-sm" placeholder="193.62" />
+                <label className="text-xs font-semibold">Valor da Hora (R$)</label>
+                <input type="number" step="0.01" value={formValorHora} onChange={e => setFormValorHora(e.target.value)} required className="w-full border p-2 rounded text-sm" />
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setModalMaquinaAberto(false)} className="px-3 py-1.5 bg-gray-100 rounded text-sm">Cancelar</button>
-                <button type="submit" className="px-3 py-1.5 bg-orange-600 text-white rounded text-sm">Salvar Equipamento</button>
+                <button type="button" onClick={() => setModalMaquinaAberto(false)} className="px-4 py-2 border rounded text-sm">Cancelar</button>
+                <button type="submit" className="px-4 py-2 bg-orange-600 text-white rounded text-sm">Salvar</button>
               </div>
             </form>
           </div>
