@@ -24,13 +24,13 @@ const formatarData = (dataStr?: string) => {
 };
 
 interface Cotacao {
-  id: string | number;
-  numero: string | number;
-  patrimonio?: string;
-  setor?: string;
-  data_cotacao?: string;
-  status?: string;
-  valor_total?: number;
+  id: string;
+  numero: string;
+  patrimonio?: string | null;
+  setor?: string | null;
+  data_cotacao?: string | null;
+  status?: string | null;
+  valor_total?: number | null;
 }
 
 export default function ListaCotacoesPage() {
@@ -86,7 +86,7 @@ export default function ListaCotacoesPage() {
     });
   }, [cotacoes, filtroNumero, filtroPatrimonio, filtroSetor, filtroStatus]);
 
-  async function handleDelete(id: string | number) {
+  async function handleDelete(id: string) {
     if (!confirm("Deseja realmente excluir esta cotação?")) return;
     try {
       const { error } = await supabase.from("cotacoes").delete().eq("id", id);
