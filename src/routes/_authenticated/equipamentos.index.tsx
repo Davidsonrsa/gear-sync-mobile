@@ -1,5 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -901,6 +900,7 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
 // ----------------------------------------------------
 function EquipamentosList() {
   const { isAdmin } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [q, setQ] = useState("");
   const [cl, setCl] = useState<string>("__all");
@@ -1110,8 +1110,41 @@ function EquipamentosList() {
                         )}
                         {overdue && (
                           <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              navigate({
+                                to: "/equipamentos/$id/manutencao",
+                                params: { id: e.id },
+                                search: {
+                                  horimetro: e.horimetro_atual?.toString(),
+                                  tipoRevisao: e.proxima_revisao_horimetro
+                                    ? `Próxima revisão: ${e.proxima_revisao_horimetro}h`
+                                    : `Revisão de ${e.limite_revisao ?? 500}h`,
+                                },
+                              });
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                navigate({
+                                  to: "/equipamentos/$id/manutencao",
+                                  params: { id: e.id },
+                                  search: {
+                                    horimetro: e.horimetro_atual?.toString(),
+                                    tipoRevisao: e.proxima_revisao_horimetro
+                                      ? `Próxima revisão: ${e.proxima_revisao_horimetro}h`
+                                      : `Revisão de ${e.limite_revisao ?? 500}h`,
+                                  },
+                                });
+                              }
+                            }}
                             className="text-[10px] font-bold px-2.5 py-0.5 rounded-full text-white shadow-sm inline-block"
                             style={{ backgroundColor: "#ef4444", color: "#ffffff" }}
+                            title="Abrir plano de manutenção preventiva"
                           >
                             Revisão vencida
                           </span>

@@ -14,10 +14,15 @@ import { buildReportDocx, REPORT_TAG } from "@/lib/manutencao-docx";
 
 export const Route = createFileRoute("/_authenticated/equipamentos/$id/manutencao")({
   component: ManutencaoPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    horimetro: typeof search.horimetro === "string" ? search.horimetro : undefined,
+    tipoRevisao: typeof search.tipoRevisao === "string" ? search.tipoRevisao : undefined,
+  }),
 });
 
 function ManutencaoPage() {
   const { id } = Route.useParams();
+  const { horimetro: horimetroInicial, tipoRevisao: tipoRevisaoInicial } = Route.useSearch();
   const { userId } = useAuth();
   const qc = useQueryClient();
 
@@ -68,9 +73,10 @@ function ManutencaoPage() {
         : [];
       setItens(arr.length ? arr : MANUTENCAO_TEMPLATE);
     } else if (e) {
-      setHorimetro(e.horimetro_atual != null ? String(e.horimetro_atual) : "");
+      setHorimetro(horimetroInicial ?? (e.horimetro_atual != null ? String(e.horimetro_atual) : ""));
+      setTipoRevisao(tipoRevisaoInicial ?? `Revisão de ${e.limite_revisao ?? 500}h`);
     }
-  }, [rascunho, e]);
+  }, [rascunho, e, horimetroInicial, tipoRevisaoInicial]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -371,7 +377,7 @@ function ManutencaoPage() {
 
       <style>{`
         @media print {
-          .no-print { display: none !important; }
+          header, nav, .no-print { display: none !important; }
           @page { size: A4; margin: 10mm; }
           body { background: white !important; color: black !important; }
           select { -webkit-appearance: none; appearance: none; }
