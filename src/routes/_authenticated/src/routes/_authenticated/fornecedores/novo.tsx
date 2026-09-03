@@ -66,7 +66,7 @@ export default function NovaCotacaoPage() {
             numero: numero.trim(),
             patrimonio: patrimonio.trim() || null,
             setor: setor.trim() || null,
-            data_cotacao: dataCotacao || null,
+            data_cotacao: dataCotacao || new Date().toISOString().slice(0, 10),
             observacoes: observacoes.trim() || null,
             status: "RASCUNHO",
           },
