@@ -42,45 +42,45 @@ const formatarData = (dataStr?: string) => {
 };
 
 interface Cotacao {
-  id: string | number;
-  numero: string | number;
-  patrimonio?: string;
-  setor?: string;
-  data_cotacao?: string;
-  observacoes?: string;
+  id: string;
+  numero: string;
+  patrimonio?: string | null;
+  setor?: string | null;
+  data_cotacao?: string | null;
+  observacoes?: string | null;
 }
 
 interface ItemCotacao {
-  id: string | number;
-  cotacao_id: string | number;
-  codigo?: string;
+  id: string;
+  cotacao_id: string;
+  codigo?: string | null;
   descricao: string;
   quantidade: number;
   unidade: string;
 }
 
 interface Fornecedor {
-  id: string | number;
+  id: string;
   razao_social: string;
-  nome_fantasia?: string;
-  cnpj?: string;
-  telefone?: string;
-  email?: string;
+  nome_fantasia?: string | null;
+  cnpj?: string | null;
+  telefone?: string | null;
+  email?: string | null;
 }
 
 interface CotacaoFornecedor {
-  cotacao_id: string | number;
-  fornecedor_id: string | number;
+  cotacao_id: string;
+  fornecedor_id: string;
   fornecedores?: Fornecedor;
 }
 
 interface RespostaPreco {
-  id: string | number;
-  cotacao_id: string | number;
-  fornecedor_id: string | number;
-  cotacao_item_id: string | number;
-  preco: number;
-  marca?: string;
+  id: string;
+  cotacao_id: string;
+  fornecedor_id: string;
+  cotacao_item_id: string;
+  preco: number | null;
+  marca?: string | null;
 }
 
 export default function DetalheCotacaoPage() {
