@@ -695,8 +695,17 @@ export function MedicoesPage() {
             </div>
           </div>
 
-          <div className="flex justify-between items-center print:hidden">
-            <div className="flex gap-2 overflow-x-auto pb-1 flex-wrap">
+          <div className="print:hidden">
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Equipamentos cadastrados</p>
+                <p className="text-xs text-gray-400">Selecione um equipamento para lançar as horas</p>
+              </div>
+              <span className="shrink-0 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-bold text-orange-700">
+                {maquinas.filter((eq) => eq.mesId === mesSelecionado.id).length} cadastrados
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
               {maquinas
                 .filter((eq) => eq.mesId === mesSelecionado.id)
                 .map((eq, index) => {
@@ -704,13 +713,22 @@ export function MedicoesPage() {
                   return (
                     <div
                       key={eq.id}
-                      className="flex items-center gap-1 bg-gray-50 border px-2 py-1 rounded-lg"
+                      className={`flex items-stretch gap-1.5 rounded-xl border p-1.5 transition ${
+                        ativa
+                          ? "border-orange-400 bg-orange-50 shadow-sm ring-1 ring-orange-200"
+                          : "border-gray-200 bg-gray-50 hover:border-orange-300 hover:bg-white"
+                      }`}
                     >
                       <button
                         onClick={() => setMaquinaSelecionadaId(eq.id)}
-                        className={`px-2 py-1 rounded text-sm font-medium ${ativa ? "bg-orange-600 text-white" : "text-gray-700 hover:bg-gray-200"}`}
+                        className="min-w-0 flex-1 rounded-lg px-2.5 py-2 text-left"
                       >
-                        {eq.codigo} - {eq.tipo}
+                        <span className={`block truncate text-sm font-extrabold ${ativa ? "text-orange-800" : "text-gray-800"}`}>
+                          {eq.codigo}
+                        </span>
+                        <span className={`block truncate text-[11px] font-medium uppercase ${ativa ? "text-orange-600" : "text-gray-500"}`}>
+                          {eq.tipo}
+                        </span>
                       </button>
                       <button
                         onClick={() => {
@@ -721,7 +739,7 @@ export function MedicoesPage() {
                           setFormValorHora(String(eq.valorHora));
                           setModalMaquinaAberto(true);
                         }}
-                        className="p-1 text-gray-500 hover:text-blue-600"
+                        className="self-center rounded-md p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600"
                         title="Editar Equipamento"
                       >
                         <Edit size={14} />
@@ -733,7 +751,7 @@ export function MedicoesPage() {
                             setMaquinaSelecionadaId(null);
                           }
                         }}
-                        className="p-1 text-gray-500 hover:text-red-600"
+                        className="self-center rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
                         title="Excluir Equipamento"
                       >
                         <Trash2 size={14} />
