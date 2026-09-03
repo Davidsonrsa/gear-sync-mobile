@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { Plus, Edit, Trash2, Save, Calendar, ArrowLeft, Clock, Printer } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export const Route = createFileRoute('/_authenticated/medicoes')({
   component: MedicoesPage,
@@ -43,6 +44,18 @@ interface MaquinaMedicao {
   assinaturaResponsavel: string;
   assinaturaContratante: string;
   dias: DiaMedicao[];
+}
+
+const MEDICOES_RASCUNHO_KEY = 'gear-sync-medicoes-rascunho';
+
+function lerRascunho<T>(valorPadrao: T): T {
+  if (typeof window === 'undefined') return valorPadrao;
+  try {
+    const salvo = window.localStorage.getItem(MEDICOES_RASCUNHO_KEY);
+    return salvo ? (JSON.parse(salvo) as T) : valorPadrao;
+  } catch {
+    return valorPadrao;
+  }
 }
 
 export function MedicoesPage() {
@@ -99,6 +112,7 @@ export function MedicoesPage() {
   const [mesSelecionado, setMesSelecionado] = useState<MesAno | null>(null);
   const [maquinaSelecionadaId, setMaquinaSelecionadaId] = useState<string | null>(null);
   const [mensagemSucesso, setMensagemSucesso] = useState('');
+  const [salvandoMedicao, setSalvandoMedicao] = useState(false);
 
   const [modalContratoAberto, setModalContratoAberto] = useState(false);
   const [contratoEditando, setContratoEditando] = useState<Contrato | null>(null);
@@ -112,6 +126,77 @@ export function MedicoesPage() {
   const [formTipo, setFormTipo] = useState('');
   const [formOperador, setFormOperador] = useState('');
   const [formValorHora, setFormValorHora] = useState('193.62');
+  const [rascunhoCarregado, setRascunhoCarregado] = useState(false);
+
+  useEffect(() => {
+    const rascunho = lerRascunho<MaquinaMedicao[] | null>(null);
+    if (rascunho) setMaquinas(rascunho);
+    setRascunhoCarregado(true);
+  }, []);
+
+  useEffect(() => {
+    if (!rascunhoCarregado) return;
+    try {
+      window.localStorage.setItem(MEDICOES_RASCUNHO_KEY, JSON.stringify(maquinas));
+    } catch (error) {
+      console.error('Erro ao salvar rascunho das medições:', error);
+    }
+  }, [maquinas]);
+
+  useEffect(() => {
+    async function carregarMedicoes() {
+      const { data, error } = await supabase.from('medicoes_diarias').select('*');
+      if (error) {
+        console.error('Erro ao carregar medições:', error);
+        return;
+      }
+
+      if (!data?.length) return;
+
+      setMaquinas((atuais) => {
+        const maquinasPersistidas = new Map<string, MaquinaMedicao>();
+
+        data.forEach((item) => {
+          const mes = meses.find((mesItem) => mesItem.nome === new Date(`${item.data}T00:00:00`).toLocaleString('pt-BR', { month: 'long' }));
+          const mesId = mes?.id || meses[0]?.id;
+          if (!mesId) return;
+
+          const chave = `${mesId}:${item.equipamento}:${item.operador}:${item.valor_hora}`;
+          let maquina = maquinasPersistidas.get(chave);
+          if (!maquina) {
+            const maquinaAtual = atuais.find((atual) => atual.codigo === item.equipamento && atual.mesId === mesId);
+            maquina = maquinaAtual ? { ...maquinaAtual, dias: maquinaAtual.dias.map((dia) => ({ ...dia })) } : {
+              id: `persistida-${item.equipamento}-${mesId}`,
+              mesId,
+              codigo: item.equipamento,
+              tipo: item.equipamento,
+              operador: item.operador,
+              valorHora: item.valor_hora,
+              dataAprovacao: '',
+              assinaturaResponsavel: '',
+              assinaturaContratante: '',
+              dias: gerarDiasDoMesEmBranco(mes?.ano || new Date(item.data).getFullYear(), mes?.mesIndex ?? new Date(item.data).getMonth()),
+            };
+            maquinasPersistidas.set(chave, maquina);
+          }
+
+          const dia = new Date(`${item.data}T00:00:00`).getDate();
+          const diaPersistido = maquina.dias[dia - 1];
+          if (diaPersistido) {
+            diaPersistido.manhaInicio = item.manha_inicio == null ? '' : `${String(Math.floor(item.manha_inicio)).padStart(2, '0')}:${String(Math.round((item.manha_inicio % 1) * 60)).padStart(2, '0')}`;
+            diaPersistido.manhaFim = item.manha_final == null ? '' : `${String(Math.floor(item.manha_final)).padStart(2, '0')}:${String(Math.round((item.manha_final % 1) * 60)).padStart(2, '0')}`;
+            diaPersistido.tardeInicio = item.tarde_inicio == null ? '' : `${String(Math.floor(item.tarde_inicio)).padStart(2, '0')}:${String(Math.round((item.tarde_inicio % 1) * 60)).padStart(2, '0')}`;
+            diaPersistido.tardeFim = item.tarde_final == null ? '' : `${String(Math.floor(item.tarde_final)).padStart(2, '0')}:${String(Math.round((item.tarde_final % 1) * 60)).padStart(2, '0')}`;
+            diaPersistido.observacao = item.observacao || '';
+          }
+        });
+
+        return [...atuais.filter((maquina) => ![...maquinasPersistidas.values()].some((persistida) => persistida.id === maquina.id)), ...maquinasPersistidas.values()];
+      });
+    }
+
+    void carregarMedicoes();
+  }, []);
 
   const handleSalvarContrato = (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,9 +288,44 @@ export function MedicoesPage() {
     return totalMes;
   };
 
-  const handleSalvarMedicao = () => {
-    setMensagemSucesso('Medição salva com sucesso!');
-    setTimeout(() => setMensagemSucesso(''), 3000);
+  const horarioParaDecimal = (horario: string) => {
+    if (!horario) return null;
+    const [hora, minuto] = horario.split(':').map(Number);
+    return Number.isFinite(hora) && Number.isFinite(minuto) ? hora + minuto / 60 : null;
+  };
+
+  const handleSalvarMedicao = async () => {
+    if (!mesSelecionado || salvandoMedicao) return;
+    const maquinasDoMes = maquinas.filter((maquina) => maquina.mesId === mesSelecionado.id);
+    setSalvandoMedicao(true);
+
+    try {
+      for (const maquina of maquinasDoMes) {
+        for (const dia of maquina.dias) {
+          const data = `${mesSelecionado.ano}-${String(mesSelecionado.mesIndex + 1).padStart(2, '0')}-${String(dia.dia).padStart(2, '0')}`;
+          const { error } = await supabase.from('medicoes_diarias').upsert({
+            contrato: contratoSelecionado?.numero || contratoSelecionado?.contratante || '',
+            equipamento: maquina.codigo,
+            operador: maquina.operador,
+            data,
+            manha_inicio: horarioParaDecimal(dia.manhaInicio),
+            manha_final: horarioParaDecimal(dia.manhaFim),
+            tarde_inicio: horarioParaDecimal(dia.tardeInicio),
+            tarde_final: horarioParaDecimal(dia.tardeFim),
+            valor_hora: maquina.valorHora,
+            observacao: dia.observacao || null,
+          }, { onConflict: 'contrato,equipamento,data' });
+          if (error) throw error;
+        }
+      }
+      setMensagemSucesso('Medição salva com sucesso!');
+      setTimeout(() => setMensagemSucesso(''), 3000);
+    } catch (error) {
+      console.error('Erro ao salvar medição:', error);
+      setMensagemSucesso('Não foi possível salvar a medição.');
+    } finally {
+      setSalvandoMedicao(false);
+    }
   };
 
   return (

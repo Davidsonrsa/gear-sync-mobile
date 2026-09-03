@@ -62,12 +62,12 @@ function AuthenticatedLayout() {
               <h1 className="text-sm md:text-base font-extrabold tracking-tight text-black leading-tight">
                 GIF - Gestão Integrada de Frotas
               </h1>
-              <p className="text-[11px] text-black/90 flex items-center gap-1.5 mt-0.5">
+              <div className="text-[11px] text-black/90 flex items-center gap-1.5 mt-0.5">
                 <span className="font-bold text-black">{fullName || "Usuário"}</span>
                 <Badge variant="outline" className="text-[9px] border-black/40 text-black bg-white/40 px-1 py-0 font-bold">
                   {isAdmin ? "Admin" : "Colaborador"}
                 </Badge>
-              </p>
+              </div>
             </div>
           </div>
 
