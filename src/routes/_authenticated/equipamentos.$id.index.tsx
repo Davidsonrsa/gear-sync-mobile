@@ -200,16 +200,29 @@ function EquipamentoDetail() {
 
   const remove = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("equipamentos").delete().eq("id", id);
+      // remove vínculos que impedem a exclusão
+      await supabase.from("cotacoes").update({ equipamento_id: null }).eq("equipamento_id", id);
+      await supabase.from("notas_fiscais").update({ equipamento_id: null }).eq("equipamento_id", id);
+
+      const { data, error } = await supabase
+        .from("equipamentos")
+        .delete()
+        .eq("id", id)
+        .select("id");
       if (error) throw error;
+      if (!data || data.length === 0)
+        throw new Error("Não foi possível excluir. Apenas administradores podem remover equipamentos.");
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Equipamento excluído");
-      qc.invalidateQueries({ queryKey: ["equipamentos"] });
-      navigate({ to: "/equipamentos" });
+      qc.removeQueries({ queryKey: ["equipamento", id] });
+      await qc.invalidateQueries({ queryKey: ["equipamentos"] });
+      await qc.refetchQueries({ queryKey: ["equipamentos"] });
+      navigate({ to: "/equipamentos", replace: true });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   async function handleUpload(files: FileList | null) {
     if (!files?.length || !userId) return;
