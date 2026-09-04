@@ -751,7 +751,7 @@ export function MedicoesPage() {
                             setMaquinaSelecionadaId(null);
                           }
                         }}
-                        "self-center rounded-md bg-red-600 p-1.5 text-white hover:bg-red-700"
+                        className="self-center rounded-md bg-red-600 p-1.5 text-white hover:bg-red-700"
                         title="Excluir Equipamento"
                       >
                         <Trash2 size={14} />
