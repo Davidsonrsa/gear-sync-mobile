@@ -997,9 +997,10 @@ function EquipamentosList() {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto w-full space-y-4">
+    <div className="p-3 md:p-6 max-w-7xl mx-auto w-full space-y-3 md:space-y-4">
       {/* Header & Filtros */}
-      <div className="sticky top-[60px] md:top-[76px] z-20 p-3 bg-white/90 backdrop-blur-md rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
+      <div className="sticky top-0 md:top-[76px] z-20 p-2.5 md:p-3 bg-white/95 backdrop-blur-md rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-2 md:gap-3 md:items-center justify-between">
+
         <div className="relative w-full md:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
@@ -1063,7 +1064,7 @@ function EquipamentosList() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 pb-20">
         {filtered.map((e) => {
           const hrRodado =
             e.horimetro_atual != null && e.h_revisao != null
@@ -1099,8 +1100,8 @@ function EquipamentosList() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className={`font-bold text-sm ${overdue ? "text-red-900" : "text-slate-800"}`}>
+                      <div className="flex min-w-0 items-center gap-1.5 flex-wrap">
+                        <span className={`font-bold text-sm truncate max-w-[10rem] ${overdue ? "text-red-900" : "text-slate-800"}`}>
                           {e.numero}
                         </span>
                         {e.cl && (

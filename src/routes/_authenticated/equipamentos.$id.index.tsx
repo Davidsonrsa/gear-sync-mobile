@@ -200,16 +200,29 @@ function EquipamentoDetail() {
 
   const remove = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("equipamentos").delete().eq("id", id);
+      // remove vínculos que impedem a exclusão
+      await supabase.from("cotacoes").update({ equipamento_id: null }).eq("equipamento_id", id);
+      await supabase.from("notas_fiscais").update({ equipamento_id: null }).eq("equipamento_id", id);
+
+      const { data, error } = await supabase
+        .from("equipamentos")
+        .delete()
+        .eq("id", id)
+        .select("id");
       if (error) throw error;
+      if (!data || data.length === 0)
+        throw new Error("Não foi possível excluir. Apenas administradores podem remover equipamentos.");
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Equipamento excluído");
-      qc.invalidateQueries({ queryKey: ["equipamentos"] });
-      navigate({ to: "/equipamentos" });
+      qc.removeQueries({ queryKey: ["equipamento", id] });
+      await qc.invalidateQueries({ queryKey: ["equipamentos"] });
+      await qc.refetchQueries({ queryKey: ["equipamentos"] });
+      navigate({ to: "/equipamentos", replace: true });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   async function handleUpload(files: FileList | null) {
     if (!files?.length || !userId) return;
@@ -328,6 +341,7 @@ function EquipamentoDetail() {
           <Link
             to="/equipamentos/$id/manutencao"
             params={{ id }}
+            search={{ horimetro: undefined, tipoRevisao: undefined }}
             className="inline-flex items-center gap-1 text-xs text-primary font-medium"
           >
             <Wrench className="w-3.5 h-3.5" /> Plano
@@ -547,14 +561,12 @@ function EquipamentoDetail() {
           <Field label="Nº">
             <Input
               value={form.numero ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, numero: e.target.value })}
             />
           </Field>
           <Field label="Classe">
             <Input
               value={form.cl ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, cl: e.target.value })}
             />
           </Field>
@@ -699,11 +711,11 @@ function EquipamentoDetail() {
           <Field label="Status">
             <select
               value={form.status ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, status: e.target.value })}
               disabled={ro}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
+
               <option value="">Selecione o status</option>
               <option value="Em manutenção">Em manutenção</option>
               <option value="Disponível para venda">Disponível para venda</option>
@@ -924,7 +936,7 @@ function EquipamentoDetail() {
         </div>
       </Card>
 
-      <Link to="/equipamentos/$id/manutencao" params={{ id }}>
+      <Link to="/equipamentos/$id/manutencao" params={{ id }} search={{ horimetro: undefined, tipoRevisao: undefined }}>
         <Button type="button" variant="outline" className="w-full h-12">
           <Printer className="w-4 h-4 mr-2" /> Formulário de manutenção (imprimir)
         </Button>
