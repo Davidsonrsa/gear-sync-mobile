@@ -219,6 +219,8 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   const router = useRouter();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const hideNav = pathname === "/" || pathname.startsWith("/auth");
 
   useEffect(() => {
     const {
@@ -249,15 +251,18 @@ function RootComponent() {
       <div className="min-h-screen bg-gray-100 text-gray-900 antialiased">
 
         {/* Menu principal integrado no estilo do topo */}
-        <nav className="flex items-center gap-4 bg-[#f97316] px-4 py-2 text-white shadow-sm">
+        {!hideNav && (
+        <nav className="flex items-center gap-2 bg-[#f97316] px-3 py-2 text-white shadow-sm overflow-x-auto">
           <Link
             to="/medicoes"
-            className="flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium hover:bg-black/10 transition-colors"
+            className="flex shrink-0 items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium hover:bg-black/10 transition-colors"
           >
             <Clock size={16} />
             Medições
           </Link>
         </nav>
+        )}
+
 
         {/* Conteúdo das páginas */}
         <Outlet />
