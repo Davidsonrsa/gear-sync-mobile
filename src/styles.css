@@ -95,6 +95,12 @@ button:not([class*="destructive"]):not([class*="outline"]):not([class*="ghost"])
   font-weight: 600 !important;
 }
 
+button.medicao-equipamento:not([class*="destructive"]):not([class*="outline"]):not([class*="ghost"]):not([class*="secondary"]) {
+  background-color: transparent !important;
+  color: #000000 !important;
+  border: 0 !important;
+}
+
 button[type="submit"] svg,
 button.bg-primary svg,
 button[class*="bg-primary"] svg,

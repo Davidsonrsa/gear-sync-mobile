@@ -733,58 +733,56 @@ export function MedicoesPage() {
                 {maquinas.filter((eq) => eq.mesId === mesSelecionado.id).length} cadastrados
               </span>
             </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
-  {maquinas
-    .filter((eq) => eq.mesId === mesSelecionado.id)
-    .map((eq, index) => {
-      const ativa = maquinaSelecionadaId ? eq.id === maquinaSelecionadaId : index === 0;
-      return (
-        <div
-          key={eq.id}
-          className={`flex items-stretch gap-1.5 rounded-xl border bg-white p-1.5 transition ${
-            ativa
-              ? "border-orange-500 shadow-sm ring-1 ring-orange-500"
-              : "border-gray-200 hover:border-gray-300"
-          }`}
-        >
-          <button
-            onClick={() => setMaquinaSelecionadaId(eq.id)}
-            className="min-w-0 flex-1 rounded-lg bg-transparent px-2.5 py-2 text-left"
-          >
-            <span className="block truncate text-sm font-extrabold text-gray-900">
-              {eq.codigo}
-            </span>
-            <span className="block truncate text-[11px] font-medium uppercase text-gray-500">
-              {eq.tipo}
-            </span>
-          </button>
-          
-          <button
-            onClick={() => {
-              setMaquinaEditando(eq);
-              setFormCodigo(eq.codigo);
-              setFormTipo(eq.tipo);
-              setFormOperador(eq.operador);
-              setFormValorHora(String(eq.valorHora));
-              setModalMaquinaAberto(true);
-            }}
-            className="self-center rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-blue-600"
-            title="Editar Equipamento"
-          >
-            <Edit size={14} />
-          </button>
-
-          <button
-            onClick={() => void handleExcluirMaquina(eq)}
-            className="self-center rounded-md bg-red-600 p-1.5 text-white hover:bg-red-700 transition"
-            title="Excluir Equipamento"
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
-      );
-    })}
-</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
+              {maquinas
+                .filter((eq) => eq.mesId === mesSelecionado.id)
+                .map((eq, index) => {
+                  const ativa = maquinaSelecionadaId ? eq.id === maquinaSelecionadaId : index === 0;
+                  return (
+                    <div
+                      key={eq.id}
+                      className={`flex items-stretch gap-1.5 rounded-xl border border-gray-300 bg-transparent p-1.5 text-black transition ${
+                        ativa
+                          ? "border-gray-700 shadow-sm ring-1 ring-gray-300"
+                          : "hover:border-gray-500"
+                      }`}
+                    >
+                      <button
+                        onClick={() => setMaquinaSelecionadaId(eq.id)}
+                        className="medicao-equipamento min-w-0 flex-1 rounded-lg bg-transparent px-2.5 py-2 text-left text-black"
+                      >
+                        <span className="block truncate text-sm font-extrabold text-black">
+                          {eq.codigo}
+                        </span>
+                        <span className="block truncate text-[11px] font-medium uppercase text-black">
+                          {eq.tipo}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setMaquinaEditando(eq);
+                          setFormCodigo(eq.codigo);
+                          setFormTipo(eq.tipo);
+                          setFormOperador(eq.operador);
+                          setFormValorHora(String(eq.valorHora));
+                          setModalMaquinaAberto(true);
+                        }}
+                        className="self-center rounded-md p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600"
+                        title="Editar Equipamento"
+                      >
+                        <Edit size={14} />
+                      </button>
+                      <button
+                        onClick={() => void handleExcluirMaquina(eq)}
+                        className="self-center rounded-md bg-red-600 p-1.5 text-white hover:bg-red-700"
+                        title="Excluir Equipamento"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  );
+                })}
+            </div>
           </div>
 
           {(() => {
