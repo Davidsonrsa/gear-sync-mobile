@@ -712,7 +712,6 @@ function EquipamentoDetail() {
             <select
               value={form.status ?? ""}
               readOnly={ro}
-              onChange={(e) => setForm({ ...form, status: e.target.value })}
               disabled={ro}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
