@@ -553,7 +553,7 @@ export function MedicoesPage() {
                         setContratos(contratos.filter((item) => item.id !== c.id));
                       }
                     }}
-                    className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded-lg transition"
+                    className="p-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
                     title="Excluir Contrato"
                   >
                     <Trash2 size={16} />
@@ -642,7 +642,7 @@ export function MedicoesPage() {
                             setMeses(meses.filter((x) => x.id !== m.id));
                           }
                         }}
-                        className="text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100"
+                        className="rounded-md bg-red-600 p-1.5 text-white hover:bg-red-700"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -751,7 +751,7 @@ export function MedicoesPage() {
                             setMaquinaSelecionadaId(null);
                           }
                         }}
-                        className="self-center rounded-md p-1.5 text-red-600 hover:bg-red-50 hover:text-red-700"
+                        "self-center rounded-md bg-red-600 p-1.5 text-white hover:bg-red-700"
                         title="Excluir Equipamento"
                       >
                         <Trash2 size={14} />
