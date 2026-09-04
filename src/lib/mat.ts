@@ -1,29 +1,18 @@
 ```ts
-// Helpers para login por Matrícula (sem e-mail real)
 const DOMAIN = "sphjhm.app";
 
 export function normalizeMat(mat: string): string {
-  return mat
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "");
+  return mat.trim().toLowerCase().replace(/\s+/g, "");
 }
 
 export function matToEmail(mat: string): string {
   const m = normalizeMat(mat);
 
-  // Se o usuário digitar somente a matrícula numérica,
-  // transforma, por exemplo, 0001 em mat-0001@sphjhm.app
-  if (/^\d+$/.test(m)) {
-    return `mat-${m}@${DOMAIN}`;
-  }
-
-  // Se já digitar mat-0001, mantém o formato correto
   if (m.startsWith("mat-")) {
-    return `${m}@${DOMAIN}`;
+    return m + "@" + DOMAIN;
   }
 
-  return `mat-${m}@${DOMAIN}`;
+  return "mat-" + m + "@" + DOMAIN;
 }
 
 export function emailToMat(email: string | null | undefined): string {
