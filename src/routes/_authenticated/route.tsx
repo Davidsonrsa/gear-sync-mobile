@@ -16,12 +16,14 @@ import {
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) throw redirect({ to: "/auth" });
-    return { user: data.user };
+    // getSession lê a sessão local (sem round-trip de rede a cada troca de aba)
+    const { data } = await supabase.auth.getSession();
+    if (!data.session?.user) throw redirect({ to: "/auth" });
+    return { user: data.session.user };
   },
   component: AuthenticatedLayout,
 });
+
 
 function AuthenticatedLayout() {
   const { isAdmin, fullName } = useAuth();
