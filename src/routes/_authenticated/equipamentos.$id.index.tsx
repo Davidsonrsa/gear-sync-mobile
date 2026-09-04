@@ -341,6 +341,7 @@ function EquipamentoDetail() {
           <Link
             to="/equipamentos/$id/manutencao"
             params={{ id }}
+            search={{}}
             className="inline-flex items-center gap-1 text-xs text-primary font-medium"
           >
             <Wrench className="w-3.5 h-3.5" /> Plano
@@ -560,7 +561,6 @@ function EquipamentoDetail() {
           <Field label="Nº">
             <Input
               value={form.numero ?? ""}
-              readOnly={ro}
               onChange={(e) => setForm({ ...form, numero: e.target.value })}
             />
           </Field>
@@ -937,7 +937,7 @@ function EquipamentoDetail() {
         </div>
       </Card>
 
-      <Link to="/equipamentos/$id/manutencao" params={{ id }}>
+      <Link to="/equipamentos/$id/manutencao" params={{ id }} search={{}}>
         <Button type="button" variant="outline" className="w-full h-12">
           <Printer className="w-4 h-4 mr-2" /> Formulário de manutenção (imprimir)
         </Button>
