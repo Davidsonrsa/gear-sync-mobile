@@ -84,39 +84,62 @@
    FORÇAR ESTILOS DE BOTÕES DE FORMA INVIOLÁVEL
    ========================================================================== */
 
-/* 1. BOTÕES PRINCIPAIS / SALVAR (Fundo Laranja + Texto/Ícone Branco) */
+/* 1. BOTÕES PRINCIPAIS / SALVAR (Azul claro + Texto/Ícone/Borda branca) */
 button[type="submit"],
 button.bg-primary,
 button[class*="bg-primary"],
 button:not([class*="destructive"]):not([class*="outline"]):not([class*="ghost"]):not([class*="secondary"]) {
-  background-color: #f97316 !important; /* Laranja da imagem */
+  background-color: #0ea5e9 !important; /* Azul claro */
   color: #ffffff !important;
+  border: 1px solid #ffffff !important;
   font-weight: 600 !important;
+}
+
+button[type="submit"] svg,
+button.bg-primary svg,
+button[class*="bg-primary"] svg,
+button:not([class*="destructive"]):not([class*="outline"]):not([class*="ghost"]):not([class*="secondary"]) svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 button[type="submit"]:hover,
 button.bg-primary:hover,
 button[class*="bg-primary"]:hover {
-  background-color: #ea580c !important; /* Tom de laranja mais escuro para o hover */
+  background-color: #0284c7 !important;
 }
 
-/* 2. BOTÕES DE EXCLUIR / DELETAR / LIMPAR / LIXEIRA (Fundo Vermelho + Texto/Ícone Branco) */
+/* 2. BOTÕES DE EXCLUIR / DELETAR / LIMPAR / LIXEIRA (Vermelho + Texto/Ícone/Borda branca) */
 button.bg-destructive,
 button[class*="destructive"],
 button[class*="bg-destructive"],
 button:has(svg.lucide-trash),
 button:has(svg.lucide-trash-2),
 button:has(svg.lucide-eraser) {
-  background-color: #dc2626 !important; 
+  background-color: #dc2626 !important;
   color: #ffffff !important;
+  border: 1px solid #ffffff !important;
   font-weight: 600 !important;
   padding: 0.5rem 0.75rem !important;
   border-radius: 0.375rem !important;
 }
 
+button.bg-destructive svg,
+button[class*="destructive"] svg,
+button[class*="bg-destructive"] svg,
+button:has(svg.lucide-trash) svg,
+button:has(svg.lucide-trash-2) svg,
+button:has(svg.lucide-eraser) svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
 button.bg-destructive:hover,
 button[class*="destructive"]:hover,
-button[class*="bg-destructive"]:hover {
+button[class*="bg-destructive"]:hover,
+button:has(svg.lucide-trash):hover,
+button:has(svg.lucide-trash-2):hover,
+button:has(svg.lucide-eraser):hover {
   background-color: #b91c1c !important;
 }
 
@@ -125,12 +148,19 @@ td button,
 td button:has(svg) {
   background-color: #dc2626 !important;
   color: #ffffff !important;
+  border: 1px solid #ffffff !important;
   padding: 6px !important;
   border-radius: 6px !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
 }
+
+td button svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
 
 @keyframes blink-red {
   0%, 100% { opacity: 1; }
