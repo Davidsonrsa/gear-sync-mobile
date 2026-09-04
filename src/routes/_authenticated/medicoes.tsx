@@ -334,6 +334,34 @@ export function MedicoesPage() {
     setModalMaquinaAberto(false);
   };
 
+  const handleExcluirMaquina = async (maquina: MaquinaMedicao) => {
+    if (!contratoSelecionado || !mesSelecionado) return;
+    if (!confirm(`Deseja excluir o equipamento ${maquina.codigo}?`)) return;
+
+    const dataInicial = `${mesSelecionado.ano}-${String(mesSelecionado.mesIndex + 1).padStart(2, "0")}-01`;
+    const ultimoDia = new Date(mesSelecionado.ano, mesSelecionado.mesIndex + 1, 0).getDate();
+    const dataFinal = `${mesSelecionado.ano}-${String(mesSelecionado.mesIndex + 1).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`;
+
+    const { error } = await supabase
+      .from("medicoes_diarias")
+      .delete()
+      .eq("contrato_id", contratoSelecionado.id)
+      .eq("equipamento", maquina.codigo)
+      .gte("data", dataInicial)
+      .lte("data", dataFinal);
+
+    if (error) {
+      console.error("Erro ao excluir equipamento da medição:", error);
+      setMensagemSucesso(`Não foi possível excluir: ${error.message}`);
+      return;
+    }
+
+    setMaquinas((atuais) => atuais.filter((item) => item.id !== maquina.id));
+    setMaquinaSelecionadaId(null);
+    setMensagemSucesso("Equipamento excluído com sucesso!");
+    setTimeout(() => setMensagemSucesso(""), 3000);
+  };
+
   const calcularSubtotal = (inicio: string, fim: string) => {
     if (!inicio || !fim) return 0;
     const partesIn = inicio.split(":");
@@ -713,10 +741,10 @@ export function MedicoesPage() {
                   return (
                     <div
                       key={eq.id}
-                      className={`flex items-stretch gap-1.5 rounded-xl border p-1.5 transition ${
+                      className={`flex items-stretch gap-1.5 rounded-xl border border-gray-300 bg-transparent p-1.5 text-black transition ${
                         ativa
-                          ? "border-gray-700 bg-white shadow-sm ring-1 ring-gray-300"
-                          : "border-gray-200 bg-gray-50 hover:border-gray-400 hover:bg-white"
+                          ? "border-gray-700 shadow-sm ring-1 ring-gray-300"
+                          : "hover:border-gray-500"
                       }`}
                     >
                       <button
@@ -745,12 +773,7 @@ export function MedicoesPage() {
                         <Edit size={14} />
                       </button>
                       <button
-                        onClick={() => {
-                          if (confirm(`Deseja excluir o equipamento ${eq.codigo}?`)) {
-                            setMaquinas(maquinas.filter((m) => m.id !== eq.id));
-                            setMaquinaSelecionadaId(null);
-                          }
-                        }}
+                        onClick={() => void handleExcluirMaquina(eq)}
                         className="self-center rounded-md bg-red-600 p-1.5 text-white hover:bg-red-700"
                         title="Excluir Equipamento"
                       >
