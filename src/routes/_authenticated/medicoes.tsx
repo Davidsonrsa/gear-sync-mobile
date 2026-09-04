@@ -774,7 +774,7 @@ export function MedicoesPage() {
                       </button>
                       <button
                         onClick={() => void handleExcluirMaquina(eq)}
-                        className="self-center rounded-md bg-red-600 p-1.5 text-white hover:bg-red-700"
+                        className="medicao-lixeira self-center rounded-md bg-red-600 p-1.5 text-white hover:bg-red-700"
                         title="Excluir Equipamento"
                       >
                         <Trash2 size={14} />

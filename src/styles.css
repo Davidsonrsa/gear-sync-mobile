@@ -101,6 +101,20 @@ button.medicao-equipamento:not([class*="destructive"]):not([class*="outline"]):n
   border: 0 !important;
 }
 
+button.medicao-lixeira {
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+button.medicao-lixeira:hover {
+  background-color: #b91c1c !important;
+}
+
+button.medicao-lixeira svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
 button[type="submit"] svg,
 button.bg-primary svg,
 button[class*="bg-primary"] svg,
