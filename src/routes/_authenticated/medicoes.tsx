@@ -749,12 +749,12 @@ export function MedicoesPage() {
                     >
                       <button
                         onClick={() => setMaquinaSelecionadaId(eq.id)}
-                        className="min-w-0 flex-1 rounded-lg px-2.5 py-2 text-left"
+                        className="min-w-0 flex-1 rounded-lg bg-transparent px-2.5 py-2 text-left text-black"
                       >
-                        <span className="block truncate text-sm font-extrabold text-gray-900">
+                        <span className="block truncate text-sm font-extrabold text-black">
                           {eq.codigo}
                         </span>
-                        <span className="block truncate text-[11px] font-medium uppercase text-gray-700">
+                        <span className="block truncate text-[11px] font-medium uppercase text-black">
                           {eq.tipo}
                         </span>
                       </button>
