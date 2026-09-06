@@ -82,7 +82,9 @@ function CustosPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submittingMedicao, setSubmittingMedicao] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [msgMedicao, setMsgMedicao] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [msgMedicao, setMsgMedicao] = useState<{ type: "success" | "error"; text: string } | null>(
+    null,
+  );
 
   // Form states (Custos)
   const [contratoSelecionado, setContratoSelecionado] = useState<string>("");
@@ -219,7 +221,10 @@ function CustosPage() {
       if (l.contrato && l.contrato.trim()) {
         const chave = l.contrato.trim().toLowerCase();
         if (!mapaContratos.has(chave)) {
-          mapaContratos.set(chave, { id: l.contrato_id || `virtual-${l.contrato.trim()}`, nome: l.contrato.trim() });
+          mapaContratos.set(chave, {
+            id: l.contrato_id || `virtual-${l.contrato.trim()}`,
+            nome: l.contrato.trim(),
+          });
         }
       }
     });
@@ -327,7 +332,10 @@ function CustosPage() {
 
         if (contractErr) throw contractErr;
         if (newContract) {
-          setContratos((prev) => [...prev, { id: String(newContract.id), nome: nomeContratoFinal }]);
+          setContratos((prev) => [
+            ...prev,
+            { id: String(newContract.id), nome: nomeContratoFinal },
+          ]);
         }
       } catch (err) {
         console.warn("Erro ao salvar novo contrato:", err);
@@ -400,22 +408,54 @@ function CustosPage() {
   }, [lancamentos, filtroMes, filtroContrato]);
 
   const resumos = useMemo(() => {
-    let receita = 0, impostos = 0, maoDeObra = 0, encargos = 0, manutencao = 0, transporte = 0, administrativas = 0;
+    let receita = 0,
+      impostos = 0,
+      maoDeObra = 0,
+      encargos = 0,
+      manutencao = 0,
+      transporte = 0,
+      administrativas = 0;
     lancamentosFiltrados.forEach((item) => {
       switch (item.tipo) {
-        case "Receita": receita += item.valor; break;
-        case "Impostos": impostos += item.valor; break;
-        case "Mão de Obra": maoDeObra += item.valor; break;
-        case "Encargos": encargos += item.valor; break;
-        case "Despesas de Manutenção": manutencao += item.valor; break;
-        case "Despesas de Transporte": transporte += item.valor; break;
-        case "Despesas Administrativas": administrativas += item.valor; break;
+        case "Receita":
+          receita += item.valor;
+          break;
+        case "Impostos":
+          impostos += item.valor;
+          break;
+        case "Mão de Obra":
+          maoDeObra += item.valor;
+          break;
+        case "Encargos":
+          encargos += item.valor;
+          break;
+        case "Despesas de Manutenção":
+          manutencao += item.valor;
+          break;
+        case "Despesas de Transporte":
+          transporte += item.valor;
+          break;
+        case "Despesas Administrativas":
+          administrativas += item.valor;
+          break;
       }
     });
-    const despesasTotais = impostos + maoDeObra + encargos + manutencao + transporte + administrativas;
+    const despesasTotais =
+      impostos + maoDeObra + encargos + manutencao + transporte + administrativas;
     const resultadoFinal = receita - despesasTotais;
     const margemLucro = receita > 0 ? (resultadoFinal / receita) * 100 : 0;
-    return { receita, impostos, maoDeObra, encargos, manutencao, transporte, administrativas, despesasTotais, resultadoFinal, margemLucro };
+    return {
+      receita,
+      impostos,
+      maoDeObra,
+      encargos,
+      manutencao,
+      transporte,
+      administrativas,
+      despesasTotais,
+      resultadoFinal,
+      margemLucro,
+    };
   }, [lancamentosFiltrados]);
 
   return (
@@ -565,7 +605,11 @@ function CustosPage() {
                 </div>
 
                 <div className="flex justify-end pt-2">
-                  <Button type="submit" disabled={submittingMedicao} className="bg-emerald-600 hover:bg-emerald-700">
+                  <Button
+                    type="submit"
+                    disabled={submittingMedicao}
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
                     {submittingMedicao ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     Salvar Medição Diária
                   </Button>
@@ -585,7 +629,9 @@ function CustosPage() {
             <DialogContent className="max-w-5xl border-slate-800 text-slate-100 p-0 max-h-[90vh] overflow-hidden shadow-2xl !bg-[#0f172a]">
               <div className="relative w-full h-full p-6 overflow-y-auto bg-[#0f172a]">
                 <DialogHeader className="mb-4">
-                  <DialogTitle className="text-slate-100">Painel de Desempenho Financeiro</DialogTitle>
+                  <DialogTitle className="text-slate-100">
+                    Painel de Desempenho Financeiro
+                  </DialogTitle>
                 </DialogHeader>
                 <DashboardFinanceiro lancamentos={lancamentosFiltrados} />
               </div>
@@ -632,7 +678,9 @@ function CustosPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-white border-l-4 border-l-emerald-500 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">Receita Bruta</CardTitle>
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">
+              Receita Bruta
+            </CardTitle>
             <TrendingUp className="w-4 h-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
@@ -642,7 +690,9 @@ function CustosPage() {
 
         <Card className="bg-white border-l-4 border-l-amber-500 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">Impostos</CardTitle>
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">
+              Impostos
+            </CardTitle>
             <PieChart className="w-4 h-4 text-amber-600" />
           </CardHeader>
           <CardContent>
@@ -652,21 +702,33 @@ function CustosPage() {
 
         <Card className="bg-white border-l-4 border-l-rose-500 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">Custos / Despesas</CardTitle>
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">
+              Custos / Despesas
+            </CardTitle>
             <TrendingDown className="w-4 h-4 text-rose-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-rose-600">{formatBRL(resumos.despesasTotais - resumos.impostos)}</div>
+            <div className="text-2xl font-bold text-rose-600">
+              {formatBRL(resumos.despesasTotais - resumos.impostos)}
+            </div>
           </CardContent>
         </Card>
 
-        <Card className={`bg-white border-l-4 shadow-sm ${resumos.resultadoFinal >= 0 ? "border-l-blue-600" : "border-l-red-600"}`}>
+        <Card
+          className={`bg-white border-l-4 shadow-sm ${resumos.resultadoFinal >= 0 ? "border-l-blue-600" : "border-l-red-600"}`}
+        >
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">Resultado Final</CardTitle>
-            <DollarSign className={`w-4 h-4 ${resumos.resultadoFinal >= 0 ? "text-blue-600" : "text-red-600"}`} />
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">
+              Resultado Final
+            </CardTitle>
+            <DollarSign
+              className={`w-4 h-4 ${resumos.resultadoFinal >= 0 ? "text-blue-600" : "text-red-600"}`}
+            />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${resumos.resultadoFinal >= 0 ? "text-blue-600" : "text-red-600"}`}>
+            <div
+              className={`text-2xl font-bold ${resumos.resultadoFinal >= 0 ? "text-blue-600" : "text-red-600"}`}
+            >
               {formatBRL(resumos.resultadoFinal)}
             </div>
           </CardContent>
@@ -684,7 +746,9 @@ function CustosPage() {
         <CardContent>
           <form onSubmit={handleSubmitCusto} className="space-y-4">
             {message && (
-              <div className={`p-3 rounded-md text-sm ${message.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+              <div
+                className={`p-3 rounded-md text-sm ${message.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+              >
                 {message.text}
               </div>
             )}
@@ -804,8 +868,12 @@ function CustosPage() {
                     <td className="p-3 font-medium">{m.contrato}</td>
                     <td className="p-3">{m.equipamento}</td>
                     <td className="p-3">{m.operador}</td>
-                    <td className="p-3 text-xs">{m.manha_inicio} às {m.manha_final}</td>
-                    <td className="p-3 text-xs">{m.tarde_inicio} às {m.tarde_final}</td>
+                    <td className="p-3 text-xs">
+                      {m.manha_inicio} às {m.manha_final}
+                    </td>
+                    <td className="p-3 text-xs">
+                      {m.tarde_inicio} às {m.tarde_final}
+                    </td>
                     <td className="p-3 text-right font-semibold">{formatBRL(m.valor_hora)}</td>
                     <td className="p-3 text-center">
                       <Button

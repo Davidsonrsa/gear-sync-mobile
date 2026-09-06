@@ -1,4 +1,3 @@
-```ts
 const DOMAIN = "sphjhm.app";
 
 export function normalizeMat(mat: string): string {
@@ -22,4 +21,3 @@ export function emailToMat(email: string | null | undefined): string {
 
   return m ? m[1].toUpperCase() : email;
 }
-```

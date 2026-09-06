@@ -111,11 +111,7 @@ function EquipamentoDetail() {
   const { data: equip, isLoading } = useQuery({
     queryKey: ["equipamento", id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("equipamentos")
-        .select("*")
-        .eq("id", id)
-        .single();
+      const { data, error } = await supabase.from("equipamentos").select("*").eq("id", id).single();
       if (error) throw error;
       return data as Equip;
     },
@@ -138,7 +134,7 @@ function EquipamentoDetail() {
             .from("equipamento-fotos")
             .createSignedUrl(f.storage_path, 60 * 60);
           return { ...f, url: signed?.signedUrl ?? "" };
-        })
+        }),
       );
     },
   });
@@ -202,7 +198,10 @@ function EquipamentoDetail() {
     mutationFn: async () => {
       // remove vínculos que impedem a exclusão
       await supabase.from("cotacoes").update({ equipamento_id: null }).eq("equipamento_id", id);
-      await supabase.from("notas_fiscais").update({ equipamento_id: null }).eq("equipamento_id", id);
+      await supabase
+        .from("notas_fiscais")
+        .update({ equipamento_id: null })
+        .eq("equipamento_id", id);
 
       const { data, error } = await supabase
         .from("equipamentos")
@@ -211,7 +210,9 @@ function EquipamentoDetail() {
         .select("id");
       if (error) throw error;
       if (!data || data.length === 0)
-        throw new Error("Não foi possível excluir. Apenas administradores podem remover equipamentos.");
+        throw new Error(
+          "Não foi possível excluir. Apenas administradores podem remover equipamentos.",
+        );
     },
     onSuccess: async () => {
       toast.success("Equipamento excluído");
@@ -222,7 +223,6 @@ function EquipamentoDetail() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
-
 
   async function handleUpload(files: FileList | null) {
     if (!files?.length || !userId) return;
@@ -455,11 +455,11 @@ function EquipamentoDetail() {
           />
         </Field>
 
-        <Button 
+        <Button
           type="button"
-          variant="default" 
-          onClick={() => save.mutate(form)} 
-          disabled={save.isPending} 
+          variant="default"
+          onClick={() => save.mutate(form)}
+          disabled={save.isPending}
           className="w-full h-11"
         >
           <Save className="w-4 h-4 mr-2" /> {save.isPending ? "Salvando..." : "Salvar"}
@@ -469,7 +469,12 @@ function EquipamentoDetail() {
       <Card className="p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-sm">Fotos ({fotos?.length ?? 0})</h3>
-          <Button type="button" size="sm" variant="outline" onClick={() => fileInput.current?.click()}>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => fileInput.current?.click()}
+          >
             <Camera className="w-4 h-4 mr-1.5" /> Adicionar
           </Button>
           <input
@@ -511,8 +516,8 @@ function EquipamentoDetail() {
                 {(isAdmin || f.uploaded_by === userId) && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         className="absolute top-1 right-1 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors rounded-full p-1.5 shadow"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -715,7 +720,6 @@ function EquipamentoDetail() {
               disabled={ro}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
-
               <option value="">Selecione o status</option>
               <option value="Em manutenção">Em manutenção</option>
               <option value="Disponível para venda">Disponível para venda</option>
@@ -754,7 +758,12 @@ function EquipamentoDetail() {
 
         {isAdmin && (
           <div className="flex gap-2 pt-2">
-            <Button type="button" onClick={() => save.mutate(form)} disabled={save.isPending} className="flex-1">
+            <Button
+              type="button"
+              onClick={() => save.mutate(form)}
+              disabled={save.isPending}
+              className="flex-1"
+            >
               <Save className="w-4 h-4 mr-2" /> Salvar tudo
             </Button>
             <AlertDialog>
@@ -936,7 +945,11 @@ function EquipamentoDetail() {
         </div>
       </Card>
 
-      <Link to="/equipamentos/$id/manutencao" params={{ id }} search={{ horimetro: undefined, tipoRevisao: undefined }}>
+      <Link
+        to="/equipamentos/$id/manutencao"
+        params={{ id }}
+        search={{ horimetro: undefined, tipoRevisao: undefined }}
+      >
         <Button type="button" variant="outline" className="w-full h-12">
           <Printer className="w-4 h-4 mr-2" /> Formulário de manutenção (imprimir)
         </Button>

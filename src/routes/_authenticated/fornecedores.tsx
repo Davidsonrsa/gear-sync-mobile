@@ -6,7 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Search, PlusCircle, Pencil, Trash2, Loader2, Building2, Phone, Mail, User } from "lucide-react";
+import {
+  Search,
+  PlusCircle,
+  Pencil,
+  Trash2,
+  Loader2,
+  Building2,
+  Phone,
+  Mail,
+  User,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -169,17 +179,27 @@ function FornecedoresPage() {
     (f) =>
       f.razao_social?.toLowerCase().includes(busca.toLowerCase()) ||
       f.nome_fantasia?.toLowerCase().includes(busca.toLowerCase()) ||
-      f.cnpj?.toLowerCase().includes(busca.toLowerCase())
+      f.cnpj?.toLowerCase().includes(busca.toLowerCase()),
   );
 
   return (
     <div className="p-4 md:p-6 w-full max-w-7xl mx-auto space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Cadastro de Fornecedores</h1>
-          <p className="text-sm text-slate-500">Gerencie sua base de fornecedores parceiros para cotações e compras.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            Cadastro de Fornecedores
+          </h1>
+          <p className="text-sm text-slate-500">
+            Gerencie sua base de fornecedores parceiros para cotações e compras.
+          </p>
         </div>
-        <Dialog open={openModal} onOpenChange={(open) => { setOpenModal(open); if (!open) limparForm(); }}>
+        <Dialog
+          open={openModal}
+          onOpenChange={(open) => {
+            setOpenModal(open);
+            if (!open) limparForm();
+          }}
+        >
           <DialogTrigger asChild>
             <Button className="rounded-full gap-2">
               <PlusCircle className="w-4 h-4" /> Novo Fornecedor
@@ -187,13 +207,19 @@ function FornecedoresPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{fornecedorEditando ? "Editar Fornecedor" : "Cadastrar Novo Fornecedor"}</DialogTitle>
+              <DialogTitle>
+                {fornecedorEditando ? "Editar Fornecedor" : "Cadastrar Novo Fornecedor"}
+              </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSalvar} className="space-y-4 pt-2">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <Label>Razão Social *</Label>
-                  <Input value={razaoSocial} onChange={(e) => setRazaoSocial(e.target.value)} required />
+                  <Input
+                    value={razaoSocial}
+                    onChange={(e) => setRazaoSocial(e.target.value)}
+                    required
+                  />
                 </div>
                 <div>
                   <Label>Nome Fantasia</Label>
@@ -203,15 +229,28 @@ function FornecedoresPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                   <Label>CNPJ</Label>
-                  <Input value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="00.000.000/0000-00" />
+                  <Input
+                    value={cnpj}
+                    onChange={(e) => setCnpj(e.target.value)}
+                    placeholder="00.000.000/0000-00"
+                  />
                 </div>
                 <div>
                   <Label>Telefone</Label>
-                  <Input value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(00) 00000-0000" />
+                  <Input
+                    value={telefone}
+                    onChange={(e) => setTelefone(e.target.value)}
+                    placeholder="(00) 00000-0000"
+                  />
                 </div>
                 <div>
                   <Label>E-mail</Label>
-                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="contato@fornecedor.com" />
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="contato@fornecedor.com"
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -221,38 +260,72 @@ function FornecedoresPage() {
                 </div>
                 <div>
                   <Label>Estado (UF)</Label>
-                  <Input value={estado} onChange={(e) => setEstado(e.target.value)} maxLength={2} placeholder="Ex: SP" />
+                  <Input
+                    value={estado}
+                    onChange={(e) => setEstado(e.target.value)}
+                    maxLength={2}
+                    placeholder="Ex: SP"
+                  />
                 </div>
               </div>
-              
+
               {/* Dados de Pagamento */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <Label>Banco</Label>
-                  <Input value={banco} onChange={(e) => setBanco(e.target.value)} placeholder="Nome ou código do banco" />
+                  <Input
+                    value={banco}
+                    onChange={(e) => setBanco(e.target.value)}
+                    placeholder="Nome ou código do banco"
+                  />
                 </div>
                 <div>
                   <Label>Agência</Label>
-                  <Input value={agencia} onChange={(e) => setAgencia(e.target.value)} placeholder="0000" />
+                  <Input
+                    value={agencia}
+                    onChange={(e) => setAgencia(e.target.value)}
+                    placeholder="0000"
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <Label>Conta</Label>
-                  <Input value={conta} onChange={(e) => setConta(e.target.value)} placeholder="00000-0" />
+                  <Input
+                    value={conta}
+                    onChange={(e) => setConta(e.target.value)}
+                    placeholder="00000-0"
+                  />
                 </div>
                 <div>
                   <Label>Chave PIX</Label>
-                  <Input value={pix} onChange={(e) => setPix(e.target.value)} placeholder="CPF, CNPJ, E-mail ou Telefone" />
+                  <Input
+                    value={pix}
+                    onChange={(e) => setPix(e.target.value)}
+                    placeholder="CPF, CNPJ, E-mail ou Telefone"
+                  />
                 </div>
               </div>
 
               <div>
                 <Label>Observações</Label>
-                <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} placeholder="Informações adicionais sobre o fornecedor..." />
+                <Textarea
+                  value={observacoes}
+                  onChange={(e) => setObservacoes(e.target.value)}
+                  placeholder="Informações adicionais sobre o fornecedor..."
+                />
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" onClick={() => { setOpenModal(false); limparForm(); }}>Cancelar</Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setOpenModal(false);
+                    limparForm();
+                  }}
+                >
+                  Cancelar
+                </Button>
                 <Button type="submit" disabled={submitting}>
                   {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Salvar Fornecedor
@@ -265,7 +338,12 @@ function FornecedoresPage() {
 
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex items-center gap-2">
         <Search className="w-4 h-4 text-slate-400" />
-        <Input placeholder="Buscar por Razão Social, Nome Fantasia ou CNPJ..." className="border-0 focus-visible:ring-0 text-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        <Input
+          placeholder="Buscar por Razão Social, Nome Fantasia ou CNPJ..."
+          className="border-0 focus-visible:ring-0 text-sm"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
@@ -282,31 +360,62 @@ function FornecedoresPage() {
             </thead>
             <tbody className="divide-y divide-slate-200">
               {loading ? (
-                <tr><td colSpan={5} className="p-8 text-center text-slate-500"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" /> Carregando fornecedores...</td></tr>
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-slate-500">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" /> Carregando
+                    fornecedores...
+                  </td>
+                </tr>
               ) : listaFiltrada.length === 0 ? (
-                <tr><td colSpan={5} className="p-8 text-center text-slate-500">Nenhum fornecedor cadastrado.</td></tr>
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-slate-500">
+                    Nenhum fornecedor cadastrado.
+                  </td>
+                </tr>
               ) : (
                 listaFiltrada.map((f) => (
                   <tr key={f.id} className="hover:bg-slate-50/50">
                     <td className="p-3.5">
                       <div className="font-medium text-slate-900">{f.razao_social}</div>
-                      {f.nome_fantasia && <div className="text-xs text-slate-500">{f.nome_fantasia}</div>}
+                      {f.nome_fantasia && (
+                        <div className="text-xs text-slate-500">{f.nome_fantasia}</div>
+                      )}
                     </td>
                     <td className="p-3.5 text-slate-600">{f.cnpj || "—"}</td>
                     <td className="p-3.5 text-slate-600">
-                      {f.telefone && <div className="flex items-center gap-1 text-xs"><Phone className="w-3 h-3 text-slate-400" /> {f.telefone}</div>}
-                      {f.email && <div className="flex items-center gap-1 text-xs"><Mail className="w-3 h-3 text-slate-400" /> {f.email}</div>}
+                      {f.telefone && (
+                        <div className="flex items-center gap-1 text-xs">
+                          <Phone className="w-3 h-3 text-slate-400" /> {f.telefone}
+                        </div>
+                      )}
+                      {f.email && (
+                        <div className="flex items-center gap-1 text-xs">
+                          <Mail className="w-3 h-3 text-slate-400" /> {f.email}
+                        </div>
+                      )}
                       {!f.telefone && !f.email && "—"}
                     </td>
                     <td className="p-3.5 text-slate-600">
-                      {f.cidade && f.estado ? `${f.cidade} - ${f.estado}` : f.cidade || f.estado || "—"}
+                      {f.cidade && f.estado
+                        ? `${f.cidade} - ${f.estado}`
+                        : f.cidade || f.estado || "—"}
                     </td>
                     <td className="p-3.5 text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50" onClick={() => abrirEdicao(f)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+                          onClick={() => abrirEdicao(f)}
+                        >
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:bg-red-50" onClick={() => handleDeletar(f.id, f.razao_social)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-red-600 hover:bg-red-50"
+                          onClick={() => handleDeletar(f.id, f.razao_social)}
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>

@@ -40,10 +40,7 @@ export function Notificacoes() {
   });
 
   const marcarComoLida = async (id: string) => {
-    const { error } = await supabase
-      .from("notificacoes")
-      .update({ lida: true })
-      .eq("id", id);
+    const { error } = await supabase.from("notificacoes").update({ lida: true }).eq("id", id);
 
     if (error) {
       console.error("Erro ao marcar notificação:", error);
@@ -58,10 +55,7 @@ export function Notificacoes() {
 
     const ids = notificacoes.map((n) => n.id);
 
-    const { error } = await supabase
-      .from("notificacoes")
-      .update({ lida: true })
-      .in("id", ids);
+    const { error } = await supabase.from("notificacoes").update({ lida: true }).in("id", ids);
 
     if (error) {
       console.error("Erro ao marcar notificações:", error);
@@ -78,10 +72,7 @@ export function Notificacoes() {
   // e "prender" o position:fixed dentro daquele contexto de empilhamento,
   // causando o efeito de sobreposição/transparência visto no bug).
   const painel = aberto && (
-    <div
-      className="fixed inset-0 z-[9999] bg-black/30"
-      onClick={() => setAberto(false)}
-    >
+    <div className="fixed inset-0 z-[9999] bg-black/30" onClick={() => setAberto(false)}>
       <div
         className="absolute right-3 top-[110px] z-[10000] w-[calc(100vw-24px)] max-w-md md:right-6 md:w-96"
         onClick={(e) => e.stopPropagation()}
@@ -90,9 +81,7 @@ export function Notificacoes() {
           {/* CABEÇALHO */}
           <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900">
             <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">
-                Notificações
-              </h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white">Notificações</h3>
 
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {quantidade === 0
@@ -103,23 +92,13 @@ export function Notificacoes() {
 
             <div className="flex items-center gap-1">
               {quantidade > 0 && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={marcarTodasComoLidas}
-                >
+                <Button type="button" variant="ghost" size="sm" onClick={marcarTodasComoLidas}>
                   <Check className="mr-1 h-4 w-4" />
                   Ler todas
                 </Button>
               )}
 
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => setAberto(false)}
-              >
+              <Button type="button" variant="ghost" size="icon" onClick={() => setAberto(false)}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -137,9 +116,7 @@ export function Notificacoes() {
               <div className="bg-white p-8 text-center dark:bg-gray-900">
                 <Check className="mx-auto mb-2 h-8 w-8 text-gray-400" />
 
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  Tudo em dia!
-                </p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Tudo em dia!</p>
 
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   Não existem notificações pendentes.
@@ -158,9 +135,7 @@ export function Notificacoes() {
                   <div className="flex gap-3">
                     <div
                       className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                        vencido
-                          ? "bg-red-100 text-red-600"
-                          : "bg-yellow-100 text-yellow-600"
+                        vencido ? "bg-red-100 text-red-600" : "bg-yellow-100 text-yellow-600"
                       }`}
                     >
                       <AlertTriangle className="h-4 w-4" />
@@ -177,16 +152,12 @@ export function Notificacoes() {
                             variant={vencido ? "destructive" : "secondary"}
                             className="shrink-0 text-[10px]"
                           >
-                            {vencido
-                              ? `${Math.abs(n.dias)}d vencido`
-                              : `${n.dias}d`}
+                            {vencido ? `${Math.abs(n.dias)}d vencido` : `${n.dias}d`}
                           </Badge>
                         )}
                       </div>
 
-                      <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
-                        {n.mensagem}
-                      </p>
+                      <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">{n.mensagem}</p>
 
                       <Button
                         type="button"
@@ -214,9 +185,7 @@ export function Notificacoes() {
       {/* Monta o overlay direto no <body> via portal, escapando de
           qualquer contexto de empilhamento (transform/filter/overflow)
           criado por ancestrais como o header/toolbar. */}
-      {typeof document !== "undefined" &&
-        painel &&
-        createPortal(painel, document.body)}
+      {typeof document !== "undefined" && painel && createPortal(painel, document.body)}
     </>
   );
 }

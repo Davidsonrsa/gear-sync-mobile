@@ -6,10 +6,7 @@ export async function requireAdmin() {
   const userId = authData.user?.id;
   if (!userId) throw redirect({ to: "/auth" });
 
-  const { data: roles } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
+  const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
 
   if (!roles?.some((item) => item.role === "admin")) {
     throw redirect({ to: "/" });

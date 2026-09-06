@@ -9,20 +9,20 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  
+
   /* Cores Base do Sistema - Alterado --color-primary para Laranja */
   --color-primary: #f97316; /* Laranja */
   --color-primary-foreground: #ffffff;
   --color-destructive: #dc2626; /* Vermelho */
   --color-destructive-foreground: #ffffff;
-  
+
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -66,16 +66,22 @@
   * {
     border-color: var(--color-border);
   }
-  html, body {
+  html,
+  body {
     background-color: #f1f5f9;
     color: #0f172a;
     min-height: 100%;
-    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-family:
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
-  
+
   /* Barra fixa / Header alterados para o Laranja */
-  header, nav {
-    background-color: #f97316 !important; 
+  header,
+  nav {
+    background-color: #f97316 !important;
     border-bottom: 1px solid #c2410c;
   }
 }
@@ -88,14 +94,18 @@
 button[type="submit"],
 button.bg-primary,
 button[class*="bg-primary"],
-button:not([class*="destructive"]):not([class*="outline"]):not([class*="ghost"]):not([class*="secondary"]) {
+button:not([class*="destructive"]):not([class*="outline"]):not([class*="ghost"]):not(
+    [class*="secondary"]
+  ) {
   background-color: #0ea5e9 !important; /* Azul claro */
   color: #ffffff !important;
   border: 1px solid #ffffff !important;
   font-weight: 600 !important;
 }
 
-button.medicao-equipamento:not([class*="destructive"]):not([class*="outline"]):not([class*="ghost"]):not([class*="secondary"]) {
+button.medicao-equipamento:not([class*="destructive"]):not([class*="outline"]):not(
+    [class*="ghost"]
+  ):not([class*="secondary"]) {
   background-color: transparent !important;
   color: #000000 !important;
   border: 0 !important;
@@ -118,7 +128,10 @@ button.medicao-lixeira svg {
 button[type="submit"] svg,
 button.bg-primary svg,
 button[class*="bg-primary"] svg,
-button:not([class*="destructive"]):not([class*="outline"]):not([class*="ghost"]):not([class*="secondary"]) svg {
+button:not([class*="destructive"]):not([class*="outline"]):not([class*="ghost"]):not(
+    [class*="secondary"]
+  )
+  svg {
   color: #ffffff !important;
   stroke: #ffffff !important;
 }
@@ -164,7 +177,7 @@ button:has(svg.lucide-eraser):hover {
 }
 
 /* 3. LIXEIRAS ESPECÍFICAS DA TABELA DE CUSTOS */
-td button, 
+td button,
 td button:has(svg) {
   background-color: #dc2626 !important;
   color: #ffffff !important;
@@ -181,10 +194,14 @@ td button svg {
   stroke: #ffffff !important;
 }
 
-
 @keyframes blink-red {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 .blink-overdue {
   animation: blink-red 0.9s ease-in-out infinite;

@@ -107,10 +107,7 @@ function NotaFiscalDetail() {
         venc05: updates.venc05 || null,
       };
 
-      const { error } = await supabase
-        .from("notas_fiscais")
-        .update(payload)
-        .eq("id", id);
+      const { error } = await supabase.from("notas_fiscais").update(payload).eq("id", id);
 
       if (error) throw error;
     },
@@ -121,18 +118,13 @@ function NotaFiscalDetail() {
       setIsEditing(false);
     },
     onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : "Erro ao atualizar"
-      );
+      toast.error(error instanceof Error ? error.message : "Erro ao atualizar");
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from("notas_fiscais")
-        .delete()
-        .eq("id", id);
+      const { error } = await supabase.from("notas_fiscais").delete().eq("id", id);
 
       if (error) throw error;
     },
@@ -150,9 +142,7 @@ function NotaFiscalDetail() {
     return (
       <div className="px-3 py-6 md:px-6 max-w-md md:max-w-7xl mx-auto w-full">
         <Card className="p-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            Carregando nota fiscal...
-          </p>
+          <p className="text-sm text-muted-foreground">Carregando nota fiscal...</p>
         </Card>
       </div>
     );
@@ -162,9 +152,7 @@ function NotaFiscalDetail() {
     return (
       <div className="px-3 py-6 md:px-6 max-w-md md:max-w-7xl mx-auto w-full">
         <Card className="p-8 text-center border-destructive">
-          <p className="text-sm text-destructive">
-            Não foi possível carregar a nota fiscal.
-          </p>
+          <p className="text-sm text-destructive">Não foi possível carregar a nota fiscal.</p>
         </Card>
       </div>
     );
@@ -180,9 +168,7 @@ function NotaFiscalDetail() {
         >
           <ArrowLeft className="w-4 h-4" />
         </Button>
-        <h1 className="text-2xl font-bold">
-          NF {nota.nf}
-        </h1>
+        <h1 className="text-2xl font-bold">NF {nota.nf}</h1>
       </div>
 
       <Card className="p-6">
@@ -276,9 +262,7 @@ function NotaFiscalDetail() {
                   value={formData.valor ?? ""}
                   disabled={!isEditing}
                   onChange={(e) => {
-                    const parsed = e.target.value
-                      ? parseFloat(e.target.value)
-                      : null;
+                    const parsed = e.target.value ? parseFloat(e.target.value) : null;
                     setFormData({
                       ...formData,
                       valor: parsed,
@@ -291,9 +275,7 @@ function NotaFiscalDetail() {
               <div className="md:col-span-2">
                 <Label>Descrição dos Produtos / Observações</Label>
                 <Textarea
-                  value={
-                    formData.descricao_produto ?? formData.observacao ?? ""
-                  }
+                  value={formData.descricao_produto ?? formData.observacao ?? ""}
                   disabled={!isEditing}
                   onChange={(e) =>
                     setFormData({
@@ -313,9 +295,7 @@ function NotaFiscalDetail() {
           <div>
             <h2 className="text-lg font-semibold mb-4">Vencimentos</h2>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              {(
-                ["venc01", "venc02", "venc03", "venc04", "venc05"] as const
-              ).map((field) => (
+              {(["venc01", "venc02", "venc03", "venc04", "venc05"] as const).map((field) => (
                 <div key={field}>
                   <Label>{field.replace("venc", "Venc. ")}</Label>
                   <Input
@@ -360,9 +340,8 @@ function NotaFiscalDetail() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Deletar Nota Fiscal?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Tem certeza que deseja deletar a nota fiscal NF{" "}
-                          {nota.nf}? Esta ação não pode ser
-                          desfeita.
+                          Tem certeza que deseja deletar a nota fiscal NF {nota.nf}? Esta ação não
+                          pode ser desfeita.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>

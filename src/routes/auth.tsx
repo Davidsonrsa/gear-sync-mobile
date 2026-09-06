@@ -49,16 +49,18 @@ function AuthPage() {
               className="w-full h-full object-contain opacity-100 !opacity-100"
             />
           </div>
-          
-          <h1 className="text-base font-bold text-center text-slate-900 mt-2">GIF - Gestão Integrada de Frotas</h1>
-          <p className="text-xs text-slate-500 text-center">
-            Acesso restrito aos colaboradores
-          </p>
+
+          <h1 className="text-base font-bold text-center text-slate-900 mt-2">
+            GIF - Gestão Integrada de Frotas
+          </h1>
+          <p className="text-xs text-slate-500 text-center">Acesso restrito aos colaboradores</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <Label htmlFor="mat" className="text-xs font-semibold text-slate-700">Matrícula</Label>
+            <Label htmlFor="mat" className="text-xs font-semibold text-slate-700">
+              Matrícula
+            </Label>
             <Input
               id="mat"
               inputMode="text"
@@ -73,7 +75,9 @@ function AuthPage() {
           </div>
 
           <div>
-            <Label htmlFor="password" className="text-xs font-semibold text-slate-700">Senha</Label>
+            <Label htmlFor="password" className="text-xs font-semibold text-slate-700">
+              Senha
+            </Label>
             <div className="relative mt-1">
               <Input
                 id="password"
@@ -95,9 +99,9 @@ function AuthPage() {
             </div>
           </div>
 
-          <Button 
-            type="submit" 
-            disabled={loading} 
+          <Button
+            type="submit"
+            disabled={loading}
             className="w-full h-11 text-sm font-semibold !bg-[#003b73] !text-white hover:!bg-[#002d59] transition-colors rounded-lg shadow-sm mt-2"
           >
             {loading ? "Entrando..." : "Entrar"}
@@ -110,8 +114,8 @@ function AuthPage() {
 
         <div className="mt-4 pt-4 border-t border-slate-100 text-center">
           <p className="text-[10px] text-slate-400 leading-relaxed">
-            📱 Para instalar no celular: abra este link no <b>Chrome</b> (Android) ou{" "}
-            <b>Safari</b> (iPhone) e use <b>"Adicionar à tela inicial"</b>.
+            📱 Para instalar no celular: abra este link no <b>Chrome</b> (Android) ou <b>Safari</b>{" "}
+            (iPhone) e use <b>"Adicionar à tela inicial"</b>.
           </p>
         </div>
       </Card>
