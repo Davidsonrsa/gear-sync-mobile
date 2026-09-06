@@ -137,17 +137,17 @@ function NewEquipamento() {
           onChange={(e) => setF({ ...f, localizacao: e.target.value })}
         />
       </div>
-      
-<div className="pt-2">
-  <Button
-    type="button"
-    onClick={() => create.mutate()}
-    disabled={create.isPending}
-    className="w-full font-semibold bg-blue-700 text-black hover:bg-blue-600"
-  >
-    {create.isPending ? "Criando..." : "Criar equipamento"}
-  </Button>
-</div>
+
+      <div className="pt-2">
+        <Button
+          type="button"
+          onClick={() => create.mutate()}
+          disabled={create.isPending}
+          className="w-full font-semibold bg-blue-700 text-black hover:bg-blue-600"
+        >
+          {create.isPending ? "Criando..." : "Criar equipamento"}
+        </Button>
+      </div>
       <p className="text-[11px] text-muted-foreground">
         Os demais campos podem ser preenchidos depois na tela do equipamento.
       </p>
@@ -266,7 +266,7 @@ function Usuarios() {
             type="button"
             onClick={() => m.mutate()}
             disabled={m.isPending}
-           className="w-full font-semibold"
+            className="w-full font-semibold"
           >
             {m.isPending
               ? "Criando..."
@@ -305,27 +305,27 @@ function Usuarios() {
                 {u.isAdmin ? "Admin" : "Colab"}
               </Badge>
               {u.id !== userId && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button size="icon" variant="ghost" className="h-8 w-8">
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Remover {u.full_name || emailToMat(u.email)}?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      O usuário perderá acesso ao aplicativo.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => d.mutate(u.id)}>Remover</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-8 w-8">
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Remover {u.full_name || emailToMat(u.email)}?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        O usuário perderá acesso ao aplicativo.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => d.mutate(u.id)}>Remover</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
             </li>
           ))}

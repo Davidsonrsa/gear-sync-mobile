@@ -5,7 +5,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, ChevronRight, Plus, Gauge, ShieldCheck, AlertTriangle, Calendar, AlertCircle, Trash2, Edit3, CheckCircle2 } from "lucide-react";
+import {
+  Search,
+  ChevronRight,
+  Plus,
+  Gauge,
+  ShieldCheck,
+  AlertTriangle,
+  Calendar,
+  AlertCircle,
+  Trash2,
+  Edit3,
+  CheckCircle2,
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Notificacoes } from "@/components/Notificacoes";
@@ -17,12 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/equipamentos/")({
   component: EquipamentosList,
@@ -76,9 +83,7 @@ function BotaoTacografo() {
   const { data: tacografos, isLoading } = useQuery({
     queryKey: ["tacografos-vencimentos"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tacografos_vencimentos")
-        .select("*");
+      const { data, error } = await supabase.from("tacografos_vencimentos").select("*");
 
       if (error) {
         console.error("Erro ao carregar tacógrafos:", error);
@@ -114,9 +119,10 @@ function BotaoTacografo() {
       .map((item: any) => {
         const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento;
         const diasRestantes = dataVal ? calcularDiasVencimento(dataVal) : null;
-        
+
         const isVencido = diasRestantes !== null && diasRestantes < 0;
-        const isVencendoEmBreve = diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 30;
+        const isVencendoEmBreve =
+          diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 30;
 
         return {
           ...item,
@@ -138,14 +144,21 @@ function BotaoTacografo() {
     if (!f) return todosComStatus;
     return todosComStatus.filter((item: any) =>
       Object.values(item).some((val) =>
-        String(val ?? "").toLowerCase().includes(f)
-      )
+        String(val ?? "")
+          .toLowerCase()
+          .includes(f),
+      ),
     );
   }, [todosComStatus, filtro]);
 
   return (
     <>
-      <Button size="sm" variant="outline" className="h-9 relative bg-white hover:bg-slate-100 text-slate-900 border-slate-300 gap-1.5" onClick={() => setOpen(true)}>
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-9 relative bg-white hover:bg-slate-100 text-slate-900 border-slate-300 gap-1.5"
+        onClick={() => setOpen(true)}
+      >
         <Calendar className="w-4 h-4 text-slate-900" />
         <span>Tacógrafo</span>
         {tacografosVencidos.length > 0 ? (
@@ -176,7 +189,8 @@ function BotaoTacografo() {
                 <div>
                   <p className="font-semibold">Atenção aos Vencimentos!</p>
                   <p className="text-[11px] text-amber-800">
-                    Existe(m) <strong>{tacografosComAlerta.length}</strong> tacógrafo(s) vencido(s) ou que vence(m) nos próximos 30 dias.
+                    Existe(m) <strong>{tacografosComAlerta.length}</strong> tacógrafo(s) vencido(s)
+                    ou que vence(m) nos próximos 30 dias.
                   </p>
                 </div>
               </div>
@@ -212,7 +226,8 @@ function BotaoTacografo() {
                   } else if (item.isVencendoEmBreve) {
                     bgCard = "bg-amber-50 border-amber-200";
                     badgeStyle = { backgroundColor: "#f59e0b", color: "#ffffff" };
-                    badgeText = item.diasRestantes === 0 ? "Hoje" : `Vence em ${item.diasRestantes}d`;
+                    badgeText =
+                      item.diasRestantes === 0 ? "Hoje" : `Vence em ${item.diasRestantes}d`;
                   }
 
                   return (
@@ -223,7 +238,10 @@ function BotaoTacografo() {
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-bold text-slate-900">
-                            {item.numero || item.veiculo_equipamento || item.equipamento || "Equipamento"}
+                            {item.numero ||
+                              item.veiculo_equipamento ||
+                              item.equipamento ||
+                              "Equipamento"}
                           </p>
                           <span
                             className="text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm inline-block"
@@ -232,7 +250,9 @@ function BotaoTacografo() {
                             {badgeText}
                           </span>
                         </div>
-                        {item.placa && <p className="text-slate-500 font-mono mt-0.5">{item.placa}</p>}
+                        {item.placa && (
+                          <p className="text-slate-500 font-mono mt-0.5">{item.placa}</p>
+                        )}
                       </div>
 
                       <div className="text-right">
@@ -261,16 +281,22 @@ function BotaoTacografo() {
 function BotaoSeguro() {
   const [open, setOpen] = useState(false);
   const [filtro, setFiltro] = useState("");
-  const [form, setForm] = useState({ veiculo_equipamento: "", seguradora: "", data_vencimento: "" });
+  const [form, setForm] = useState({
+    veiculo_equipamento: "",
+    seguradora: "",
+    data_vencimento: "",
+  });
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
-  const { data: seguros, isLoading, refetch } = useQuery({
+  const {
+    data: seguros,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["seguros-vencimentos"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("seguros")
-        .select("*");
+      const { data, error } = await supabase.from("seguros").select("*");
 
       if (error) {
         console.error("Erro ao carregar seguros:", error);
@@ -319,7 +345,6 @@ function BotaoSeguro() {
     refetch();
   }
 
-
   const segurosVencidos = useMemo(() => {
     if (!seguros) return [];
     return seguros.filter((item: any) => {
@@ -346,9 +371,10 @@ function BotaoSeguro() {
       .map((item: any) => {
         const dataVal = item.vencimento || item.data_vencimento || item.vencimento_seguro;
         const diasRestantes = dataVal ? calcularDiasVencimento(dataVal) : null;
-        
+
         const isVencido = diasRestantes !== null && diasRestantes < 0;
-        const isVencendoEmBreve = diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 30;
+        const isVencendoEmBreve =
+          diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 30;
 
         return {
           ...item,
@@ -370,14 +396,21 @@ function BotaoSeguro() {
     if (!f) return todosComStatus;
     return todosComStatus.filter((item: any) =>
       Object.values(item).some((val) =>
-        String(val ?? "").toLowerCase().includes(f)
-      )
+        String(val ?? "")
+          .toLowerCase()
+          .includes(f),
+      ),
     );
   }, [todosComStatus, filtro]);
 
   return (
     <>
-      <Button size="sm" variant="outline" className="h-9 relative bg-white hover:bg-slate-100 text-slate-900 border-slate-300 gap-1.5" onClick={() => setOpen(true)}>
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-9 relative bg-white hover:bg-slate-100 text-slate-900 border-slate-300 gap-1.5"
+        onClick={() => setOpen(true)}
+      >
         <ShieldCheck className="w-4 h-4 text-slate-900" />
         <span>Seguro</span>
         {segurosVencidos.length > 0 ? (
@@ -408,7 +441,8 @@ function BotaoSeguro() {
                 <div>
                   <p className="font-semibold">Atenção aos Vencimentos!</p>
                   <p className="text-[11px] text-amber-800">
-                    Existe(m) <strong>{segurosComAlerta.length}</strong> seguro(s) vencido(s) ou que vence(m) nos próximos 30 dias.
+                    Existe(m) <strong>{segurosComAlerta.length}</strong> seguro(s) vencido(s) ou que
+                    vence(m) nos próximos 30 dias.
                   </p>
                 </div>
               </div>
@@ -458,7 +492,6 @@ function BotaoSeguro() {
               </div>
             </div>
 
-
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <Input
@@ -472,9 +505,7 @@ function BotaoSeguro() {
             {isLoading ? (
               <p className="text-xs text-slate-500 text-center py-4">Carregando dados...</p>
             ) : listaFiltrada.length === 0 ? (
-              <p className="text-xs text-slate-500 text-center py-4">
-                Nenhum seguro encontrado.
-              </p>
+              <p className="text-xs text-slate-500 text-center py-4">Nenhum seguro encontrado.</p>
             ) : (
               <div className="space-y-2">
                 {listaFiltrada.map((item: any, idx: number) => {
@@ -489,7 +520,8 @@ function BotaoSeguro() {
                   } else if (item.isVencendoEmBreve) {
                     bgCard = "bg-amber-50 border-amber-200";
                     badgeStyle = { backgroundColor: "#f59e0b", color: "#ffffff" };
-                    badgeText = item.diasRestantes === 0 ? "Hoje" : `Vence em ${item.diasRestantes}d`;
+                    badgeText =
+                      item.diasRestantes === 0 ? "Hoje" : `Vence em ${item.diasRestantes}d`;
                   }
 
                   return (
@@ -500,7 +532,10 @@ function BotaoSeguro() {
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-bold text-slate-900">
-                            {item.equipamento || item.numero || item.veiculo_equipamento || "Equipamento"}
+                            {item.equipamento ||
+                              item.numero ||
+                              item.veiculo_equipamento ||
+                              "Equipamento"}
                           </p>
                           <span
                             className="text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm inline-block"
@@ -547,7 +582,6 @@ function BotaoSeguro() {
                           <Trash2 className="w-3.5 h-3.5 text-red-600" />
                         </Button>
                       </div>
-
                     </div>
                   );
                 })}
@@ -563,7 +597,13 @@ function BotaoSeguro() {
 // ----------------------------------------------------
 // COMPONENTE: MODAL DE PENDÊNCIAS DE MANUTENÇÃO POR EQUIPAMENTO
 // ----------------------------------------------------
-function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamentoId: string; numeroEquipamento: string }) {
+function BotaoPendenciasCard({
+  equipamentoId,
+  numeroEquipamento,
+}: {
+  equipamentoId: string;
+  numeroEquipamento: string;
+}) {
   const [open, setOpen] = useState(false);
   const [novaDescricao, setNovaDescricao] = useState("");
   const [executadoPor, setExecutadoPor] = useState("");
@@ -663,7 +703,7 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
     }
 
     let texto = `📋 *RELATÓRIO DE PENDÊNCIAS — EQUIPAMENTO: ${numeroEquipamento}*\n\n`;
-    
+
     pendencias.forEach((p: any, index: number) => {
       texto += `${index + 1}. *${p.descricao}*\n`;
       texto += `   • Status: ${p.status || "PENDENTE"}\n`;
@@ -714,7 +754,7 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
                     Data: ${new Date(p.created_at).toLocaleString("pt-BR")}
                   </div>
                 </div>
-              `
+              `,
                   )
                   .join("")
           }
@@ -736,8 +776,8 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
       <Button
         size="sm"
         className={`h-7 px-2.5 text-[11px] gap-1 font-bold shadow-sm transition-all border ${
-          temPendenciasAbertas 
-            ? "text-white border-red-700 animate-pulse" 
+          temPendenciasAbertas
+            ? "text-white border-red-700 animate-pulse"
             : "text-slate-700 border-slate-300 hover:bg-slate-200"
         }`}
         style={
@@ -750,8 +790,12 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
           setOpen(true);
         }}
       >
-        <AlertCircle className={`w-3.5 h-3.5 ${temPendenciasAbertas ? "text-white animate-bounce" : "text-slate-500"}`} />
-        <span>{temPendenciasAbertas ? `Pendências (${pendenciasAbertas.length})` : "Pendências"}</span>
+        <AlertCircle
+          className={`w-3.5 h-3.5 ${temPendenciasAbertas ? "text-white animate-bounce" : "text-slate-500"}`}
+        />
+        <span>
+          {temPendenciasAbertas ? `Pendências (${pendenciasAbertas.length})` : "Pendências"}
+        </span>
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -789,7 +833,10 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
           </DialogHeader>
 
           <div className="p-4 max-h-[75vh] overflow-y-auto space-y-4 bg-white">
-            <form onSubmit={handleSalvar} className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+            <form
+              onSubmit={handleSalvar}
+              className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3"
+            >
               <p className="text-xs font-bold text-slate-800">Registrar Nova Pendência</p>
               <Textarea
                 placeholder="Descreva a pendência ou manutenção necessária..."
@@ -805,21 +852,30 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
                   onChange={(e) => setExecutadoPor(e.target.value)}
                   className="text-xs h-8 bg-white border-slate-300 flex-1 text-slate-900"
                 />
-                <Button type="submit" size="sm" className="h-8 bg-blue-600 hover:bg-blue-700 text-xs text-white">
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="h-8 bg-blue-600 hover:bg-blue-700 text-xs text-white"
+                >
                   Salvar
                 </Button>
               </div>
             </form>
 
             <div className="space-y-2">
-              <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Histórico de Pendências</p>
+              <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Histórico de Pendências
+              </p>
               {pendencias.length === 0 ? (
                 <p className="text-xs text-slate-500 text-center py-6 bg-slate-50 rounded-lg border border-dashed border-slate-200">
                   Nenhuma pendência registrada para este equipamento.
                 </p>
               ) : (
                 pendencias.map((item: any) => (
-                  <div key={item.id} className="p-3 rounded-lg border border-slate-200 bg-white shadow-sm space-y-2 text-xs">
+                  <div
+                    key={item.id}
+                    className="p-3 rounded-lg border border-slate-200 bg-white shadow-sm space-y-2 text-xs"
+                  >
                     {editandoId === item.id ? (
                       <div className="space-y-2">
                         <Textarea
@@ -834,10 +890,19 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
                           className="text-xs h-8 bg-white border-slate-300 text-slate-900"
                         />
                         <div className="flex justify-end gap-2">
-                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditandoId(null)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            onClick={() => setEditandoId(null)}
+                          >
                             Cancelar
                           </Button>
-                          <Button size="sm" className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleAtualizar(item.id)}>
+                          <Button
+                            size="sm"
+                            className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                            onClick={() => handleAtualizar(item.id)}
+                          >
                             Atualizar
                           </Button>
                         </div>
@@ -848,7 +913,9 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
                           <p className="font-semibold text-slate-900 flex-1">{item.descricao}</p>
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              item.status === "CONCLUIDO" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
+                              item.status === "CONCLUIDO"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-red-100 text-red-800"
                             }`}
                           >
                             {item.status || "PENDENTE"}
@@ -856,9 +923,17 @@ function BotaoPendenciasCard({ equipamentoId, numeroEquipamento }: { equipamento
                         </div>
 
                         <div className="text-[11px] text-slate-500 space-y-0.5 border-t border-slate-100 pt-1.5">
-                          <p>👤 <strong>Registrado por:</strong> {item.registrado_por || "Não informado"}</p>
-                          <p>🛠️ <strong>Executado por:</strong> {item.executado_por || "Pendente de execução"}</p>
-                          <p className="text-[10px] text-slate-400">📅 {new Date(item.created_at).toLocaleString("pt-BR")}</p>
+                          <p>
+                            👤 <strong>Registrado por:</strong>{" "}
+                            {item.registrado_por || "Não informado"}
+                          </p>
+                          <p>
+                            🛠️ <strong>Executado por:</strong>{" "}
+                            {item.executado_por || "Pendente de execução"}
+                          </p>
+                          <p className="text-[10px] text-slate-400">
+                            📅 {new Date(item.created_at).toLocaleString("pt-BR")}
+                          </p>
                         </div>
 
                         <div className="flex justify-end gap-2 pt-1 border-t border-slate-100">
@@ -912,7 +987,7 @@ function EquipamentosList() {
       const { data, error } = await supabase
         .from("equipamentos")
         .select(
-          "id, numero, identificacao, placa, localizacao, operador_contato, horimetro_atual, h_revisao, limite_revisao, proxima_revisao_horimetro, data_horimetro_atual, status, cl, cover_storage_path"
+          "id, numero, identificacao, placa, localizacao, operador_contato, horimetro_atual, h_revisao, limite_revisao, proxima_revisao_horimetro, data_horimetro_atual, status, cl, cover_storage_path",
         )
         .order("numero", { ascending: true });
 
@@ -1000,7 +1075,6 @@ function EquipamentosList() {
     <div className="p-3 md:p-6 max-w-7xl mx-auto w-full space-y-3 md:space-y-4">
       {/* Header & Filtros */}
       <div className="sticky top-0 md:top-[76px] z-20 p-2.5 md:p-3 bg-white/95 backdrop-blur-md rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-2 md:gap-3 md:items-center justify-between">
-
         <div className="relative w-full md:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
@@ -1022,7 +1096,9 @@ function EquipamentosList() {
             <SelectContent>
               <SelectItem value="__all">Todas as CL</SelectItem>
               {clOptions.map((c) => (
-                <SelectItem key={c} value={c}>CL {c}</SelectItem>
+                <SelectItem key={c} value={c}>
+                  CL {c}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -1101,7 +1177,9 @@ function EquipamentosList() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1">
                       <div className="flex min-w-0 items-center gap-1.5 flex-wrap">
-                        <span className={`font-bold text-sm truncate max-w-[10rem] ${overdue ? "text-red-900" : "text-slate-800"}`}>
+                        <span
+                          className={`font-bold text-sm truncate max-w-[10rem] ${overdue ? "text-red-900" : "text-slate-800"}`}
+                        >
                           {e.numero}
                         </span>
                         {e.cl && (
@@ -1155,12 +1233,16 @@ function EquipamentosList() {
                     </div>
 
                     {e.identificacao && (
-                      <p className={`text-xs mt-0.5 truncate ${overdue ? "text-red-800" : "text-slate-500"}`}>
+                      <p
+                        className={`text-xs mt-0.5 truncate ${overdue ? "text-red-800" : "text-slate-500"}`}
+                      >
                         {e.identificacao}
                       </p>
                     )}
 
-                    <div className={`flex items-center gap-2 mt-1 text-[11px] font-mono ${overdue ? "text-red-700" : "text-slate-500"}`}>
+                    <div
+                      className={`flex items-center gap-2 mt-1 text-[11px] font-mono ${overdue ? "text-red-700" : "text-slate-500"}`}
+                    >
                       {e.placa && <span>{e.placa}</span>}
                       {e.localizacao && <span>• {e.localizacao}</span>}
                     </div>
@@ -1209,7 +1291,9 @@ function EquipamentosList() {
                         }}
                       />
                     </div>
-                    <span className={`text-xs font-bold font-mono ${overdue ? "text-red-800" : "text-slate-700"}`}>
+                    <span
+                      className={`text-xs font-bold font-mono ${overdue ? "text-red-800" : "text-slate-700"}`}
+                    >
                       {e.horimetro_atual ?? 0}h
                     </span>
                   </div>

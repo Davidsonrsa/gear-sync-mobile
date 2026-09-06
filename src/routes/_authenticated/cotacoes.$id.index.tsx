@@ -30,8 +30,7 @@ export const Route = createFileRoute("/_authenticated/cotacoes/$id/")({
   component: DetalheCotacaoPage,
 });
 
-const brl = (v: number) =>
-  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const formatarData = (dataStr?: string | null) => {
   if (!dataStr) return "—";
@@ -110,7 +109,8 @@ export default function DetalheCotacaoPage() {
   const [isVincularFornecedorOpen, setIsVincularFornecedorOpen] = useState(false);
   const [isPrecosOpen, setIsPrecosOpen] = useState(false);
   const [isOrcamentoOpen, setIsOrcamentoOpen] = useState(false);
-  const [fornecedorOrcamentoAtivo, setFornecedorOrcamentoAtivo] = useState<CotacaoFornecedor | null>(null);
+  const [fornecedorOrcamentoAtivo, setFornecedorOrcamentoAtivo] =
+    useState<CotacaoFornecedor | null>(null);
 
   // Form Item
   const [codigoItem, setCodigoItem] = useState("");
@@ -123,14 +123,18 @@ export default function DetalheCotacaoPage() {
 
   // Inserção/Edição de Preços
   const [fornecedorPrecoAtivo, setFornecedorPrecoAtivo] = useState<CotacaoFornecedor | null>(null);
-  const [precosTemp, setPrecosTemp] = useState<{ [itemId: string]: { preco: string; marca: string } }>({});
+  const [precosTemp, setPrecosTemp] = useState<{
+    [itemId: string]: { preco: string; marca: string };
+  }>({});
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
 
       // Buscar usuário logado atual
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) {
         // Tenta buscar nome do perfil se houver tabela profiles, senão pega do metadata ou email
         const { data: profile } = await supabase
@@ -138,7 +142,7 @@ export default function DetalheCotacaoPage() {
           .select("full_name")
           .eq("id", user.id)
           .single();
-        
+
         if (profile?.full_name) {
           setUsuarioNome(profile.full_name);
         } else if (user.user_metadata?.name) {
@@ -164,18 +168,18 @@ export default function DetalheCotacaoPage() {
           return Number.isNaN(numero) ? maior : Math.max(maior, numero);
         }, 0);
         setNovaNumero(String(maiorNumero + 1).padStart(4, "0"));
-        
+
         const { data: allForn, error: allFornErr } = await supabase
           .from("fornecedores")
           .select("*")
           .order("razao_social", { ascending: true });
         if (allFornErr) throw allFornErr;
         setTodosFornecedores(allForn || []);
-        
+
         setLoading(false);
         return;
       }
-      
+
       const { data: cotData, error: cotErr } = await supabase
         .from("cotacoes")
         .select("*")
@@ -227,7 +231,7 @@ export default function DetalheCotacaoPage() {
   async function handleCriarCotacao(e: React.FormEvent) {
     e.preventDefault();
     if (!novaNumero.trim()) return toast.error("Informe o número da cotação.");
-    
+
     try {
       setSaving(true);
       const { data, error } = await supabase
@@ -240,8 +244,8 @@ export default function DetalheCotacaoPage() {
             data_cotacao: novaData || new Date().toISOString().split("T")[0],
             observacoes: novaObs.trim() || null,
             status: "RASCUNHO",
-            valor_total: 0
-          }
+            valor_total: 0,
+          },
         ])
         .select()
         .single();
@@ -258,7 +262,14 @@ export default function DetalheCotacaoPage() {
   }
 
   const { menoresPrecosPorItem, valorTotalOtimo } = useMemo(() => {
-    const menoresMap: { [itemId: string]: { menorTotal: number; menorUnitario: number; fornecedorNome: string; marca: string } } = {};
+    const menoresMap: {
+      [itemId: string]: {
+        menorTotal: number;
+        menorUnitario: number;
+        fornecedorNome: string;
+        marca: string;
+      };
+    } = {};
     let totalOtimo = 0;
 
     itens.forEach((item) => {
@@ -270,14 +281,16 @@ export default function DetalheCotacaoPage() {
       fornecedoresCotacao.forEach((fc) => {
         const fornId = fc.fornecedor_id || (fc as any).fornecedores?.id;
         const resp = respostas.find(
-          (r) => String(r.fornecedor_id).trim() === String(fornId).trim() && 
-                 String(r.cotacao_item_id).trim() === String(item.id).trim()
+          (r) =>
+            String(r.fornecedor_id).trim() === String(fornId).trim() &&
+            String(r.cotacao_item_id).trim() === String(item.id).trim(),
         );
-        
-        if (resp && typeof resp.preco === 'number' && resp.preco > 0) {
+
+        if (resp && typeof resp.preco === "number" && resp.preco > 0) {
           if (menorUnit === null || resp.preco < menorUnit) {
             menorUnit = resp.preco;
-            fornNome = fc.fornecedores?.nome_fantasia || fc.fornecedores?.razao_social || "Fornecedor";
+            fornNome =
+              fc.fornecedores?.nome_fantasia || fc.fornecedores?.razao_social || "Fornecedor";
             marcaStr = resp.marca || "—";
           }
         }
@@ -285,11 +298,11 @@ export default function DetalheCotacaoPage() {
 
       if (menorUnit !== null) {
         const subtotalItem = menorUnit * qtd;
-        menoresMap[item.id] = { 
-          menorTotal: subtotalItem, 
-          menorUnitario: menorUnit, 
-          fornecedorNome: fornNome, 
-          marca: marcaStr 
+        menoresMap[item.id] = {
+          menorTotal: subtotalItem,
+          menorUnitario: menorUnit,
+          fornecedorNome: fornNome,
+          marca: marcaStr,
         };
         totalOtimo += subtotalItem;
       }
@@ -304,9 +317,9 @@ export default function DetalheCotacaoPage() {
       try {
         await supabase
           .from("cotacoes")
-          .update({ 
+          .update({
             valor_total: valorTotalOtimo,
-            status: valorTotalOtimo > 0 ? "FINALIZADA" : "RASCUNHO"
+            status: valorTotalOtimo > 0 ? "FINALIZADA" : "RASCUNHO",
           })
           .eq("id", id);
       } catch (e) {
@@ -386,8 +399,16 @@ export default function DetalheCotacaoPage() {
   async function handleRemoverFornecedor(fornecedorId: string) {
     if (!confirm("Remover fornecedor desta cotação e seus preços?")) return;
     try {
-      await supabase.from("cotacao_respostas").delete().eq("cotacao_id", id).eq("fornecedor_id", fornecedorId);
-      await supabase.from("cotacao_fornecedores").delete().eq("cotacao_id", id).eq("fornecedor_id", fornecedorId);
+      await supabase
+        .from("cotacao_respostas")
+        .delete()
+        .eq("cotacao_id", id)
+        .eq("fornecedor_id", fornecedorId);
+      await supabase
+        .from("cotacao_fornecedores")
+        .delete()
+        .eq("cotacao_id", id)
+        .eq("fornecedor_id", fornecedorId);
       toast.success("Fornecedor removido.");
       fetchData();
     } catch (error: unknown) {
@@ -400,11 +421,12 @@ export default function DetalheCotacaoPage() {
     setFornecedorPrecoAtivo(fc);
     const map: { [itemId: string]: { preco: string; marca: string } } = {};
     const fornId = fc.fornecedor_id || (fc as any).fornecedores?.id;
-    
+
     itens.forEach((item) => {
       const resp = respostas.find(
-        (r) => String(r.fornecedor_id).trim() === String(fornId).trim() && 
-               String(r.cotacao_item_id).trim() === String(item.id).trim()
+        (r) =>
+          String(r.fornecedor_id).trim() === String(fornId).trim() &&
+          String(r.cotacao_item_id).trim() === String(item.id).trim(),
       );
       map[item.id] = {
         preco: resp && resp.preco !== null && resp.preco !== undefined ? resp.preco.toString() : "",
@@ -421,14 +443,17 @@ export default function DetalheCotacaoPage() {
   }
 
   function gerarTextoOrcamento() {
-    const fornNome = fornecedorOrcamentoAtivo?.fornecedores?.nome_fantasia || fornecedorOrcamentoAtivo?.fornecedores?.razao_social || "Prezado Fornecedor";
+    const fornNome =
+      fornecedorOrcamentoAtivo?.fornecedores?.nome_fantasia ||
+      fornecedorOrcamentoAtivo?.fornecedores?.razao_social ||
+      "Prezado Fornecedor";
     let texto = `*SOLICITAÇÃO DE ORÇAMENTO - COTAÇÃO Nº ${cotacao?.numero}*\n`;
     texto += `*Fornecedor:* ${fornNome}\n`;
     texto += `*Solicitante:* ${usuarioNome}\n`;
     texto += `*Equipamento/Patrimônio:* ${cotacao?.patrimonio || "—"}\n`;
     texto += `*Setor:* ${cotacao?.setor || "—"} | *Data:* ${formatarData(cotacao?.data_cotacao)}\n\n`;
     texto += `*ITENS SOLICITADOS:*\n`;
-    
+
     itens.forEach((item, index) => {
       texto += `${index + 1}. *${item.descricao}* (Cód: ${item.codigo || "N/D"}) - Qtd: ${item.quantidade} ${item.unidade}\n`;
     });
@@ -443,7 +468,9 @@ export default function DetalheCotacaoPage() {
   function enviarPorWhatsApp() {
     const telefone = fornecedorOrcamentoAtivo?.fornecedores?.telefone?.replace(/\D/g, "") || "";
     const texto = encodeURIComponent(gerarTextoOrcamento());
-    const url = telefone ? `https://wa.me/55${telefone}?text=${texto}` : `https://wa.me/?text=${texto}`;
+    const url = telefone
+      ? `https://wa.me/55${telefone}?text=${texto}`
+      : `https://wa.me/?text=${texto}`;
     window.open(url, "_blank");
   }
 
@@ -460,7 +487,8 @@ export default function DetalheCotacaoPage() {
     if (!fornecedorPrecoAtivo) return;
     try {
       setSaving(true);
-      const fornecedorIdReal = fornecedorPrecoAtivo.fornecedor_id || (fornecedorPrecoAtivo as any).fornecedores?.id;
+      const fornecedorIdReal =
+        fornecedorPrecoAtivo.fornecedor_id || (fornecedorPrecoAtivo as any).fornecedores?.id;
 
       for (const item of itens) {
         const dados = precosTemp[item.id];
@@ -469,8 +497,9 @@ export default function DetalheCotacaoPage() {
         const marcaStr = dados ? dados.marca : null;
 
         const existente = respostas.find(
-          (r) => String(r.fornecedor_id).trim() === String(fornecedorIdReal).trim() && 
-                 String(r.cotacao_item_id).trim() === String(item.id).trim()
+          (r) =>
+            String(r.fornecedor_id).trim() === String(fornecedorIdReal).trim() &&
+            String(r.cotacao_item_id).trim() === String(item.id).trim(),
         );
 
         if (existente) {
@@ -483,13 +512,15 @@ export default function DetalheCotacaoPage() {
             await supabase.from("cotacao_respostas").delete().eq("id", existente.id);
           }
         } else if (!isNaN(precoNum) && precoNum > 0) {
-          await supabase.from("cotacao_respostas").insert([{
-            cotacao_id: id,
-            fornecedor_id: fornecedorIdReal,
-            cotacao_item_id: item.id,
-            preco: precoNum,
-            marca: marcaStr,
-          }]);
+          await supabase.from("cotacao_respostas").insert([
+            {
+              cotacao_id: id,
+              fornecedor_id: fornecedorIdReal,
+              cotacao_item_id: item.id,
+              preco: precoNum,
+              marca: marcaStr,
+            },
+          ]);
         }
       }
 
@@ -536,7 +567,9 @@ export default function DetalheCotacaoPage() {
             </div>
 
             <div>
-              <Label className="text-xs font-semibold text-slate-700">Patrimônio / Equipamento</Label>
+              <Label className="text-xs font-semibold text-slate-700">
+                Patrimônio / Equipamento
+              </Label>
               <Input
                 placeholder="Ex: RE50- VIDRO"
                 value={novaPatrimonio}
@@ -579,7 +612,11 @@ export default function DetalheCotacaoPage() {
               <Button type="button" variant="outline" onClick={() => navigate({ to: "/cotacoes" })}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Button
+                type="submit"
+                disabled={saving}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Avançar para Adicionar Itens
               </Button>
@@ -599,7 +636,10 @@ export default function DetalheCotacaoPage() {
           <ArrowLeft className="w-4 h-4" /> Voltar às Cotações
         </Button>
         <div className="flex gap-2">
-          <Button onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-900 text-white gap-2">
+          <Button
+            onClick={() => window.print()}
+            className="bg-slate-800 hover:bg-slate-900 text-white gap-2"
+          >
             <Printer className="w-4 h-4" /> Imprimir Comparativo
           </Button>
         </div>
@@ -615,22 +655,34 @@ export default function DetalheCotacaoPage() {
               Patrimônio / Equipamento: {cotacao.patrimonio || "Não informado"}
             </h1>
             <p className="text-sm text-slate-600 mt-1">
-              Setor: {cotacao.setor || "—"} | Data: {formatarData(cotacao.data_cotacao)} | <strong>Solicitante:</strong> {usuarioNome}
+              Setor: {cotacao.setor || "—"} | Data: {formatarData(cotacao.data_cotacao)} |{" "}
+              <strong>Solicitante:</strong> {usuarioNome}
             </p>
-            {cotacao.observacoes && <p className="text-xs text-slate-500 mt-2">Obs: {cotacao.observacoes}</p>}
+            {cotacao.observacoes && (
+              <p className="text-xs text-slate-500 mt-2">Obs: {cotacao.observacoes}</p>
+            )}
           </div>
           <div className="text-right print:hidden">
-            <span className="block text-xs text-slate-500">Valor Total Otimizado (Menores Preços):</span>
+            <span className="block text-xs text-slate-500">
+              Valor Total Otimizado (Menores Preços):
+            </span>
             <span className="text-2xl font-extrabold text-green-600">{brl(valorTotalOtimo)}</span>
           </div>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-3 print:hidden">
-        <Button onClick={() => setIsNovoItemOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+        <Button
+          onClick={() => setIsNovoItemOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+        >
           <Plus className="w-4 h-4" /> Adicionar Item / Peça
         </Button>
-        <Button onClick={() => setIsVincularFornecedorOpen(true)} variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50 gap-2">
+        <Button
+          onClick={() => setIsVincularFornecedorOpen(true)}
+          variant="outline"
+          className="border-blue-600 text-blue-600 hover:bg-blue-50 gap-2"
+        >
           <Plus className="w-4 h-4" /> Vincular Fornecedor
         </Button>
       </div>
@@ -652,17 +704,33 @@ export default function DetalheCotacaoPage() {
                   const fornId = fc.fornecedor_id || (fc as any).fornecedores?.id;
                   return (
                     <th key={fornId} className="p-3 border-b text-right">
-                      <div className="font-bold">{fc.fornecedores?.nome_fantasia || fc.fornecedores?.razao_social || "Fornecedor"}</div>
+                      <div className="font-bold">
+                        {fc.fornecedores?.nome_fantasia ||
+                          fc.fornecedores?.razao_social ||
+                          "Fornecedor"}
+                      </div>
                       <div className="text-[10px] text-slate-500 print:hidden flex justify-end gap-1 mt-1">
-                        <button type="button" onClick={() => abrirModalOrcamento(fc)} className="text-emerald-700 hover:underline font-semibold">
+                        <button
+                          type="button"
+                          onClick={() => abrirModalOrcamento(fc)}
+                          className="text-emerald-700 hover:underline font-semibold"
+                        >
                           Orçamento
                         </button>
                         <span>|</span>
-                        <button type="button" onClick={() => abrirModalPrecos(fc)} className="text-blue-600 hover:underline">
+                        <button
+                          type="button"
+                          onClick={() => abrirModalPrecos(fc)}
+                          className="text-blue-600 hover:underline"
+                        >
                           Editar Preços
                         </button>
                         <span>|</span>
-                        <button type="button" onClick={() => handleRemoverFornecedor(fornId)} className="text-red-600 hover:underline">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoverFornecedor(fornId)}
+                          className="text-red-600 hover:underline"
+                        >
                           Excluir
                         </button>
                       </div>
@@ -678,7 +746,10 @@ export default function DetalheCotacaoPage() {
             <tbody>
               {itens.length === 0 ? (
                 <tr>
-                  <td colSpan={6 + fornecedoresCotacao.length} className="p-6 text-center text-slate-500">
+                  <td
+                    colSpan={6 + fornecedoresCotacao.length}
+                    className="p-6 text-center text-slate-500"
+                  >
                     Nenhum item cadastrado nesta cotação.
                   </td>
                 </tr>
@@ -695,8 +766,9 @@ export default function DetalheCotacaoPage() {
                       {fornecedoresCotacao.map((fc) => {
                         const fornId = fc.fornecedor_id || (fc as any).fornecedores?.id;
                         const resp = respostas.find(
-                          (r) => String(r.fornecedor_id).trim() === String(fornId).trim() && 
-                                 String(r.cotacao_item_id).trim() === String(item.id).trim()
+                          (r) =>
+                            String(r.fornecedor_id).trim() === String(fornId).trim() &&
+                            String(r.cotacao_item_id).trim() === String(item.id).trim(),
                         );
                         const precoResp = resp?.preco ?? 0;
                         const subtotalForn = precoResp > 0 ? precoResp * (item.quantidade || 1) : 0;
@@ -710,7 +782,9 @@ export default function DetalheCotacaoPage() {
                             {subtotalForn > 0 ? (
                               <div>
                                 <div>{brl(subtotalForn)}</div>
-                                <div className="text-[10px] text-slate-500 font-normal">Unit: {brl(precoResp)} {resp?.marca ? `(${resp.marca})` : ""}</div>
+                                <div className="text-[10px] text-slate-500 font-normal">
+                                  Unit: {brl(precoResp)} {resp?.marca ? `(${resp.marca})` : ""}
+                                </div>
                               </div>
                             ) : (
                               <span className="text-slate-300">—</span>
@@ -727,7 +801,8 @@ export default function DetalheCotacaoPage() {
                               {brl(menorInfo.menorTotal)}
                             </div>
                             <div className="text-[10px] text-slate-600 font-normal">
-                              {menorInfo.fornecedorNome} {menorInfo.marca !== "—" ? `(${menorInfo.marca})` : ""}
+                              {menorInfo.fornecedorNome}{" "}
+                              {menorInfo.marca !== "—" ? `(${menorInfo.marca})` : ""}
                             </div>
                           </div>
                         ) : (
@@ -736,7 +811,12 @@ export default function DetalheCotacaoPage() {
                       </td>
 
                       <td className="p-3 text-center print:hidden">
-                        <Button size="sm" variant="ghost" onClick={() => handleDeleteItem(item.id)} className="text-red-600 h-8 w-8 p-0">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteItem(item.id)}
+                          className="text-red-600 h-8 w-8 p-0"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </td>
@@ -747,14 +827,17 @@ export default function DetalheCotacaoPage() {
             </tbody>
             <tfoot className="bg-slate-100 font-bold text-slate-800">
               <tr>
-                <td colSpan={4} className="p-3 text-right">VALOR TOTAL:</td>
+                <td colSpan={4} className="p-3 text-right">
+                  VALOR TOTAL:
+                </td>
                 {fornecedoresCotacao.map((fc) => {
                   const fornId = fc.fornecedor_id || (fc as any).fornecedores?.id;
                   let totalForn = 0;
                   itens.forEach((item) => {
                     const resp = respostas.find(
-                      (r) => String(r.fornecedor_id).trim() === String(fornId).trim() && 
-                             String(r.cotacao_item_id).trim() === String(item.id).trim()
+                      (r) =>
+                        String(r.fornecedor_id).trim() === String(fornId).trim() &&
+                        String(r.cotacao_item_id).trim() === String(item.id).trim(),
                     );
                     if (resp && (resp.preco ?? 0) > 0) {
                       totalForn += (resp.preco ?? 0) * (item.quantidade || 1);
@@ -802,29 +885,49 @@ export default function DetalheCotacaoPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-blue-600" />
-              Solicitação de Orçamento - {fornecedorOrcamentoAtivo?.fornecedores?.nome_fantasia || fornecedorOrcamentoAtivo?.fornecedores?.razao_social}
+              Solicitação de Orçamento -{" "}
+              {fornecedorOrcamentoAtivo?.fornecedores?.nome_fantasia ||
+                fornecedorOrcamentoAtivo?.fornecedores?.razao_social}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs space-y-1">
-              <p><strong>Cotação Nº:</strong> {cotacao.numero}</p>
-              <p><strong>Equipamento / Patrimônio:</strong> {cotacao.patrimonio || "—"}</p>
-              <p><strong>Setor:</strong> {cotacao.setor || "—"} | <strong>Data:</strong> {formatarData(cotacao.data_cotacao)}</p>
-              <p><strong>Solicitante:</strong> <span className="text-blue-700 font-bold">{usuarioNome}</span></p>
+              <p>
+                <strong>Cotação Nº:</strong> {cotacao.numero}
+              </p>
+              <p>
+                <strong>Equipamento / Patrimônio:</strong> {cotacao.patrimonio || "—"}
+              </p>
+              <p>
+                <strong>Setor:</strong> {cotacao.setor || "—"} | <strong>Data:</strong>{" "}
+                {formatarData(cotacao.data_cotacao)}
+              </p>
+              <p>
+                <strong>Solicitante:</strong>{" "}
+                <span className="text-blue-700 font-bold">{usuarioNome}</span>
+              </p>
               {fornecedorOrcamentoAtivo?.fornecedores?.cnpj && (
-                <p><strong>CNPJ Fornecedor:</strong> {fornecedorOrcamentoAtivo.fornecedores.cnpj}</p>
+                <p>
+                  <strong>CNPJ Fornecedor:</strong> {fornecedorOrcamentoAtivo.fornecedores.cnpj}
+                </p>
               )}
               {fornecedorOrcamentoAtivo?.fornecedores?.telefone && (
-                <p><strong>Telefone:</strong> {fornecedorOrcamentoAtivo.fornecedores.telefone}</p>
+                <p>
+                  <strong>Telefone:</strong> {fornecedorOrcamentoAtivo.fornecedores.telefone}
+                </p>
               )}
               {fornecedorOrcamentoAtivo?.fornecedores?.email && (
-                <p><strong>E-mail:</strong> {fornecedorOrcamentoAtivo.fornecedores.email}</p>
+                <p>
+                  <strong>E-mail:</strong> {fornecedorOrcamentoAtivo.fornecedores.email}
+                </p>
               )}
             </div>
 
             <div>
-              <h4 className="text-xs font-bold uppercase text-slate-700 mb-2">Itens solicitados para cotação:</h4>
+              <h4 className="text-xs font-bold uppercase text-slate-700 mb-2">
+                Itens solicitados para cotação:
+              </h4>
               <div className="border border-slate-200 rounded-lg overflow-hidden">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-100 text-slate-700">
@@ -860,18 +963,36 @@ export default function DetalheCotacaoPage() {
 
           <DialogFooter className="flex flex-wrap gap-2 justify-between items-center pt-2 border-t">
             <div className="flex gap-2">
-              <Button type="button" onClick={enviarPorWhatsApp} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 text-xs">
+              <Button
+                type="button"
+                onClick={enviarPorWhatsApp}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 text-xs"
+              >
                 <MessageCircle className="w-4 h-4" /> Enviar por WhatsApp
               </Button>
-              <Button type="button" onClick={enviarPorEmail} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 text-xs">
+              <Button
+                type="button"
+                onClick={enviarPorEmail}
+                className="bg-blue-600 hover:bg-blue-700 text-white gap-2 text-xs"
+              >
                 <Mail className="w-4 h-4" /> Enviar por E-mail
               </Button>
             </div>
             <div className="flex gap-2">
-              <Button type="button" onClick={() => window.print()} variant="outline" className="gap-2 text-xs">
+              <Button
+                type="button"
+                onClick={() => window.print()}
+                variant="outline"
+                className="gap-2 text-xs"
+              >
                 <Printer className="w-4 h-4" /> Imprimir PDF
               </Button>
-              <Button type="button" variant="ghost" onClick={() => setIsOrcamentoOpen(false)} className="text-xs">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsOrcamentoOpen(false)}
+                className="text-xs"
+              >
                 Fechar
               </Button>
             </div>
@@ -882,29 +1003,60 @@ export default function DetalheCotacaoPage() {
       {/* MODAIS DE ITEM, FORNECEDOR E PREÇOS */}
       <Dialog open={isNovoItemOpen} onOpenChange={setIsNovoItemOpen}>
         <DialogContent className="sm:max-w-md bg-white">
-          <DialogHeader><DialogTitle>Adicionar Item / Peça</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Adicionar Item / Peça</DialogTitle>
+          </DialogHeader>
           <form onSubmit={handleAddItem} className="space-y-4 mt-2">
             <div>
-              <Label className="text-xs font-semibold text-slate-700">Código do Produto / Peça</Label>
-              <Input value={codigoItem} onChange={(e) => setCodigoItem(e.target.value)} placeholder="Ex: FIL-01" className="mt-1" />
+              <Label className="text-xs font-semibold text-slate-700">
+                Código do Produto / Peça
+              </Label>
+              <Input
+                value={codigoItem}
+                onChange={(e) => setCodigoItem(e.target.value)}
+                placeholder="Ex: FIL-01"
+                className="mt-1"
+              />
             </div>
             <div>
               <Label className="text-xs font-semibold text-slate-700">Descrição *</Label>
-              <Input value={descricaoItem} onChange={(e) => setDescricaoItem(e.target.value)} placeholder="Ex: Filtro de Óleo" required className="mt-1" />
+              <Input
+                value={descricaoItem}
+                onChange={(e) => setDescricaoItem(e.target.value)}
+                placeholder="Ex: Filtro de Óleo"
+                required
+                className="mt-1"
+              />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-xs font-semibold text-slate-700">Quantidade</Label>
-                <Input type="number" step="any" value={quantidadeItem} onChange={(e) => setQuantidadeItem(e.target.value)} required className="mt-1" />
+                <Input
+                  type="number"
+                  step="any"
+                  value={quantidadeItem}
+                  onChange={(e) => setQuantidadeItem(e.target.value)}
+                  required
+                  className="mt-1"
+                />
               </div>
               <div>
                 <Label className="text-xs font-semibold text-slate-700">Unidade</Label>
-                <Input value={unidadeItem} onChange={(e) => setUnidadeItem(e.target.value)} required className="mt-1" />
+                <Input
+                  value={unidadeItem}
+                  onChange={(e) => setUnidadeItem(e.target.value)}
+                  required
+                  className="mt-1"
+                />
               </div>
             </div>
             <DialogFooter className="mt-4 flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={() => setIsNovoItemOpen(false)}>Cancelar</Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Salvar</Button>
+              <Button type="button" variant="outline" onClick={() => setIsNovoItemOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
+                Salvar
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -912,7 +1064,9 @@ export default function DetalheCotacaoPage() {
 
       <Dialog open={isVincularFornecedorOpen} onOpenChange={setIsVincularFornecedorOpen}>
         <DialogContent className="sm:max-w-md bg-white">
-          <DialogHeader><DialogTitle>Vincular Fornecedor</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Vincular Fornecedor</DialogTitle>
+          </DialogHeader>
           <form onSubmit={handleVincularFornecedor} className="space-y-4 mt-2">
             <div>
               <Label className="text-xs font-semibold text-slate-700">Fornecedor *</Label>
@@ -924,13 +1078,23 @@ export default function DetalheCotacaoPage() {
               >
                 <option value="">Selecione...</option>
                 {todosFornecedores.map((f) => (
-                  <option key={f.id} value={f.id}>{f.nome_fantasia || f.razao_social}</option>
+                  <option key={f.id} value={f.id}>
+                    {f.nome_fantasia || f.razao_social}
+                  </option>
                 ))}
               </select>
             </div>
             <DialogFooter className="mt-4 flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={() => setIsVincularFornecedorOpen(false)}>Cancelar</Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Vincular</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsVincularFornecedorOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
+                Vincular
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -938,11 +1102,16 @@ export default function DetalheCotacaoPage() {
 
       <Dialog open={isPrecosOpen} onOpenChange={setIsPrecosOpen}>
         <DialogContent className="sm:max-w-2xl bg-white max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Informar Preços</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Informar Preços</DialogTitle>
+          </DialogHeader>
           <form onSubmit={handleSalvarPrecos} className="space-y-4 mt-2">
             <div className="space-y-3">
               {itens.map((item) => (
-                <div key={item.id} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <div
+                  key={item.id}
+                  className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center bg-slate-50 p-3 rounded-lg border border-slate-200"
+                >
                   <div className="md:col-span-6 text-sm">
                     <span className="font-semibold text-slate-800">{item.descricao}</span>
                   </div>
@@ -950,22 +1119,36 @@ export default function DetalheCotacaoPage() {
                     <Input
                       placeholder="Preço (R$)"
                       value={precosTemp[item.id]?.preco || ""}
-                      onChange={(e) => setPrecosTemp({ ...precosTemp, [item.id]: { ...precosTemp[item.id], preco: e.target.value } })}
+                      onChange={(e) =>
+                        setPrecosTemp({
+                          ...precosTemp,
+                          [item.id]: { ...precosTemp[item.id], preco: e.target.value },
+                        })
+                      }
                     />
                   </div>
                   <div className="md:col-span-3">
                     <Input
                       placeholder="Marca"
                       value={precosTemp[item.id]?.marca || ""}
-                      onChange={(e) => setPrecosTemp({ ...precosTemp, [item.id]: { ...precosTemp[item.id], marca: e.target.value } })}
+                      onChange={(e) =>
+                        setPrecosTemp({
+                          ...precosTemp,
+                          [item.id]: { ...precosTemp[item.id], marca: e.target.value },
+                        })
+                      }
                     />
                   </div>
                 </div>
               ))}
             </div>
             <DialogFooter className="mt-4 flex gap-2 justify-end">
-              <Button type="button" variant="outline" onClick={() => setIsPrecosOpen(false)}>Cancelar</Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">Salvar Preços</Button>
+              <Button type="button" variant="outline" onClick={() => setIsPrecosOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
+                Salvar Preços
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

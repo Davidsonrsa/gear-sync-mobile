@@ -10,8 +10,7 @@ export const Route = createFileRoute("/_authenticated/cotacoes/")({
   component: ListaCotacoesPage,
 });
 
-const brl = (v: number) =>
-  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const formatarData = (dataStr?: string | null) => {
   if (!dataStr) return "—";
@@ -67,20 +66,15 @@ export default function ListaCotacoesPage() {
 
   const cotacoesFiltradas = useMemo(() => {
     return cotacoes.filter((cot) => {
-      const matchNumero = String(cot.numero)
-        .toLowerCase()
-        .includes(filtroNumero.toLowerCase());
-      
+      const matchNumero = String(cot.numero).toLowerCase().includes(filtroNumero.toLowerCase());
+
       const matchPatrimonio = (cot.patrimonio || "")
         .toLowerCase()
         .includes(filtroPatrimonio.toLowerCase());
 
-      const matchSetor = (cot.setor || "")
-        .toLowerCase()
-        .includes(filtroSetor.toLowerCase());
+      const matchSetor = (cot.setor || "").toLowerCase().includes(filtroSetor.toLowerCase());
 
-      const matchStatus =
-        filtroStatus === "TODOS" || cot.status === filtroStatus;
+      const matchStatus = filtroStatus === "TODOS" || cot.status === filtroStatus;
 
       return matchNumero && matchPatrimonio && matchSetor && matchStatus;
     });
@@ -112,9 +106,11 @@ export default function ListaCotacoesPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Gerenciamento de Cotações</h1>
-          <p className="text-sm text-slate-600">Acompanhe e registre cotações de peças e serviços da frota</p>
+          <p className="text-sm text-slate-600">
+            Acompanhe e registre cotações de peças e serviços da frota
+          </p>
         </div>
-        
+
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
@@ -210,7 +206,9 @@ export default function ListaCotacoesPage() {
                     <td className="p-3 text-slate-800">{cot.patrimonio || "—"}</td>
                     <td className="p-3 text-slate-600">{cot.setor || "—"}</td>
                     <td className="p-3">
-                      <span className={`px-2 py-1 rounded text-xs font-bold ${cot.status === 'FINALIZADA' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-bold ${cot.status === "FINALIZADA" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}
+                      >
                         {cot.status || "RASCUNHO"}
                       </span>
                     </td>

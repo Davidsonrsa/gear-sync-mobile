@@ -73,7 +73,9 @@ function ManutencaoPage() {
         : [];
       setItens(arr.length ? arr : MANUTENCAO_TEMPLATE);
     } else if (e) {
-      setHorimetro(horimetroInicial ?? (e.horimetro_atual != null ? String(e.horimetro_atual) : ""));
+      setHorimetro(
+        horimetroInicial ?? (e.horimetro_atual != null ? String(e.horimetro_atual) : ""),
+      );
       setTipoRevisao(tipoRevisaoInicial ?? `Revisão de ${e.limite_revisao ?? 500}h`);
     }
   }, [rascunho, e, horimetroInicial, tipoRevisaoInicial]);

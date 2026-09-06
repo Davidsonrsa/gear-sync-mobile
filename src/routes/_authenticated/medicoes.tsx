@@ -224,7 +224,8 @@ export function MedicoesPage() {
           let maquina = persistidas.get(chave);
           if (!maquina) {
             const atual = atuais.find(
-              (itemAtual) => itemAtual.id === chave ||
+              (itemAtual) =>
+                itemAtual.id === chave ||
                 (itemAtual.mesId === mesId && itemAtual.codigo === item.equipamento),
             );
             maquina = atual ?? {
@@ -413,7 +414,8 @@ export function MedicoesPage() {
   const handleSalvarMedicao = async () => {
     if (!contratoSelecionado || !mesSelecionado) return;
 
-    const maquina = maquinas.find((item) => item.id === maquinaSelecionadaId) ??
+    const maquina =
+      maquinas.find((item) => item.id === maquinaSelecionadaId) ??
       maquinas.find((item) => item.mesId === mesSelecionado.id);
     if (!maquina) return;
 
@@ -726,8 +728,12 @@ export function MedicoesPage() {
           <div className="print:hidden">
             <div className="flex items-center justify-between gap-3 mb-2">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Equipamentos cadastrados</p>
-                <p className="text-xs text-gray-400">Selecione um equipamento para lançar as horas</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-500">
+                  Equipamentos cadastrados
+                </p>
+                <p className="text-xs text-gray-400">
+                  Selecione um equipamento para lançar as horas
+                </p>
               </div>
               <span className="shrink-0 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-bold text-orange-700">
                 {maquinas.filter((eq) => eq.mesId === mesSelecionado.id).length} cadastrados

@@ -7,9 +7,11 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/src/routes/_authenticated/fornecedores/novo")({
-  component: NovaCotacaoPage,
-});
+export const Route = createFileRoute("/_authenticated/src/routes/_authenticated/fornecedores/novo")(
+  {
+    component: NovaCotacaoPage,
+  },
+);
 
 export default function NovaCotacaoPage() {
   const navigate = useNavigate();
@@ -157,7 +159,11 @@ export default function NovaCotacaoPage() {
             <Button type="button" variant="outline" onClick={() => navigate({ to: "/cotacoes" })}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={saving || loadingNumero} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Button
+              type="submit"
+              disabled={saving || loadingNumero}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               Avançar para Adicionar Itens
             </Button>
