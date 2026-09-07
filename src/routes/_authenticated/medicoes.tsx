@@ -198,6 +198,18 @@ export function MedicoesPage() {
         }),
       );
 
+      const contratosCarregados = (dadosContratos ?? []).map((item) => {
+        try {
+          const contrato = JSON.parse(item.nome_contrato) as Partial<Contrato>;
+          return {
+            id: String(item.id),
+            numero: contrato.numero ?? item.nome_contrato,
+          };
+        } catch {
+          return { id: String(item.id), numero: item.nome_contrato };
+        }
+      });
+
       const { data: dadosMedicoes, error: erroMedicoes } = await supabase
         .from("medicoes_diarias")
         .select("*")
@@ -215,7 +227,13 @@ export function MedicoesPage() {
             (itemMes) =>
               itemMes.ano === dataItem.getFullYear() &&
               itemMes.mesIndex === dataItem.getMonth() &&
-              (item.contrato_id ? itemMes.contratoId === item.contrato_id : true),
+              (item.contrato_id
+                ? itemMes.contratoId === item.contrato_id ||
+                  (item.contrato ===
+                    contratosCarregados.find((contrato) => contrato.id === item.contrato_id)
+                      ?.numero &&
+                    itemMes.contratoId === "1")
+                : true),
           );
           const mesId = mes?.id;
           if (!mesId) return;
