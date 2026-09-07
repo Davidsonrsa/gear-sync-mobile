@@ -82,6 +82,7 @@ function CustosPage() {
   // Filter states
   const [filtroMes, setFiltroMes] = useState<string>("");
   const [filtroContrato, setFiltroContrato] = useState<string>("");
+  const [mostrarLancamentos, setMostrarLancamentos] = useState(true);
 
   const formatBRL = (val: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -537,61 +538,6 @@ function CustosPage() {
       </Card>
 
       <Card className="bg-white border shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg">Lançamentos do período</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {lancamentosFiltrados.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Nenhum lançamento encontrado para este contrato e mês.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {lancamentosFiltrados.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex flex-col gap-3 rounded-md border p-3 md:flex-row md:items-center md:justify-between"
-                >
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">{item.descricao}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.data} | {item.tipo}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 shrink-0">
-                    <span className={`font-semibold ${item.tipo === "Receita" ? "text-emerald-600" : "text-rose-600"}`}>
-                      {item.tipo === "Receita" ? "+" : "-"} {formatBRL(item.valor)}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        title="Editar lançamento"
-                        onClick={() => abrirEdicaoLancamento(item)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        className="text-rose-600 hover:bg-rose-50"
-                        title="Excluir lançamento"
-                        onClick={() => handleDeletarCusto(item.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="bg-white border shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <Briefcase className="w-5 h-5 text-primary" />
@@ -843,6 +789,73 @@ function CustosPage() {
             </div>
           </form>
         </CardContent>
+      </Card>
+
+      <Card className="bg-white border shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
+          <CardTitle className="text-lg">Lançamentos do período</CardTitle>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setMostrarLancamentos((visivel) => !visivel)}
+          >
+            {mostrarLancamentos ? "Ocultar lançamentos" : "Visualizar lançamentos"}
+          </Button>
+        </CardHeader>
+        {mostrarLancamentos && (
+          <CardContent>
+            {lancamentosFiltrados.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nenhum lançamento encontrado para este contrato e mês.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {lancamentosFiltrados.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex flex-col gap-3 rounded-md border p-3 md:flex-row md:items-center md:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{item.descricao}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.data} | {item.tipo}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 shrink-0">
+                      <span
+                        className={`font-semibold ${item.tipo === "Receita" ? "text-emerald-600" : "text-rose-600"}`}
+                      >
+                        {item.tipo === "Receita" ? "+" : "-"} {formatBRL(item.valor)}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          title="Editar lançamento"
+                          onClick={() => abrirEdicaoLancamento(item)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          className="text-rose-600 hover:bg-rose-50"
+                          title="Excluir lançamento"
+                          onClick={() => handleDeletarCusto(item.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        )}
       </Card>
 
       <Dialog

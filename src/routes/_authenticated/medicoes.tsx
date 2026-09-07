@@ -219,21 +219,67 @@ export function MedicoesPage() {
         return;
       }
 
+      const nomesMeses = [
+        "Janeiro",
+        "Fevereiro",
+        "Março",
+        "Abril",
+        "Maio",
+        "Junho",
+        "Julho",
+        "Agosto",
+        "Setembro",
+        "Outubro",
+        "Novembro",
+        "Dezembro",
+      ];
+      const mesesCarregados = [...meses];
+
+      (dadosMedicoes ?? []).forEach((item) => {
+        const dataItem = new Date(`${item.data}T00:00:00`);
+        const contratoBanco = item.contrato_id
+          ? contratosCarregados.find((contrato) => contrato.id === String(item.contrato_id))
+          : contratosCarregados.find((contrato) => contrato.numero === item.contrato);
+        const contratoId = contratoBanco?.id ?? String(item.contrato_id ?? "1");
+        const contratoNumero = contratoBanco?.numero ?? item.contrato;
+        const mesExiste = mesesCarregados.some(
+          (itemMes) =>
+            itemMes.ano === dataItem.getFullYear() &&
+            itemMes.mesIndex === dataItem.getMonth() &&
+            (itemMes.contratoId === contratoId ||
+              (itemMes.contratoId === "1" && item.contrato === contratoNumero)),
+        );
+
+        if (!mesExiste) {
+          mesesCarregados.push({
+            id: `db-${contratoId}-${dataItem.getFullYear()}-${dataItem.getMonth()}`,
+            contratoId,
+            nome: nomesMeses[dataItem.getMonth()],
+            ano: dataItem.getFullYear(),
+            mesIndex: dataItem.getMonth(),
+          });
+        }
+      });
+
+      if (mesesCarregados.length !== meses.length) setMeses(mesesCarregados);
+
       setMaquinas((atuais) => {
         const persistidas = new Map<string, MaquinaMedicao>();
         (dadosMedicoes ?? []).forEach((item) => {
           const dataItem = new Date(`${item.data}T00:00:00`);
-          const mes = meses.find(
+          const contratoBanco = item.contrato_id
+            ? contratosCarregados.find((contrato) => contrato.id === String(item.contrato_id))
+            : contratosCarregados.find((contrato) => contrato.numero === item.contrato);
+          const mes = mesesCarregados.find(
             (itemMes) =>
               itemMes.ano === dataItem.getFullYear() &&
               itemMes.mesIndex === dataItem.getMonth() &&
               (item.contrato_id
-                ? itemMes.contratoId === item.contrato_id ||
+                ? itemMes.contratoId === String(item.contrato_id) ||
                   (item.contrato ===
-                    contratosCarregados.find((contrato) => contrato.id === item.contrato_id)
-                      ?.numero &&
+                    contratoBanco?.numero &&
                     itemMes.contratoId === "1")
-                : true),
+                : itemMes.contratoId === (contratoBanco?.id ?? "1")),
           );
           const mesId = mes?.id;
           if (!mesId) return;

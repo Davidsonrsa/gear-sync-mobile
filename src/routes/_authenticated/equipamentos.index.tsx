@@ -16,6 +16,8 @@ import {
   AlertCircle,
   ClipboardList,
   Printer,
+  Mail,
+  MessageCircle,
   Trash2,
   Edit3,
   CheckCircle2,
@@ -1038,6 +1040,31 @@ function BotaoPendenciasAbertas({
     }, 500);
   };
 
+  const gerarTextoRelatorio = () => {
+    const titulo = clFiltro === "__all" ? "Todos os CLs" : `CL ${clFiltro}`;
+    const linhas = [`RELATÓRIO DE PENDÊNCIAS ABERTAS - ${titulo}`, ""];
+    agrupadas.forEach(({ equipamento, pendencias: itens }) => {
+      linhas.push(`${equipamento.numero}${equipamento.cl ? ` - CL ${equipamento.cl}` : ""}`);
+      itens.forEach((item, index) => {
+        linhas.push(`${index + 1}. ${item.descricao}`);
+        linhas.push(`   Registrado por: ${item.registrado_por || "Não informado"}`);
+      });
+      linhas.push("");
+    });
+    return linhas.join("\n");
+  };
+
+  const handleEnviarWhatsApp = () => {
+    if (!agrupadas.length) return;
+    window.open(`https://wa.me/?text=${encodeURIComponent(gerarTextoRelatorio())}`, "_blank");
+  };
+
+  const handleEnviarEmail = () => {
+    if (!agrupadas.length) return;
+    const titulo = clFiltro === "__all" ? "Todos os CLs" : `CL ${clFiltro}`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(`Pendências abertas - ${titulo}`)}&body=${encodeURIComponent(gerarTextoRelatorio())}`;
+  };
+
   return (
     <>
       <Button type="button" size="sm" variant="outline" className="h-9 text-xs border-slate-200 gap-1.5 bg-white" onClick={() => setOpen(true)}>
@@ -1056,7 +1083,17 @@ function BotaoPendenciasAbertas({
                 {clOptions.map((opcao) => <SelectItem key={opcao} value={opcao}>CL {opcao}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Button type="button" size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={handleImprimir} disabled={isLoading}><Printer className="w-4 h-4" /> Imprimir</Button>
+            <div className="flex items-center gap-1.5">
+              <Button type="button" size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={handleEnviarWhatsApp} disabled={isLoading || !agrupadas.length}>
+                <MessageCircle className="w-4 h-4 text-emerald-600" /> WhatsApp
+              </Button>
+              <Button type="button" size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={handleEnviarEmail} disabled={isLoading || !agrupadas.length}>
+                <Mail className="w-4 h-4 text-blue-600" /> E-mail
+              </Button>
+              <Button type="button" size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={handleImprimir} disabled={isLoading}>
+                <Printer className="w-4 h-4" /> Imprimir
+              </Button>
+            </div>
           </div>
           {isLoading ? <p className="py-8 text-center text-xs text-slate-500">Carregando pendências...</p> : agrupadas.length === 0 ? <p className="py-8 text-center text-xs text-slate-500">Nenhuma pendência aberta encontrada para este filtro.</p> : (
             <div className="max-h-[55vh] overflow-y-auto space-y-3">
@@ -1189,19 +1226,21 @@ function EquipamentosList() {
   async function handleHorimetroChange(equipamentoId: string, value: string) {
     const horimetro = value === "" ? null : Number(value);
     if (horimetro !== null && !Number.isFinite(horimetro)) return;
+    const hoje = new Date();
+    const dataHorimetro = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
 
     const previous = data?.find((equipamento) => equipamento.id === equipamentoId)?.horimetro_atual;
     queryClient.setQueryData<Equip[]>(["equipamentos"], (equipamentos) =>
       equipamentos?.map((equipamento) =>
         equipamento.id === equipamentoId
-          ? { ...equipamento, horimetro_atual: horimetro }
+          ? { ...equipamento, horimetro_atual: horimetro, data_horimetro_atual: dataHorimetro }
           : equipamento,
       ),
     );
 
     const { error } = await supabase
       .from("equipamentos")
-      .update({ horimetro_atual: horimetro })
+      .update({ horimetro_atual: horimetro, data_horimetro_atual: dataHorimetro })
       .eq("id", equipamentoId);
 
     if (error) {
