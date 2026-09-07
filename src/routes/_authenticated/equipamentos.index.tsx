@@ -14,6 +14,8 @@ import {
   AlertTriangle,
   Calendar,
   AlertCircle,
+  ClipboardList,
+  Printer,
   Trash2,
   Edit3,
   CheckCircle2,
@@ -30,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/equipamentos/")({
   component: EquipamentosList,
@@ -973,6 +976,104 @@ function BotaoPendenciasCard({
 // ----------------------------------------------------
 // TELA PRINCIPAL
 // ----------------------------------------------------
+function BotaoPendenciasAbertas({
+  clOptions,
+  equipamentos,
+}: {
+  clOptions: string[];
+  equipamentos: Equip[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [clFiltro, setClFiltro] = useState("__all");
+  const { data: pendencias = [], isLoading } = useQuery({
+    queryKey: ["pendencias-abertas-frota"],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("manutencao_pendencias")
+        .select("id, equipamento_id, descricao, registrado_por, created_at, status")
+        .or("status.is.null,status.eq.PENDENTE")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const agrupadas = useMemo(() => {
+    const porId = new Map(equipamentos.map((equipamento) => [equipamento.id, equipamento]));
+    const grupos = new Map<string, { equipamento: Equip; pendencias: typeof pendencias }>();
+    pendencias.forEach((pendencia) => {
+      if (!pendencia.equipamento_id) return;
+      const equipamento = porId.get(pendencia.equipamento_id);
+      if (!equipamento || (clFiltro !== "__all" && equipamento.cl !== clFiltro)) return;
+      const grupo = grupos.get(equipamento.id);
+      grupos.set(equipamento.id, {
+        equipamento,
+        pendencias: [...(grupo?.pendencias ?? []), pendencia],
+      });
+    });
+    return Array.from(grupos.values()).sort((a, b) =>
+      a.equipamento.numero.localeCompare(b.equipamento.numero),
+    );
+  }, [equipamentos, pendencias, clFiltro]);
+
+  const handleImprimir = () => {
+    const janela = window.open("", "", "width=900,height=700");
+    if (!janela) return;
+    const tituloCl = clFiltro === "__all" ? "Todos os CLs" : `CL ${clFiltro}`;
+    const gruposHtml = agrupadas
+      .map(
+        ({ equipamento, pendencias: itens }) => `
+          <h2>${equipamento.numero}${equipamento.cl ? ` - CL ${equipamento.cl}` : ""}</h2>
+          ${itens.map((item) => `<div class="item"><strong>${item.descricao}</strong><div class="meta">Registrado por: ${item.registrado_por || "Não informado"} | ${new Date(item.created_at).toLocaleString("pt-BR")}</div></div>`).join("")}
+        `,
+      )
+      .join("");
+    janela.document.write(`<html><head><title>Pendências abertas - ${tituloCl}</title><style>body{font-family:Arial;padding:24px;color:#111827}h1{font-size:20px;border-bottom:2px solid #111827;padding-bottom:8px}h2{font-size:16px;margin:20px 0 8px}.item{border:1px solid #d1d5db;padding:10px;margin:6px 0}.meta{color:#6b7280;font-size:11px;margin-top:4px}</style></head><body><h1>Relatório de pendências abertas - ${tituloCl}</h1><p>Emissão: ${new Date().toLocaleString("pt-BR")}</p>${gruposHtml || "<p>Nenhuma pendência aberta encontrada.</p>"}</body></html>`);
+    janela.document.close();
+    janela.focus();
+    setTimeout(() => {
+      janela.print();
+      janela.close();
+    }, 500);
+  };
+
+  return (
+    <>
+      <Button type="button" size="sm" variant="outline" className="h-9 text-xs border-slate-200 gap-1.5 bg-white" onClick={() => setOpen(true)}>
+        <ClipboardList className="w-4 h-4" /> Pendências abertas
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-2xl text-slate-900 bg-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><ClipboardList className="w-5 h-5 text-red-600" />Pendências abertas</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-between gap-2 border-y border-slate-200 py-3">
+            <Select value={clFiltro} onValueChange={setClFiltro}>
+              <SelectTrigger className="h-9 w-[180px] text-xs"><SelectValue placeholder="Filtrar por CL" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Todos os CLs</SelectItem>
+                {clOptions.map((opcao) => <SelectItem key={opcao} value={opcao}>CL {opcao}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button type="button" size="sm" variant="outline" className="h-9 text-xs gap-1.5" onClick={handleImprimir} disabled={isLoading}><Printer className="w-4 h-4" /> Imprimir</Button>
+          </div>
+          {isLoading ? <p className="py-8 text-center text-xs text-slate-500">Carregando pendências...</p> : agrupadas.length === 0 ? <p className="py-8 text-center text-xs text-slate-500">Nenhuma pendência aberta encontrada para este filtro.</p> : (
+            <div className="max-h-[55vh] overflow-y-auto space-y-3">
+              {agrupadas.map(({ equipamento, pendencias: itens }) => (
+                <div key={equipamento.id} className="rounded-lg border border-slate-200 p-3">
+                  <div className="flex items-center justify-between gap-2 mb-2"><p className="text-sm font-bold text-slate-900">{equipamento.numero}</p>{equipamento.cl && <Badge variant="secondary" className="text-[10px]">CL {equipamento.cl}</Badge>}</div>
+                  {itens.map((item) => <div key={item.id} className="rounded bg-red-50 px-2.5 py-2 text-xs mb-1.5"><p className="font-medium text-red-900">{item.descricao}</p><p className="mt-1 text-[10px] text-red-700">Registrado por: {item.registrado_por || "Não informado"}</p></div>)}
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 function EquipamentosList() {
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
@@ -980,6 +1081,7 @@ function EquipamentosList() {
   const [q, setQ] = useState("");
   const [cl, setCl] = useState<string>("__all");
   const [onlyOverdue, setOnlyOverdue] = useState(false);
+  const [horimetroDrafts, setHorimetroDrafts] = useState<Record<string, string>>({});
 
   const { data, isLoading } = useQuery({
     queryKey: ["equipamentos"],
@@ -995,6 +1097,19 @@ function EquipamentosList() {
       return (data ?? []) as Equip[];
     },
   });
+
+  useEffect(() => {
+    if (!data) return;
+    setHorimetroDrafts((drafts) => {
+      const next = { ...drafts };
+      data.forEach((equipamento) => {
+        if (!(equipamento.id in next)) {
+          next[equipamento.id] = equipamento.horimetro_atual?.toString() ?? "";
+        }
+      });
+      return next;
+    });
+  }, [data]);
 
   const totalEquipamentosVencidos = useMemo(() => {
     if (!data) return 0;
@@ -1071,6 +1186,34 @@ function EquipamentosList() {
     }
   }
 
+  async function handleHorimetroChange(equipamentoId: string, value: string) {
+    const horimetro = value === "" ? null : Number(value);
+    if (horimetro !== null && !Number.isFinite(horimetro)) return;
+
+    const previous = data?.find((equipamento) => equipamento.id === equipamentoId)?.horimetro_atual;
+    queryClient.setQueryData<Equip[]>(["equipamentos"], (equipamentos) =>
+      equipamentos?.map((equipamento) =>
+        equipamento.id === equipamentoId
+          ? { ...equipamento, horimetro_atual: horimetro }
+          : equipamento,
+      ),
+    );
+
+    const { error } = await supabase
+      .from("equipamentos")
+      .update({ horimetro_atual: horimetro })
+      .eq("id", equipamentoId);
+
+    if (error) {
+      setHorimetroDrafts((drafts) => ({
+        ...drafts,
+        [equipamentoId]: previous?.toString() ?? "",
+      }));
+      queryClient.invalidateQueries({ queryKey: ["equipamentos"] });
+      toast.error("Não foi possível atualizar o horímetro");
+    }
+  }
+
   return (
     <div className="p-3 md:p-6 max-w-7xl mx-auto w-full space-y-3 md:space-y-4">
       {/* Header & Filtros */}
@@ -1088,6 +1231,7 @@ function EquipamentosList() {
         <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
           <BotaoTacografo />
           <BotaoSeguro />
+          <BotaoPendenciasAbertas clOptions={clOptions} equipamentos={data ?? []} />
 
           <Select value={cl} onValueChange={setCl}>
             <SelectTrigger className="h-9 text-xs w-[130px] bg-white border-slate-200">
@@ -1291,18 +1435,36 @@ function EquipamentosList() {
                         }}
                       />
                     </div>
-                    <span
-                      className={`text-xs font-bold font-mono ${overdue ? "text-red-800" : "text-slate-700"}`}
+                    <div
+                      className="flex items-center gap-1"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                      }}
                     >
-                      {e.horimetro_atual ?? 0}h
-                    </span>
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        aria-label={`Horímetro atual do equipamento ${e.numero}`}
+                        value={horimetroDrafts[e.id] ?? ""}
+                        onChange={(event) =>
+                          setHorimetroDrafts((drafts) => ({
+                            ...drafts,
+                            [e.id]: event.target.value,
+                          }))
+                        }
+                        onBlur={(event) => void handleHorimetroChange(e.id, event.target.value)}
+                        className={`h-7 w-20 px-1.5 text-xs text-right font-bold font-mono ${overdue ? "text-red-800" : "text-slate-700"}`}
+                      />
+                      <span className="text-xs font-bold font-mono">h</span>
+                    </div>
                   </div>
 
                   <div className="flex justify-between items-center text-xs">
-                    <span className={overdue ? "text-red-700 font-semibold" : "text-slate-400"}>
+                    <span className="text-black font-semibold">
                       Hr rodado: {hrRodado}h
                     </span>
-                    <span className={overdue ? "text-red-700 font-semibold" : "text-slate-400"}>
+                    <span className="text-black font-semibold">
                       limite: {limite}h
                     </span>
                   </div>
