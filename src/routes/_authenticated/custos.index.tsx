@@ -27,7 +27,6 @@ import {
   Briefcase,
   Pencil,
   Settings,
-  ClipboardList,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/custos/")({
@@ -59,32 +58,13 @@ export interface ItemFinanceiro {
   data: string;
 }
 
-export interface MedicaoDiariaItem {
-  id: string;
-  contrato: string;
-  contrato_id?: string | null;
-  equipamento: string;
-  operador: string;
-  data: string;
-  manha_inicio: string;
-  manha_final: string;
-  tarde_inicio: string;
-  tarde_final: string;
-  valor_hora: number;
-  observacao: string;
-}
-
 function CustosPage() {
   const [lancamentos, setLancamentos] = useState<ItemFinanceiro[]>([]);
-  const [medicoes, setMedicoes] = useState<MedicaoDiariaItem[]>([]);
   const [contratos, setContratos] = useState<ContratoItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [submittingMedicao, setSubmittingMedicao] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [msgMedicao, setMsgMedicao] = useState<{ type: "success" | "error"; text: string } | null>(
-    null,
-  );
+  const [contratoDialogAberto, setContratoDialogAberto] = useState(false);
 
   // Form states (Custos)
   const [contratoSelecionado, setContratoSelecionado] = useState<string>("");
@@ -92,27 +72,16 @@ function CustosPage() {
   const [isCriandoContrato, setIsCriandoContrato] = useState<boolean>(false);
   const [contratoEditando, setContratoEditando] = useState<ContratoItem | null>(null);
   const [novoNomeEditado, setNovoNomeEditado] = useState("");
+  const [lancamentoEditando, setLancamentoEditando] = useState<ItemFinanceiro | null>(null);
 
   const [tipo, setTipo] = useState<TipoLancamento>("Despesas de Manutenção");
   const [description, setDescription] = useState("");
   const [value, setValue] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
 
-  // Form states (Medições Diárias)
-  const [medContrato, setMedContrato] = useState("");
-  const [medEquipamento, setMedEquipamento] = useState("");
-  const [medOperador, setMedOperador] = useState("");
-  const [medData, setMedData] = useState(new Date().toISOString().split("T")[0]);
-  const [medManhaInicio, setMedManhaInicio] = useState("08:00");
-  const [medManhaFinal, setMedManhaFinal] = useState("12:00");
-  const [medTardeInicio, setMedTardeInicio] = useState("13:00");
-  const [medTardeFinal, setMedTardeFinal] = useState("17:00");
-  const [medValorHora, setMedValorHora] = useState("");
-  const [medObservacao, setMedObservacao] = useState("");
-
   // Filter states
-  const [filtroMes, setFiltroMes] = useState<string>("TODOS");
-  const [filtroContrato, setFiltroContrato] = useState<string>("TODOS");
+  const [filtroMes, setFiltroMes] = useState<string>("");
+  const [filtroContrato, setFiltroContrato] = useState<string>("");
 
   const formatBRL = (val: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -124,7 +93,6 @@ function CustosPage() {
   useEffect(() => {
     fetchContratos();
     fetchData();
-    fetchMedicoes();
   }, []);
 
   async function fetchContratos() {
@@ -142,7 +110,6 @@ function CustosPage() {
         setContratos(lista);
         if (lista.length > 0) {
           if (!contratoSelecionado) setContratoSelecionado(lista[0].nome);
-          if (!medContrato) setMedContrato(lista[0].nome);
         }
       }
     } catch (err) {
@@ -179,37 +146,6 @@ function CustosPage() {
     }
   }
 
-  async function fetchMedicoes() {
-    try {
-      const { data, error } = await supabase
-        .from("medicoes_diarias")
-        .select("*")
-        .order("data", { ascending: false });
-
-      if (error) throw error;
-
-      if (data) {
-        const mappedMed: MedicaoDiariaItem[] = data.map((item: any) => ({
-          id: item.id?.toString() || crypto.randomUUID(),
-          contrato: item.contrato || "",
-          contrato_id: item.contrato_id ? String(item.contrato_id) : undefined,
-          equipamento: item.equipamento || "",
-          operador: item.operador || "",
-          data: item.data || new Date().toISOString().split("T")[0],
-          manha_inicio: item.manha_inicio || "",
-          manha_final: item.manha_final || "",
-          tarde_inicio: item.tarde_inicio || "",
-          tarde_final: item.tarde_final || "",
-          valor_hora: Number(item.valor_hora) || 0,
-          observacao: item.observacao || "",
-        }));
-        setMedicoes(mappedMed);
-      }
-    } catch (err) {
-      console.error("Erro ao carregar medições:", err);
-    }
-  }
-
   const listaTodosContratos = useMemo(() => {
     const mapaContratos = new Map<string, ContratoItem>();
     contratos.forEach((c) => {
@@ -231,80 +167,87 @@ function CustosPage() {
     return Array.from(mapaContratos.values()).sort((a, b) => a.nome.localeCompare(b.nome));
   }, [contratos, lancamentos]);
 
-  async function handleSalvarMedicao(e: React.FormEvent) {
-    e.preventDefault();
-    setSubmittingMedicao(true);
-    setMsgMedicao(null);
-
-    const valorHoraNum = parseFloat(medValorHora);
-    if (isNaN(valorHoraNum) || valorHoraNum < 0) {
-      setMsgMedicao({ type: "error", text: "Informe um valor por hora válido." });
-      setSubmittingMedicao(false);
-      return;
+  useEffect(() => {
+    if (!filtroContrato && listaTodosContratos.length > 0) {
+      setFiltroContrato(listaTodosContratos[0].nome);
     }
+  }, [filtroContrato, listaTodosContratos]);
 
-    const contratoObj = contratos.find((c) => c.nome === medContrato);
+  useEffect(() => {
+    if (filtroMes || !filtroContrato) return;
+
+    const mesesDisponiveis = lancamentos
+      .filter(
+        (item) => item.contrato.trim().toLowerCase() === filtroContrato.trim().toLowerCase(),
+      )
+      .map((item) => item.data.substring(0, 7))
+      .sort()
+      .reverse();
+
+    if (mesesDisponiveis.length > 0) {
+      setFiltroMes(mesesDisponiveis[0]);
+    }
+  }, [filtroContrato, filtroMes, lancamentos]);
+
+  async function handleSalvarContrato(e: React.FormEvent) {
+    e.preventDefault();
+    const nome = novoNomeEditado.trim();
+    if (!nome) return;
 
     try {
-      const num = (v: string) => (v === "" || v === null ? null : Number(v));
-      const payload = {
-        contrato: medContrato,
-        contrato_id: contratoObj?.id || null,
-        equipamento: medEquipamento,
-        operador: medOperador,
-        data: medData,
-        manha_inicio: medManhaInicio,
-        manha_final: medManhaFinal,
-        tarde_inicio: medTardeInicio,
-        tarde_final: medTardeFinal,
-        valor_hora: valorHoraNum,
-        observacao: medObservacao,
-      };
-
-      const { data, error } = await supabase
-        .from("medicoes_diarias")
-        .insert([
-          {
-            ...payload,
-            manha_inicio: num(medManhaInicio),
-            manha_final: num(medManhaFinal),
-            tarde_inicio: num(medTardeInicio),
-            tarde_final: num(medTardeFinal),
-          },
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const novaMedicao: MedicaoDiariaItem = {
-        id: data?.id?.toString() || crypto.randomUUID(),
-        ...payload,
-      };
-
-      setMedicoes((prev) => [novaMedicao, ...prev]);
-      setMsgMedicao({ type: "success", text: "Medição diária salva com sucesso!" });
-
-      // Limpar campos secundários
-      setMedEquipamento("");
-      setMedOperador("");
-      setMedObservacao("");
-      setMedValorHora("");
-    } catch (err: any) {
-      console.error("Erro ao salvar medição:", err);
-      setMsgMedicao({ type: "error", text: "Erro ao salvar medição no banco." });
-    } finally {
-      setSubmittingMedicao(false);
+      if (contratoEditando) {
+        const { error } = await supabase
+          .from("contratos")
+          .update({ nome_contrato: nome })
+          .eq("id", contratoEditando.id);
+        if (error) throw error;
+        await supabase.from("custos").update({ contrato: nome }).eq("contrato_id", contratoEditando.id);
+        setContratos((prev) =>
+          prev.map((contrato) =>
+            contrato.id === contratoEditando.id ? { ...contrato, nome } : contrato,
+          ),
+        );
+        setLancamentos((prev) =>
+          prev.map((item) =>
+            item.contrato_id === contratoEditando.id ? { ...item, contrato: nome } : item,
+          ),
+        );
+        if (contratoSelecionado === contratoEditando.nome) setContratoSelecionado(nome);
+        if (filtroContrato === contratoEditando.nome) setFiltroContrato(nome);
+      } else {
+        const { data, error } = await supabase
+          .from("contratos")
+          .insert([{ nome_contrato: nome }])
+          .select()
+          .single();
+        if (error) throw error;
+        const novoContrato = { id: String(data.id), nome };
+        setContratos((prev) => [...prev, novoContrato]);
+        setContratoSelecionado(nome);
+      }
+      setContratoDialogAberto(false);
+      setContratoEditando(null);
+      setNovoNomeEditado("");
+    } catch (err) {
+      console.error("Erro ao salvar contrato:", err);
+      setMessage({ type: "error", text: "Não foi possível salvar o contrato." });
     }
   }
 
-  async function handleDeletarMedicao(id: string) {
+  async function handleDeletarContrato(contrato: ContratoItem) {
+    if (!window.confirm(`Excluir o contrato "${contrato.nome}"?`)) return;
     try {
-      const { error } = await supabase.from("medicoes_diarias").delete().eq("id", Number(id));
+      const { error } = await supabase.from("contratos").delete().eq("id", contrato.id);
       if (error) throw error;
-      setMedicoes((prev) => prev.filter((m) => m.id !== id));
+      setContratos((prev) => prev.filter((item) => item.id !== contrato.id));
+      if (contratoSelecionado === contrato.nome) setContratoSelecionado("");
+      if (filtroContrato === contrato.nome) {
+        const proximoContrato = listaTodosContratos.find((item) => item.nome !== contrato.nome);
+        setFiltroContrato(proximoContrato?.nome || "");
+      }
     } catch (err) {
-      console.error("Erro ao deletar medição:", err);
+      console.error("Erro ao deletar contrato:", err);
+      setMessage({ type: "error", text: "Não foi possível excluir o contrato." });
     }
   }
 
@@ -387,21 +330,85 @@ function CustosPage() {
   }
 
   async function handleDeletarCusto(id: string) {
+    if (!window.confirm("Excluir este lançamento?")) return;
     try {
       const { error } = await supabase.from("custos").delete().eq("id", id);
       if (error) throw error;
       setLancamentos((prev) => prev.filter((item) => item.id !== id));
+      setMessage({ type: "success", text: "Lançamento excluído com sucesso." });
     } catch (err) {
       console.error("Erro ao deletar registro:", err);
+      setMessage({ type: "error", text: "Não foi possível excluir o lançamento." });
     }
+  }
+
+  async function handleAtualizarCusto(e: React.FormEvent) {
+    e.preventDefault();
+    if (!lancamentoEditando) return;
+
+    const numValue = parseFloat(value);
+    if (isNaN(numValue) || numValue <= 0) {
+      setMessage({ type: "error", text: "Informe um valor numérico válido maior que zero." });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const itemContratoObj = contratos.find((contrato) => contrato.nome === contratoSelecionado);
+      const { error } = await supabase
+        .from("custos")
+        .update({
+          contrato: contratoSelecionado,
+          contrato_id: itemContratoObj?.id || null,
+          categoria: tipo,
+          descricao: description,
+          valor: numValue,
+          data: date,
+        })
+        .eq("id", lancamentoEditando.id);
+
+      if (error) throw error;
+
+      setLancamentos((prev) =>
+        prev.map((item) =>
+          item.id === lancamentoEditando.id
+            ? {
+                ...item,
+                contrato: contratoSelecionado,
+                contrato_id: itemContratoObj?.id,
+                tipo,
+                descricao: description,
+                valor: numValue,
+                data: date,
+              }
+            : item,
+        ),
+      );
+      setLancamentoEditando(null);
+      setMessage({ type: "success", text: "Lançamento atualizado com sucesso." });
+    } catch (err) {
+      console.error("Erro ao atualizar lançamento:", err);
+      setMessage({ type: "error", text: "Não foi possível atualizar o lançamento." });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function abrirEdicaoLancamento(item: ItemFinanceiro) {
+    setLancamentoEditando(item);
+    setContratoSelecionado(item.contrato);
+    setTipo(item.tipo);
+    setDescription(item.descricao);
+    setValue(String(item.valor));
+    setDate(item.data);
   }
 
   const lancamentosFiltrados = useMemo(() => {
     return lancamentos.filter((item) => {
       const mesItem = item.data.substring(0, 7);
-      const matchMes = filtroMes === "TODOS" || mesItem === filtroMes;
+      const matchMes = Boolean(filtroMes) && mesItem === filtroMes;
       const matchContrato =
-        filtroContrato === "TODOS" ||
+        Boolean(filtroContrato) &&
         item.contrato.trim().toLowerCase() === filtroContrato.trim().toLowerCase();
       return matchMes && matchContrato;
     });
@@ -469,155 +476,6 @@ function CustosPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* BOTÃO DE LANÇAMENTO DE MEDIÇÃO DIÁRIA */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
-                <ClipboardList className="w-4 h-4" />
-                Lançar Medição Diária
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl bg-white text-slate-900 max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Formulário de Medição Diária</DialogTitle>
-              </DialogHeader>
-
-              <form onSubmit={handleSalvarMedicao} className="space-y-4 pt-2">
-                {msgMedicao && (
-                  <div
-                    className={`p-3 rounded-md text-sm ${
-                      msgMedicao.type === "success"
-                        ? "bg-green-100 text-green-800 border border-green-200"
-                        : "bg-red-100 text-red-800 border border-red-200"
-                    }`}
-                  >
-                    {msgMedicao.text}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="med-contrato">Contrato</Label>
-                    <select
-                      id="med-contrato"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      value={medContrato}
-                      onChange={(e) => setMedContrato(e.target.value)}
-                    >
-                      {listaTodosContratos.map((c) => (
-                        <option key={c.id} value={c.nome}>
-                          {c.nome}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="med-data">Data</Label>
-                    <Input
-                      id="med-data"
-                      type="date"
-                      value={medData}
-                      onChange={(e) => setMedData(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="med-equipamento">Equipamento</Label>
-                    <Input
-                      id="med-equipamento"
-                      type="text"
-                      placeholder="Ex: Escavadeira CAT 320"
-                      value={medEquipamento}
-                      onChange={(e) => setMedEquipamento(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="med-operador">Operador</Label>
-                    <Input
-                      id="med-operador"
-                      type="text"
-                      placeholder="Nome do Operador"
-                      value={medOperador}
-                      onChange={(e) => setMedOperador(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Turno da Manhã (Início - Fim)</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="time"
-                        value={medManhaInicio}
-                        onChange={(e) => setMedManhaInicio(e.target.value)}
-                      />
-                      <Input
-                        type="time"
-                        value={medManhaFinal}
-                        onChange={(e) => setMedManhaFinal(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Turno da Tarde (Início - Fim)</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="time"
-                        value={medTardeInicio}
-                        onChange={(e) => setMedTardeInicio(e.target.value)}
-                      />
-                      <Input
-                        type="time"
-                        value={medTardeFinal}
-                        onChange={(e) => setMedTardeFinal(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="med-valor">Valor Hora (R$)</Label>
-                    <Input
-                      id="med-valor"
-                      type="number"
-                      step="0.01"
-                      placeholder="0,00"
-                      value={medValorHora}
-                      onChange={(e) => setMedValorHora(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="med-obs">Observações</Label>
-                    <Input
-                      id="med-obs"
-                      type="text"
-                      placeholder="Detalhes ou ocorrências do dia"
-                      value={medObservacao}
-                      onChange={(e) => setMedObservacao(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-2">
-                  <Button
-                    type="submit"
-                    disabled={submittingMedicao}
-                    className="bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    {submittingMedicao ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    Salvar Medição Diária
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-
           {/* DASHBOARD MODAL */}
           <Dialog>
             <DialogTrigger asChild>
@@ -652,8 +510,9 @@ function CustosPage() {
             <input
               type="month"
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-              value={filtroMes === "TODOS" ? "" : filtroMes}
-              onChange={(e) => setFiltroMes(e.target.value || "TODOS")}
+              value={filtroMes}
+              onChange={(e) => setFiltroMes(e.target.value)}
+              required
             />
           </div>
           <div className="flex items-center gap-2 min-w-[220px]">
@@ -662,8 +521,11 @@ function CustosPage() {
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
               value={filtroContrato}
               onChange={(e) => setFiltroContrato(e.target.value)}
+              required
             >
-              <option value="TODOS">Todos os Contratos</option>
+              <option value="" disabled>
+                Selecione um contrato
+              </option>
               {listaTodosContratos.map((c) => (
                 <option key={c.id} value={c.nome}>
                   {c.nome}
@@ -671,6 +533,155 @@ function CustosPage() {
               ))}
             </select>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-white border shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg">Lançamentos do período</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {lancamentosFiltrados.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nenhum lançamento encontrado para este contrato e mês.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {lancamentosFiltrados.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex flex-col gap-3 rounded-md border p-3 md:flex-row md:items-center md:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{item.descricao}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.data} | {item.tipo}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 shrink-0">
+                    <span className={`font-semibold ${item.tipo === "Receita" ? "text-emerald-600" : "text-rose-600"}`}>
+                      {item.tipo === "Receita" ? "+" : "-"} {formatBRL(item.valor)}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        title="Editar lançamento"
+                        onClick={() => abrirEdicaoLancamento(item)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="text-rose-600 hover:bg-rose-50"
+                        title="Excluir lançamento"
+                        onClick={() => handleDeletarCusto(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="bg-white border shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Briefcase className="w-5 h-5 text-primary" />
+            Contratos
+          </CardTitle>
+          <Dialog
+            open={contratoDialogAberto}
+            onOpenChange={(aberto) => {
+              setContratoDialogAberto(aberto);
+              if (!aberto) {
+                setContratoEditando(null);
+                setNovoNomeEditado("");
+              }
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setContratoEditando(null);
+                  setNovoNomeEditado("");
+                }}
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Novo contrato
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-white text-slate-900">
+              <DialogHeader>
+                <DialogTitle>{contratoEditando ? "Editar contrato" : "Novo contrato"}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSalvarContrato} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nome-contrato">Nome do contrato</Label>
+                  <Input
+                    id="nome-contrato"
+                    value={novoNomeEditado}
+                    onChange={(e) => setNovoNomeEditado(e.target.value)}
+                    placeholder="Ex: Contrato Norte"
+                    required
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <Button type="submit">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Salvar contrato
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {contratos.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum contrato cadastrado.</p>
+          ) : (
+            contratos.map((contrato) => (
+              <div
+                key={contrato.id}
+                className="flex items-center justify-between gap-3 rounded-md border px-3 py-2"
+              >
+                <span className="text-sm font-medium truncate">{contrato.nome}</span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    title={`Editar ${contrato.nome}`}
+                    onClick={() => {
+                      setContratoEditando(contrato);
+                      setNovoNomeEditado(contrato.nome);
+                      setContratoDialogAberto(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="text-rose-600 hover:bg-rose-50"
+                    title={`Excluir ${contrato.nome}`}
+                    onClick={() => handleDeletarContrato(contrato)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
         </CardContent>
       </Card>
 
@@ -834,64 +845,95 @@ function CustosPage() {
         </CardContent>
       </Card>
 
-      {/* Histórico de Medições Diárias Cadastradas */}
-      <Card className="bg-white shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Medições Diárias Registradas</CardTitle>
-          <span className="text-xs text-muted-foreground">{medicoes.length} registro(s)</span>
-        </CardHeader>
-        <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-muted/50 text-xs uppercase text-muted-foreground border-b">
-              <tr>
-                <th className="p-3">Data</th>
-                <th className="p-3">Contrato</th>
-                <th className="p-3">Equipamento</th>
-                <th className="p-3">Operador</th>
-                <th className="p-3">Manhã</th>
-                <th className="p-3">Tarde</th>
-                <th className="p-3 text-right">Vlr/Hora</th>
-                <th className="p-3 text-center">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {medicoes.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="p-4 text-center text-muted-foreground">
-                    Nenhuma medição diária registrada.
-                  </td>
-                </tr>
-              ) : (
-                medicoes.map((m) => (
-                  <tr key={m.id} className="border-b hover:bg-muted/30">
-                    <td className="p-3 whitespace-nowrap">{m.data}</td>
-                    <td className="p-3 font-medium">{m.contrato}</td>
-                    <td className="p-3">{m.equipamento}</td>
-                    <td className="p-3">{m.operador}</td>
-                    <td className="p-3 text-xs">
-                      {m.manha_inicio} às {m.manha_final}
-                    </td>
-                    <td className="p-3 text-xs">
-                      {m.tarde_inicio} às {m.tarde_final}
-                    </td>
-                    <td className="p-3 text-right font-semibold">{formatBRL(m.valor_hora)}</td>
-                    <td className="p-3 text-center">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-rose-600 hover:bg-rose-50"
-                        onClick={() => handleDeletarMedicao(m.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+      <Dialog
+        open={lancamentoEditando !== null}
+        onOpenChange={(aberto) => {
+          if (!aberto) setLancamentoEditando(null);
+        }}
+      >
+        <DialogContent className="bg-white text-slate-900">
+          <DialogHeader>
+            <DialogTitle>Editar lançamento financeiro</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAtualizarCusto} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="editar-contrato">Contrato</Label>
+              <select
+                id="editar-contrato"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={contratoSelecionado}
+                onChange={(e) => setContratoSelecionado(e.target.value)}
+                required
+              >
+                {listaTodosContratos.map((contrato) => (
+                  <option key={contrato.id} value={contrato.nome}>
+                    {contrato.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="editar-tipo">Classificação Financeira</Label>
+                <select
+                  id="editar-tipo"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={tipo}
+                  onChange={(e) => setTipo(e.target.value as TipoLancamento)}
+                >
+                  <option value="Receita">Receita (+)</option>
+                  <option value="Impostos">Impostos (-)</option>
+                  <option value="Mão de Obra">Mão de Obra (-)</option>
+                  <option value="Encargos">Encargos (-)</option>
+                  <option value="Despesas de Manutenção">Despesas de Manutenção (-)</option>
+                  <option value="Despesas de Transporte">Despesas de Transporte (-)</option>
+                  <option value="Despesas Administrativas">Despesas Administrativas (-)</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editar-valor">Valor (R$)</Label>
+                <Input
+                  id="editar-valor"
+                  type="number"
+                  step="0.01"
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editar-descricao">Descrição</Label>
+              <Input
+                id="editar-descricao"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editar-data">Data</Label>
+              <Input
+                id="editar-data"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setLancamentoEditando(null)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Atualizar lançamento
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }

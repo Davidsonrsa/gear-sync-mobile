@@ -1,13 +1,21 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Filter,
   TrendingUp,
   TrendingDown,
   DollarSign,
   PieChart as PieChartIcon,
 } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 export interface ItemFinanceiro {
   id: string;
@@ -26,8 +34,6 @@ interface DashboardFinanceiroProps {
 const COLORS = ["#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#3B82F6", "#EC4899", "#6366F1"];
 
 export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
-  const [contratoSelecionado, setContratoSelecionado] = useState("TODOS");
-
   const listaContratos = useMemo(() => {
     const set = new Set<string>();
     lancamentos.forEach((l) => {
@@ -36,10 +42,7 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
     return Array.from(set).sort();
   }, [lancamentos]);
 
-  const lancamentosFiltrados = useMemo(() => {
-    if (contratoSelecionado === "TODOS") return lancamentos;
-    return lancamentos.filter((l) => l.contrato === contratoSelecionado);
-  }, [lancamentos, contratoSelecionado]);
+  const lancamentosFiltrados = lancamentos;
 
   function formatBRL(valor: number) {
     return new Intl.NumberFormat("pt-BR", {
@@ -138,45 +141,36 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
   }, [lancamentosFiltrados]);
 
   const pieData = useMemo(() => {
-    const items = [
-      { name: "Mão de Obra", value: resumos.maoDeObra },
-      { name: "Manutenção", value: resumos.manutencao },
-      { name: "Encargos", value: resumos.encargos },
-      { name: "Transporte", value: resumos.transporte },
-      { name: "Impostos", value: resumos.impostos },
-      { name: "Outros", value: resumos.outros },
-    ].filter((item) => item.value > 0);
-    return items;
-  }, [resumos]);
+    const porMes = new Map<string, Record<string, number | string>>();
+    lancamentosFiltrados.forEach((lancamento) => {
+      const mes = lancamento.data.substring(0, 7);
+      const contrato = lancamento.contrato || "Sem contrato";
+      const linha = porMes.get(mes) ?? { mes };
+      const valor = Number(lancamento.valor) || 0;
+      const categoria = classificarCategoria(lancamento.tipo, lancamento.descricao);
+      linha[contrato] = Number(linha[contrato] || 0) + (categoria === "receita" ? valor : -valor);
+      porMes.set(mes, linha);
+    });
+
+    return Array.from(porMes.values())
+      .sort((a, b) => String(a.mes).localeCompare(String(b.mes)))
+      .map((linha) => ({
+        ...linha,
+        mesLabel: new Intl.DateTimeFormat("pt-BR", {
+          month: "short",
+          year: "2-digit",
+          timeZone: "UTC",
+        }).format(new Date(`${linha.mes}-01T00:00:00Z`)),
+      }));
+  }, [lancamentosFiltrados]);
+
+  const contratosComparativo = useMemo(
+    () => listaContratos.filter((contrato) => pieData.some((linha) => contrato in linha)),
+    [listaContratos, pieData],
+  );
 
   return (
     <div className="space-y-6 text-slate-100">
-      {/* Selector de Contrato */}
-      <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-700 bg-slate-800/80">
-        <Filter className="w-4 h-4 text-emerald-400" />
-        <label
-          htmlFor="modal-select-contrato"
-          className="text-sm font-medium text-slate-200 whitespace-nowrap"
-        >
-          Filtrar por Contrato:
-        </label>
-        <select
-          id="modal-select-contrato"
-          className="flex h-9 w-full md:w-80 rounded-md border border-slate-600 bg-slate-950 px-3 py-1 text-sm text-slate-100 shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
-          value={contratoSelecionado}
-          onChange={(e) => setContratoSelecionado(e.target.value)}
-        >
-          <option value="TODOS" style={{ backgroundColor: "#020617", color: "#ffffff" }}>
-            Todos os Contratos
-          </option>
-          {listaContratos.map((c) => (
-            <option key={c} value={c} style={{ backgroundColor: "#020617", color: "#ffffff" }}>
-              {c}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {/* Grid KPI + Rosca */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:col-span-2">
@@ -245,32 +239,27 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
           </Card>
         </div>
 
-        {/* Gráfico de Rosca */}
+        {/* Comparativo mensal por contrato */}
         <Card className="border-slate-700 bg-slate-800/90 text-slate-100 shadow-md flex flex-col justify-between">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-semibold text-slate-300 uppercase">
-              Distribuição por Tipo de Custo
+              Comparativo mensal por contrato
             </CardTitle>
           </CardHeader>
-          <CardContent className="h-64 flex items-center justify-center p-0">
-            {pieData.length === 0 ? (
-              <span className="text-xs text-slate-400">Sem despesas registradas</span>
+          <CardContent className="h-72 p-0 pr-4">
+            {pieData.length === 0 || contratosComparativo.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-xs text-slate-400">
+                Sem lançamentos para comparar
+              </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {pieData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
+                <BarChart data={pieData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                  <XAxis dataKey="mesLabel" tick={{ fill: "#94A3B8", fontSize: 11 }} />
+                  <YAxis
+                    tick={{ fill: "#94A3B8", fontSize: 10 }}
+                    tickFormatter={(value) => `${value / 1000}k`}
+                  />
                   <Tooltip
                     formatter={(value: number) => formatBRL(value)}
                     contentStyle={{
@@ -279,8 +268,17 @@ export function DashboardFinanceiro({ lancamentos }: DashboardFinanceiroProps) {
                       color: "#F8FAFC",
                     }}
                   />
-                  <Legend wrapperStyle={{ fontSize: "12px", color: "#F8FAFC" }} />
-                </PieChart>
+                  <Legend wrapperStyle={{ fontSize: "11px", color: "#F8FAFC" }} />
+                  {contratosComparativo.map((contrato, index) => (
+                    <Bar
+                      key={contrato}
+                      dataKey={contrato}
+                      name={contrato}
+                      fill={COLORS[index % COLORS.length]}
+                      radius={[3, 3, 0, 0]}
+                    />
+                  ))}
+                </BarChart>
               </ResponsiveContainer>
             )}
           </CardContent>
