@@ -681,7 +681,7 @@ function CustosPage() {
     });
     const despesasTotais =
       impostos + maoDeObra + encargos + manutencao + transporte + administrativas;
-    const receitaBruta = receita + (lancamentoMedicoesExportado?.valor ?? 0);
+    const receitaBruta = receita + totalMedicoesPeriodo;
     const resultadoFinal = receitaBruta - despesasTotais;
     const margemLucro = receitaBruta > 0 ? (resultadoFinal / receitaBruta) * 100 : 0;
     return {
