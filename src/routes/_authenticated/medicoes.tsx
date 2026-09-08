@@ -67,10 +67,11 @@ export function MedicoesPage() {
   const [contratos, setContratos] = useState<Contrato[]>([]);
 
   const [meses, setMeses] = useState<MesAno[]>(() =>
-    lerRascunho<MesAno[]>(MESES_RASCUNHO_KEY, [
-      { id: "m1", contratoId: "1", nome: "Setembro", ano: 2026, mesIndex: 8 },
-    ]),
+    lerRascunho<MesAno[]>(MESES_RASCUNHO_KEY, []).filter(
+      (mes) => mes.contratoId && mes.contratoId !== "1",
+    ),
   );
+
 
   const gerarDiasDoMesEmBranco = (ano: number, mesIndex: number): DiaMedicao[] => {
     const quantidadeDias = new Date(ano, mesIndex + 1, 0).getDate();
@@ -117,20 +118,8 @@ export function MedicoesPage() {
     });
   };
 
-  const [maquinas, setMaquinas] = useState<MaquinaMedicao[]>([
-    {
-      id: "eq1",
-      mesId: "m1",
-      codigo: "RE23",
-      tipo: "Retroescavadeira",
-      operador: "Pedro",
-      valorHora: 193.62,
-      dataAprovacao: "2026-09-30",
-      assinaturaResponsavel: "Responsável Técnico",
-      assinaturaContratante: "Fiscal da Prefeitura",
-      dias: gerarDiasDoMesEmBranco(2026, 8),
-    },
-  ]);
+  const [maquinas, setMaquinas] = useState<MaquinaMedicao[]>([]);
+
 
   const [contratoSelecionado, setContratoSelecionado] = useState<Contrato | null>(null);
   const [mesSelecionado, setMesSelecionado] = useState<MesAno | null>(null);
@@ -235,27 +224,46 @@ export function MedicoesPage() {
       ];
       const mesesCarregados = [...meses];
 
-      (dadosMedicoes ?? []).filter((item) => {
-        return (
-          item.manha_inicio != null ||
-          item.manha_final != null ||
-          item.tarde_inicio != null ||
-          item.tarde_final != null ||
-          Boolean(item.observacao)
+      const normalizar = (valor: string) => (valor ?? "").trim().toLowerCase();
+      const primeiroToken = (valor: string) => normalizar(valor).split(/\s+/)[0] ?? "";
+
+      const resolverContratoId = (item: { contrato: string; contrato_id: string | null }) => {
+        if (item.contrato_id) {
+          const porId = contratosCarregados.find(
+            (contrato) => contrato.id === String(item.contrato_id),
+          );
+          if (porId) return porId.id;
+        }
+        const porNumero = contratosCarregados.find(
+          (contrato) =>
+            normalizar(contrato.numero) === normalizar(item.contrato) ||
+            primeiroToken(contrato.numero) === primeiroToken(item.contrato),
         );
-      }).forEach((item) => {
+        return porNumero?.id ?? (item.contrato_id ? String(item.contrato_id) : null);
+      };
+
+      const temLancamento = (item: {
+        manha_inicio: number | null;
+        manha_final: number | null;
+        tarde_inicio: number | null;
+        tarde_final: number | null;
+        observacao: string | null;
+      }) =>
+        item.manha_inicio != null ||
+        item.manha_final != null ||
+        item.tarde_inicio != null ||
+        item.tarde_final != null ||
+        Boolean(item.observacao);
+
+      (dadosMedicoes ?? []).filter(temLancamento).forEach((item) => {
         const dataItem = new Date(`${item.data}T00:00:00`);
-        const contratoBanco = item.contrato_id
-          ? contratosCarregados.find((contrato) => contrato.id === String(item.contrato_id))
-          : contratosCarregados.find((contrato) => contrato.numero === item.contrato);
-        const contratoId = contratoBanco?.id ?? String(item.contrato_id ?? "1");
-        const contratoNumero = contratoBanco?.numero ?? item.contrato;
+        const contratoId = resolverContratoId(item);
+        if (!contratoId) return;
         const mesExiste = mesesCarregados.some(
           (itemMes) =>
             itemMes.ano === dataItem.getFullYear() &&
             itemMes.mesIndex === dataItem.getMonth() &&
-            (itemMes.contratoId === contratoId ||
-              (itemMes.contratoId === "1" && item.contrato === contratoNumero)),
+            itemMes.contratoId === contratoId,
         );
 
         if (!mesExiste) {
@@ -273,34 +281,21 @@ export function MedicoesPage() {
 
       setMaquinas((atuais) => {
         const persistidas = new Map<string, MaquinaMedicao>();
-        (dadosMedicoes ?? []).filter((item) => {
-          return (
-            item.manha_inicio != null ||
-            item.manha_final != null ||
-            item.tarde_inicio != null ||
-            item.tarde_final != null ||
-            Boolean(item.observacao)
-          );
-        }).forEach((item) => {
+        (dadosMedicoes ?? []).filter(temLancamento).forEach((item) => {
           const dataItem = new Date(`${item.data}T00:00:00`);
-          const contratoBanco = item.contrato_id
-            ? contratosCarregados.find((contrato) => contrato.id === String(item.contrato_id))
-            : contratosCarregados.find((contrato) => contrato.numero === item.contrato);
+          const contratoId = resolverContratoId(item);
+          if (!contratoId) return;
           const mes = mesesCarregados.find(
             (itemMes) =>
               itemMes.ano === dataItem.getFullYear() &&
               itemMes.mesIndex === dataItem.getMonth() &&
-              (item.contrato_id
-                ? itemMes.contratoId === String(item.contrato_id) ||
-                  (item.contrato ===
-                    contratoBanco?.numero &&
-                    itemMes.contratoId === "1")
-                : itemMes.contratoId === (contratoBanco?.id ?? "1")),
+              itemMes.contratoId === contratoId,
           );
+
           const mesId = mes?.id;
           if (!mesId) return;
 
-          const chave = `${item.contrato_id ?? item.contrato}:${mesId}:${item.equipamento}:${item.operador}:${item.valor_hora}`;
+          const chave = `${contratoId}:${mesId}:${item.equipamento}:${item.operador}:${item.valor_hora}`;
           let maquina = persistidas.get(chave);
           if (!maquina) {
             const atual = atuais.find(
