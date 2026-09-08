@@ -235,7 +235,15 @@ export function MedicoesPage() {
       ];
       const mesesCarregados = [...meses];
 
-      (dadosMedicoes ?? []).forEach((item) => {
+      (dadosMedicoes ?? []).filter((item) => {
+        return (
+          item.manha_inicio != null ||
+          item.manha_final != null ||
+          item.tarde_inicio != null ||
+          item.tarde_final != null ||
+          Boolean(item.observacao)
+        );
+      }).forEach((item) => {
         const dataItem = new Date(`${item.data}T00:00:00`);
         const contratoBanco = item.contrato_id
           ? contratosCarregados.find((contrato) => contrato.id === String(item.contrato_id))
@@ -265,7 +273,15 @@ export function MedicoesPage() {
 
       setMaquinas((atuais) => {
         const persistidas = new Map<string, MaquinaMedicao>();
-        (dadosMedicoes ?? []).forEach((item) => {
+        (dadosMedicoes ?? []).filter((item) => {
+          return (
+            item.manha_inicio != null ||
+            item.manha_final != null ||
+            item.tarde_inicio != null ||
+            item.tarde_final != null ||
+            Boolean(item.observacao)
+          );
+        }).forEach((item) => {
           const dataItem = new Date(`${item.data}T00:00:00`);
           const contratoBanco = item.contrato_id
             ? contratosCarregados.find((contrato) => contrato.id === String(item.contrato_id))
@@ -489,7 +505,15 @@ export function MedicoesPage() {
       return (hora || 0) + (minuto || 0) / 60;
     };
 
-    const lancamentos = maquina.dias.map((dia) => ({
+    const diasComLancamento = maquina.dias.filter(
+      (dia) =>
+        dia.manhaInicio ||
+        dia.manhaFim ||
+        dia.tardeInicio ||
+        dia.tardeFim ||
+        dia.observacao,
+    );
+    const lancamentos = diasComLancamento.map((dia) => ({
       contrato: contratoSelecionado.numero,
       contrato_id: contratoSelecionado.id,
       equipamento: maquina.codigo,
@@ -880,6 +904,19 @@ export function MedicoesPage() {
 
             let totalGeralHoras = 0;
             let totalGeralValor = 0;
+            const totalContrato = listaMes.reduce(
+              (totais, maquina) => {
+                maquina.dias.forEach((dia) => {
+                  const horas =
+                    calcularSubtotal(dia.manhaInicio, dia.manhaFim) +
+                    calcularSubtotal(dia.tardeInicio, dia.tardeFim);
+                  totais.horas += horas;
+                  totais.valor += horas * maquina.valorHora;
+                });
+                return totais;
+              },
+              { horas: 0, valor: 0 },
+            );
 
             return (
               <div className="space-y-2 print:space-y-1">
@@ -916,7 +953,6 @@ export function MedicoesPage() {
                     </div>
                   </div>
                 </div>
-
                 <div className="overflow-x-auto border border-gray-800">
                   <table className="w-full text-left border-collapse text-[10px] print:text-[8px]">
                     <thead>
@@ -1176,6 +1212,13 @@ export function MedicoesPage() {
                       </tr>
                     </tfoot>
                   </table>
+                </div>
+
+                <div className="flex flex-wrap justify-end gap-4 border border-gray-800 bg-orange-50 p-2 text-xs font-bold text-gray-900 print:hidden">
+                  <span>
+                    Total do contrato no mês: {totalContrato.horas.toFixed(2)}h | R${" "}
+                    {totalContrato.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </span>
                 </div>
 
                 <div className="mt-2 pt-2 border border-gray-800 p-2 text-[10px] print:text-[9px] space-y-4 bg-gray-50 print:bg-white">

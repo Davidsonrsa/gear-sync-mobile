@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      classificacoes_financeiras: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
       contrato_custos: {
         Row: {
           cl: string
@@ -66,18 +84,21 @@ export type Database = {
       }
       contratos: {
         Row: {
+          ativo: boolean
           cl: string | null
           created_at: string | null
           id: string
           nome_contrato: string
         }
         Insert: {
+          ativo?: boolean
           cl?: string | null
           created_at?: string | null
           id?: string
           nome_contrato: string
         }
         Update: {
+          ativo?: boolean
           cl?: string | null
           created_at?: string | null
           id?: string

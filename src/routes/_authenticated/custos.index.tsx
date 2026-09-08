@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 import {
   PlusCircle,
@@ -27,6 +28,10 @@ import {
   Briefcase,
   Pencil,
   Settings,
+  Power,
+  Maximize2,
+  Minimize2,
+  X,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/custos/")({
@@ -34,18 +39,28 @@ export const Route = createFileRoute("/_authenticated/custos/")({
   component: CustosPage,
 });
 
-export type TipoLancamento =
-  | "Receita"
-  | "Impostos"
-  | "Mão de Obra"
-  | "Encargos"
-  | "Despesas de Manutenção"
-  | "Despesas de Transporte"
-  | "Despesas Administrativas";
+export type TipoLancamento = string;
+
+const CLASSIFICACOES_PADRAO = [
+  "Receita",
+  "Impostos",
+  "Mão de Obra",
+  "Encargos",
+  "Despesas de Manutenção",
+  "Despesas de Transporte",
+  "Despesas Administrativas",
+] as const;
+const DESCRICAO_MEDICOES_PREFIXO = "Medições do período - ";
+
+interface ClassificacaoFinanceira {
+  id: string;
+  nome: string;
+}
 
 export interface ContratoItem {
   id: string;
   nome: string;
+  ativo: boolean;
 }
 
 export interface ItemFinanceiro {
@@ -58,13 +73,32 @@ export interface ItemFinanceiro {
   data: string;
 }
 
+interface MedicaoFinanceira {
+  id: number;
+  equipamento: string;
+  contrato: string;
+  contrato_id: string | null;
+  data: string;
+  valor_hora: number;
+  manha_inicio: number | null;
+  manha_final: number | null;
+  tarde_inicio: number | null;
+  tarde_final: number | null;
+}
+
 function CustosPage() {
   const [lancamentos, setLancamentos] = useState<ItemFinanceiro[]>([]);
+    const [medicoes, setMedicoes] = useState<MedicaoFinanceira[]>([]);
   const [contratos, setContratos] = useState<ContratoItem[]>([]);
+  const [classificacoes, setClassificacoes] = useState<ClassificacaoFinanceira[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [contratoDialogAberto, setContratoDialogAberto] = useState(false);
+  const [listaContratosAberta, setListaContratosAberta] = useState(false);
+  const [dashboardExpandido, setDashboardExpandido] = useState(false);
+  const [classificacaoDialogAberto, setClassificacaoDialogAberto] = useState(false);
+  const [novaClassificacao, setNovaClassificacao] = useState("");
 
   // Form states (Custos)
   const [contratoSelecionado, setContratoSelecionado] = useState<string>("");
@@ -80,8 +114,9 @@ function CustosPage() {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
 
   // Filter states
-  const [filtroMes, setFiltroMes] = useState<string>("");
   const [filtroContrato, setFiltroContrato] = useState<string>("");
+  const [filtroDataInicial, setFiltroDataInicial] = useState<string>("");
+  const [filtroDataFinal, setFiltroDataFinal] = useState<string>("");
   const [mostrarLancamentos, setMostrarLancamentos] = useState(true);
 
   const formatBRL = (val: number) => {
@@ -94,23 +129,83 @@ function CustosPage() {
   useEffect(() => {
     fetchContratos();
     fetchData();
+    fetchClassificacoes();
+    fetchMedicoes();
   }, []);
+
+  async function fetchClassificacoes() {
+    const { data, error } = await supabase
+      .from("classificacoes_financeiras")
+      .select("id, nome")
+      .order("nome");
+    if (error) {
+      console.error("Erro ao carregar classificações financeiras:", error);
+      return;
+    }
+    setClassificacoes(data ?? []);
+  }
+
+  const todasClassificacoes = useMemo(
+    () => [
+      ...CLASSIFICACOES_PADRAO,
+      ...classificacoes.map((classificacao) => classificacao.nome),
+    ].filter((nome, index, lista) => lista.indexOf(nome) === index),
+    [classificacoes],
+  );
+
+  async function handleSalvarClassificacao(e: React.FormEvent) {
+    e.preventDefault();
+    const nome = novaClassificacao.trim();
+    if (!nome || todasClassificacoes.some((item) => item.toLowerCase() === nome.toLowerCase())) {
+      setMessage({ type: "error", text: "Informe uma classificação nova e válida." });
+      return;
+    }
+    const { data, error } = await supabase
+      .from("classificacoes_financeiras")
+      .insert({ nome })
+      .select("id, nome")
+      .single();
+    if (error || !data) {
+      setMessage({ type: "error", text: "Não foi possível cadastrar a classificação." });
+      return;
+    }
+    setClassificacoes((prev) => [...prev, data]);
+    setTipo(nome);
+    setNovaClassificacao("");
+    setClassificacaoDialogAberto(false);
+  }
+
+  async function handleExcluirClassificacao(classificacao: ClassificacaoFinanceira) {
+    if (!window.confirm(`Excluir a classificação "${classificacao.nome}"?`)) return;
+    const { error } = await supabase
+      .from("classificacoes_financeiras")
+      .delete()
+      .eq("id", classificacao.id);
+    if (error) {
+      setMessage({ type: "error", text: "Não foi possível excluir a classificação." });
+      return;
+    }
+    setClassificacoes((prev) => prev.filter((item) => item.id !== classificacao.id));
+    if (tipo === classificacao.nome) setTipo("Despesas de Manutenção");
+  }
 
   async function fetchContratos() {
     try {
       const { data, error } = await supabase.from("contratos").select("*");
       if (error) throw error;
       if (data) {
-        const lista: ContratoItem[] = data
+          const lista: ContratoItem[] = data
           .map((c: any) => ({
             id: String(c.id),
             nome: String(c.nome_contrato || c.nome || c.descricao || c.cliente || "").trim(),
+            ativo: c.ativo !== false,
           }))
           .filter((c) => c.nome !== "");
 
         setContratos(lista);
-        if (lista.length > 0) {
-          if (!contratoSelecionado) setContratoSelecionado(lista[0].nome);
+        const contratosAtivos = lista.filter((contrato) => contrato.ativo);
+        if (contratosAtivos.length > 0) {
+          if (!contratoSelecionado) setContratoSelecionado(contratosAtivos[0].nome);
         }
       }
     } catch (err) {
@@ -147,20 +242,94 @@ function CustosPage() {
     }
   }
 
+  async function fetchMedicoes() {
+    const { data, error } = await supabase
+      .from("medicoes_diarias")
+      .select(
+        "id, equipamento, contrato, contrato_id, data, valor_hora, manha_inicio, manha_final, tarde_inicio, tarde_final",
+      );
+    if (error) {
+      console.error("Erro ao carregar medições para os custos:", error);
+      return;
+    }
+    setMedicoes(
+      Array.from(
+        (data ?? []).reduce((unicos, item) => {
+          const chave = `${item.contrato_id ?? item.contrato}|${item.data}|${item.equipamento}`;
+          const anterior = unicos.get(chave);
+          if (!anterior || Number(item.id) > Number(anterior.id)) unicos.set(chave, item);
+          return unicos;
+        }, new Map<string, any>()).values(),
+      ).map((item) => ({
+        id: item.id,
+        equipamento: item.equipamento,
+        contrato: item.contrato,
+        contrato_id: item.contrato_id ? String(item.contrato_id) : null,
+        data: item.data,
+        valor_hora: Number(item.valor_hora) || 0,
+        manha_inicio: item.manha_inicio,
+        manha_final: item.manha_final,
+        tarde_inicio: item.tarde_inicio,
+        tarde_final: item.tarde_final,
+      })),
+    );
+  }
+
+  const totalMedicoesPeriodo = useMemo(() => {
+    const contrato = contratos.find((item) => item.nome === filtroContrato);
+    const mesReferencia = date.substring(0, 7);
+    const dataInicialEfetiva = filtroDataInicial || `${mesReferencia}-01`;
+    const dataFinalEfetiva =
+      filtroDataFinal ||
+      `${mesReferencia}-${String(new Date(Number(mesReferencia.substring(0, 4)), Number(mesReferencia.substring(5, 7)), 0).getDate()).padStart(2, "0")}`;
+    return medicoes.reduce((total, medicao) => {
+      const mesmoContrato = contrato
+        ? medicao.contrato_id === contrato.id ||
+          medicao.contrato.trim().toLowerCase() === contrato.nome.trim().toLowerCase()
+        : medicao.contrato.trim().toLowerCase() === filtroContrato.trim().toLowerCase();
+      const dentroDoPeriodo =
+        mesmoContrato &&
+        medicao.data >= dataInicialEfetiva &&
+        medicao.data <= dataFinalEfetiva;
+      if (!dentroDoPeriodo) return total;
+
+      const horasManha =
+        medicao.manha_inicio != null && medicao.manha_final != null
+          ? Math.max(0, medicao.manha_final - medicao.manha_inicio)
+          : 0;
+      const horasTarde =
+        medicao.tarde_inicio != null && medicao.tarde_final != null
+          ? Math.max(0, medicao.tarde_final - medicao.tarde_inicio)
+          : 0;
+      return total + (horasManha + horasTarde) * medicao.valor_hora;
+    }, 0);
+  }, [contratos, medicoes, filtroContrato, filtroDataInicial, filtroDataFinal, date]);
+
   const listaTodosContratos = useMemo(() => {
     const mapaContratos = new Map<string, ContratoItem>();
     contratos.forEach((c) => {
       if (c.nome && c.nome.trim()) {
-        mapaContratos.set(c.nome.trim().toLowerCase(), { id: c.id, nome: c.nome.trim() });
+        if (c.ativo) {
+          mapaContratos.set(c.nome.trim().toLowerCase(), {
+            id: c.id,
+            nome: c.nome.trim(),
+            ativo: true,
+          });
+        }
       }
     });
     lancamentos.forEach((l) => {
       if (l.contrato && l.contrato.trim()) {
         const chave = l.contrato.trim().toLowerCase();
+        const contratoCadastrado = contratos.find(
+          (contrato) => contrato.nome.trim().toLowerCase() === chave,
+        );
+        if (contratoCadastrado && !contratoCadastrado.ativo) return;
         if (!mapaContratos.has(chave)) {
           mapaContratos.set(chave, {
             id: l.contrato_id || `virtual-${l.contrato.trim()}`,
             nome: l.contrato.trim(),
+            ativo: true,
           });
         }
       }
@@ -173,22 +342,6 @@ function CustosPage() {
       setFiltroContrato(listaTodosContratos[0].nome);
     }
   }, [filtroContrato, listaTodosContratos]);
-
-  useEffect(() => {
-    if (filtroMes || !filtroContrato) return;
-
-    const mesesDisponiveis = lancamentos
-      .filter(
-        (item) => item.contrato.trim().toLowerCase() === filtroContrato.trim().toLowerCase(),
-      )
-      .map((item) => item.data.substring(0, 7))
-      .sort()
-      .reverse();
-
-    if (mesesDisponiveis.length > 0) {
-      setFiltroMes(mesesDisponiveis[0]);
-    }
-  }, [filtroContrato, filtroMes, lancamentos]);
 
   async function handleSalvarContrato(e: React.FormEvent) {
     e.preventDefault();
@@ -222,7 +375,7 @@ function CustosPage() {
           .select()
           .single();
         if (error) throw error;
-        const novoContrato = { id: String(data.id), nome };
+        const novoContrato = { id: String(data.id), nome, ativo: true };
         setContratos((prev) => [...prev, novoContrato]);
         setContratoSelecionado(nome);
       }
@@ -252,6 +405,25 @@ function CustosPage() {
     }
   }
 
+  async function handleAlternarContrato(contrato: ContratoItem) {
+    const ativo = !contrato.ativo;
+    const { error } = await supabase
+      .from("contratos")
+      .update({ ativo })
+      .eq("id", contrato.id);
+    if (error) {
+      setMessage({ type: "error", text: "Não foi possível alterar o status do contrato." });
+      return;
+    }
+    setContratos((prev) =>
+      prev.map((item) => (item.id === contrato.id ? { ...item, ativo } : item)),
+    );
+    if (!ativo && filtroContrato === contrato.nome) {
+      setFiltroContrato("");
+      setContratoSelecionado("");
+    }
+  }
+
   async function handleSubmitCusto(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
@@ -278,7 +450,7 @@ function CustosPage() {
         if (newContract) {
           setContratos((prev) => [
             ...prev,
-            { id: String(newContract.id), nome: nomeContratoFinal },
+            { id: String(newContract.id), nome: nomeContratoFinal, ativo: true },
           ]);
         }
       } catch (err) {
@@ -406,14 +578,73 @@ function CustosPage() {
 
   const lancamentosFiltrados = useMemo(() => {
     return lancamentos.filter((item) => {
-      const mesItem = item.data.substring(0, 7);
-      const matchMes = Boolean(filtroMes) && mesItem === filtroMes;
       const matchContrato =
         Boolean(filtroContrato) &&
         item.contrato.trim().toLowerCase() === filtroContrato.trim().toLowerCase();
-      return matchMes && matchContrato;
+      const matchDataInicial = !filtroDataInicial || item.data >= filtroDataInicial;
+      const matchDataFinal = !filtroDataFinal || item.data <= filtroDataFinal;
+      return matchContrato && matchDataInicial && matchDataFinal;
     });
-  }, [lancamentos, filtroMes, filtroContrato]);
+  }, [lancamentos, filtroContrato, filtroDataInicial, filtroDataFinal]);
+
+  const lancamentosFinanceiros = useMemo(
+    () =>
+      lancamentosFiltrados.filter(
+        (item) => !item.descricao.startsWith(DESCRICAO_MEDICOES_PREFIXO),
+      ),
+    [lancamentosFiltrados],
+  );
+
+  const lancamentoMedicoesExportado = useMemo(
+    () =>
+      lancamentosFiltrados.find((item) =>
+        item.descricao.startsWith(DESCRICAO_MEDICOES_PREFIXO),
+      ),
+    [lancamentosFiltrados],
+  );
+
+  async function exportarMedicoesParaCustos() {
+    if (!filtroContrato || totalMedicoesPeriodo <= 0) return;
+    const contrato = contratos.find((item) => item.nome === filtroContrato);
+    const dataLancamento = filtroDataInicial || date;
+    const payload = {
+      contrato: filtroContrato,
+      contrato_id: contrato?.id || null,
+      categoria: "Receita",
+      descricao: `${DESCRICAO_MEDICOES_PREFIXO}${filtroContrato}${filtroDataInicial || filtroDataFinal ? ` (${filtroDataInicial || "início"} a ${filtroDataFinal || "fim"})` : ""}`,
+      valor: totalMedicoesPeriodo,
+      data: dataLancamento,
+    };
+    const query = lancamentoMedicoesExportado
+      ? supabase.from("custos").update(payload).eq("id", lancamentoMedicoesExportado.id)
+      : supabase.from("custos").insert(payload).select().single();
+    const { data, error } = await query;
+    if (error) {
+      setMessage({ type: "error", text: "Não foi possível exportar as medições para Custos." });
+      return;
+    }
+    if (lancamentoMedicoesExportado) {
+      setLancamentos((prev) =>
+        prev.map((item) =>
+          item.id === lancamentoMedicoesExportado.id ? { ...item, ...payload } : item,
+        ),
+      );
+    } else if (data) {
+      setLancamentos((prev) => [
+        {
+          id: String(data.id),
+          contrato: payload.contrato,
+          contrato_id: payload.contrato_id,
+          tipo: "Receita",
+          descricao: payload.descricao,
+          valor: payload.valor,
+          data: payload.data,
+        },
+        ...prev,
+      ]);
+    }
+    setMessage({ type: "success", text: "Medições exportadas para os lançamentos financeiros." });
+  }
 
   const resumos = useMemo(() => {
     let receita = 0,
@@ -423,7 +654,7 @@ function CustosPage() {
       manutencao = 0,
       transporte = 0,
       administrativas = 0;
-    lancamentosFiltrados.forEach((item) => {
+    lancamentosFinanceiros.forEach((item) => {
       switch (item.tipo) {
         case "Receita":
           receita += item.valor;
@@ -450,10 +681,13 @@ function CustosPage() {
     });
     const despesasTotais =
       impostos + maoDeObra + encargos + manutencao + transporte + administrativas;
-    const resultadoFinal = receita - despesasTotais;
-    const margemLucro = receita > 0 ? (resultadoFinal / receita) * 100 : 0;
+    const receitaBruta = receita + (lancamentoMedicoesExportado?.valor ?? 0);
+    const resultadoFinal = receitaBruta - despesasTotais;
+    const margemLucro = receitaBruta > 0 ? (resultadoFinal / receitaBruta) * 100 : 0;
     return {
-      receita,
+      receita: receitaBruta,
+      receitaLancamentos: receita,
+      totalMedicoes: totalMedicoesPeriodo,
       impostos,
       maoDeObra,
       encargos,
@@ -464,7 +698,7 @@ function CustosPage() {
       resultadoFinal,
       margemLucro,
     };
-  }, [lancamentosFiltrados]);
+  }, [lancamentosFinanceiros, totalMedicoesPeriodo, lancamentoMedicoesExportado]);
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
@@ -485,19 +719,162 @@ function CustosPage() {
                 Dashboard
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-5xl border-slate-800 text-slate-100 p-0 max-h-[90vh] overflow-hidden shadow-2xl !bg-[#0f172a]">
+            <DialogContent
+              className={`${dashboardExpandido ? "w-[calc(100vw-2rem)] max-w-none h-[calc(100vh-2rem)]" : "max-w-5xl max-h-[90vh]"} border-slate-800 text-slate-100 p-0 overflow-hidden shadow-2xl !bg-[#0f172a]`}
+            >
               <div className="relative w-full h-full p-6 overflow-y-auto bg-[#0f172a]">
-                <DialogHeader className="mb-4">
-                  <DialogTitle className="text-slate-100">
-                    Painel de Desempenho Financeiro
-                  </DialogTitle>
+                <DialogHeader className="mb-4 flex flex-row items-center justify-between">
+                  <DialogTitle className="text-slate-100">Painel de Desempenho Financeiro</DialogTitle>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="text-slate-300 hover:bg-slate-700 hover:text-white"
+                      title={dashboardExpandido ? "Reduzir dashboard" : "Expandir dashboard"}
+                      onClick={() => setDashboardExpandido((expandido) => !expandido)}
+                    >
+                      {dashboardExpandido ? (
+                        <Minimize2 className="h-4 w-4" />
+                      ) : (
+                        <Maximize2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <DialogClose asChild>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="text-slate-300 hover:bg-red-600 hover:text-white"
+                        title="Fechar dashboard"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </DialogClose>
+                  </div>
                 </DialogHeader>
                 <DashboardFinanceiro lancamentos={lancamentosFiltrados} />
               </div>
             </DialogContent>
           </Dialog>
+          <Dialog open={listaContratosAberta} onOpenChange={setListaContratosAberta}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-primary" />
+                Contratos
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-white text-slate-900 sm:max-w-2xl">
+              <DialogHeader>
+                <DialogTitle className="flex items-center justify-between gap-3">
+                  <span>Contratos cadastrados</span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      setContratoEditando(null);
+                      setNovoNomeEditado("");
+                      setContratoDialogAberto(true);
+                    }}
+                  >
+                    <PlusCircle className="mr-2 h-4 w-4" /> Novo contrato
+                  </Button>
+                </DialogTitle>
+              </DialogHeader>
+              <div className="max-h-[60vh] space-y-2 overflow-y-auto">
+                {contratos.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum contrato cadastrado.</p>
+                ) : (
+                  contratos.map((contrato) => (
+                    <div
+                      key={contrato.id}
+                      className="flex items-center justify-between gap-3 rounded-md border px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{contrato.nome}</p>
+                        <span
+                          className={`text-xs font-semibold ${contrato.ativo ? "text-emerald-600" : "text-slate-500"}`}
+                        >
+                          {contrato.ativo ? "Ativo" : "Inativo"}
+                        </span>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          title={contrato.ativo ? "Desativar contrato" : "Ativar contrato"}
+                          onClick={() => void handleAlternarContrato(contrato)}
+                        >
+                          <Power
+                            className={`h-4 w-4 ${contrato.ativo ? "text-emerald-600" : "text-slate-400"}`}
+                          />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          title={`Editar ${contrato.nome}`}
+                          onClick={() => {
+                            setContratoEditando(contrato);
+                            setNovoNomeEditado(contrato.nome);
+                            setContratoDialogAberto(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          className="text-rose-600 hover:bg-rose-50"
+                          title={`Excluir ${contrato.nome}`}
+                          onClick={() => void handleDeletarContrato(contrato)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
+
+      <Card className="border-primary/30 bg-primary/5 shadow-sm">
+        <CardContent className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+              Contrato de trabalho
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Selecione o contrato para consultar e lançar os custos financeiros.
+            </p>
+          </div>
+          <select
+            aria-label="Contrato de trabalho"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-medium shadow-sm sm:max-w-md"
+            value={filtroContrato}
+            onChange={(e) => {
+              setFiltroContrato(e.target.value);
+              setContratoSelecionado(e.target.value);
+            }}
+            disabled={listaTodosContratos.length === 0}
+          >
+            {listaTodosContratos.length === 0 ? (
+              <option value="">Nenhum contrato cadastrado</option>
+            ) : (
+              listaTodosContratos.map((contrato) => (
+                <option key={contrato.id} value={contrato.nome}>
+                  {contrato.nome}
+                </option>
+              ))
+            )}
+          </select>
+        </CardContent>
+      </Card>
 
       {/* Filtros */}
       <Card className="bg-white border shadow-sm">
@@ -507,37 +884,39 @@ function CustosPage() {
             Filtros:
           </div>
           <div className="flex items-center gap-2 min-w-[180px]">
-            <Label className="text-xs whitespace-nowrap">Mês:</Label>
+            <Label className="text-xs whitespace-nowrap">De:</Label>
             <input
-              type="month"
+              type="date"
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-              value={filtroMes}
-              onChange={(e) => setFiltroMes(e.target.value)}
-              required
+              value={filtroDataInicial}
+              onChange={(e) => setFiltroDataInicial(e.target.value)}
             />
           </div>
           <div className="flex items-center gap-2 min-w-[220px]">
-            <Label className="text-xs whitespace-nowrap">Contrato:</Label>
-            <select
+            <Label className="text-xs whitespace-nowrap">Até:</Label>
+            <input
+              type="date"
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-              value={filtroContrato}
-              onChange={(e) => setFiltroContrato(e.target.value)}
-              required
-            >
-              <option value="" disabled>
-                Selecione um contrato
-              </option>
-              {listaTodosContratos.map((c) => (
-                <option key={c.id} value={c.nome}>
-                  {c.nome}
-                </option>
-              ))}
-            </select>
+              value={filtroDataFinal}
+              min={filtroDataInicial || undefined}
+              onChange={(e) => setFiltroDataFinal(e.target.value)}
+            />
           </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setFiltroDataInicial("");
+              setFiltroDataFinal("");
+            }}
+          >
+            Limpar período
+          </Button>
         </CardContent>
       </Card>
 
-      <Card className="bg-white border shadow-sm">
+      <Card className="hidden bg-white border shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <Briefcase className="w-5 h-5 text-primary" />
@@ -642,6 +1021,19 @@ function CustosPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-emerald-600">{formatBRL(resumos.receita)}</div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Inclui {formatBRL(resumos.totalMedicoes)} em medições
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="mt-2 h-8 text-xs"
+              onClick={() => void exportarMedicoesParaCustos()}
+              disabled={!filtroContrato || totalMedicoesPeriodo <= 0}
+            >
+              {lancamentoMedicoesExportado ? "Atualizar em Custos" : "Exportar medições"}
+            </Button>
           </CardContent>
         </Card>
 
@@ -711,36 +1103,82 @@ function CustosPage() {
             )}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="contrato">Contrato</Label>
-                <select
-                  id="contrato"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={contratoSelecionado}
-                  onChange={(e) => setContratoSelecionado(e.target.value)}
-                >
-                  {listaTodosContratos.map((c) => (
-                    <option key={c.id} value={c.nome}>
-                      {c.nome}
-                    </option>
-                  ))}
-                </select>
+                <Label htmlFor="mes-lancamento">Mês do lançamento</Label>
+                <Input
+                  id="mes-lancamento"
+                  type="month"
+                  value={date.substring(0, 7)}
+                  onChange={(e) => {
+                    if (e.target.value) setDate(`${e.target.value}-01`);
+                  }}
+                  required
+                />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="tipo">Classificação Financeira</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="tipo">Classificação Financeira</Label>
+                  <Dialog
+                    open={classificacaoDialogAberto}
+                    onOpenChange={setClassificacaoDialogAberto}
+                  >
+                    <DialogTrigger asChild>
+                      <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                        <Settings className="mr-1 h-3.5 w-3.5" /> Gerenciar
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-white text-slate-900 sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Classificações financeiras</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleSalvarClassificacao} className="flex gap-2">
+                        <Input
+                          value={novaClassificacao}
+                          onChange={(e) => setNovaClassificacao(e.target.value)}
+                          placeholder="Nova classificação"
+                          required
+                        />
+                        <Button type="submit">Cadastrar</Button>
+                      </form>
+                      <div className="max-h-60 space-y-1 overflow-y-auto">
+                        {CLASSIFICACOES_PADRAO.map((nome) => (
+                          <div key={nome} className="rounded border px-3 py-2 text-sm text-slate-600">
+                            {nome}
+                          </div>
+                        ))}
+                        {classificacoes.map((classificacao) => (
+                          <div
+                            key={classificacao.id}
+                            className="flex items-center justify-between rounded border px-3 py-2 text-sm"
+                          >
+                            <span>{classificacao.nome}</span>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-rose-600 hover:bg-rose-50"
+                              title="Excluir classificação"
+                              onClick={() => void handleExcluirClassificacao(classificacao)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
                 <select
                   id="tipo"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={tipo}
-                  onChange={(e) => setTipo(e.target.value as TipoLancamento)}
+                  onChange={(e) => setTipo(e.target.value)}
                 >
-                  <option value="Receita">Receita (+)</option>
-                  <option value="Impostos">Impostos (-)</option>
-                  <option value="Mão de Obra">Mão de Obra (-)</option>
-                  <option value="Encargos">Encargos (-)</option>
-                  <option value="Despesas de Manutenção">Despesas de Manutenção (-)</option>
-                  <option value="Despesas de Transporte">Despesas de Transporte (-)</option>
-                  <option value="Despesas Administrativas">Despesas Administrativas (-)</option>
+                  {todasClassificacoes.map((classificacao) => (
+                    <option key={classificacao} value={classificacao}>
+                      {classificacao}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -875,7 +1313,10 @@ function CustosPage() {
                 id="editar-contrato"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={contratoSelecionado}
-                onChange={(e) => setContratoSelecionado(e.target.value)}
+                onChange={(e) => {
+                  setContratoSelecionado(e.target.value);
+                  setFiltroContrato(e.target.value);
+                }}
                 required
               >
                 {listaTodosContratos.map((contrato) => (
@@ -892,15 +1333,13 @@ function CustosPage() {
                   id="editar-tipo"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={tipo}
-                  onChange={(e) => setTipo(e.target.value as TipoLancamento)}
+                  onChange={(e) => setTipo(e.target.value)}
                 >
-                  <option value="Receita">Receita (+)</option>
-                  <option value="Impostos">Impostos (-)</option>
-                  <option value="Mão de Obra">Mão de Obra (-)</option>
-                  <option value="Encargos">Encargos (-)</option>
-                  <option value="Despesas de Manutenção">Despesas de Manutenção (-)</option>
-                  <option value="Despesas de Transporte">Despesas de Transporte (-)</option>
-                  <option value="Despesas Administrativas">Despesas Administrativas (-)</option>
+                  {todasClassificacoes.map((classificacao) => (
+                    <option key={classificacao} value={classificacao}>
+                      {classificacao}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="space-y-2">
