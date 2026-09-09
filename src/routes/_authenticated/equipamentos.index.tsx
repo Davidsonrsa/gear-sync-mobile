@@ -485,6 +485,29 @@ function BotaoSeguro() {
                 onChange={(e) => setForm({ ...form, data_vencimento: e.target.value })}
                 className="h-8 text-xs bg-white border-slate-300 text-slate-900"
               />
+              <div className="pt-1 border-t border-slate-200">
+                <p className="text-[11px] font-semibold text-slate-600 mb-1.5">
+                  Em caso de sinistro, contactar:
+                </p>
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Nome do contato"
+                    value={form.contato_sinistro_nome}
+                    onChange={(e) =>
+                      setForm({ ...form, contato_sinistro_nome: e.target.value })
+                    }
+                    className="h-8 text-xs bg-white border-slate-300 text-slate-900"
+                  />
+                  <Input
+                    placeholder="Telefone do contato"
+                    value={form.contato_sinistro_telefone}
+                    onChange={(e) =>
+                      setForm({ ...form, contato_sinistro_telefone: e.target.value })
+                    }
+                    className="h-8 text-xs bg-white border-slate-300 text-slate-900"
+                  />
+                </div>
+              </div>
               <div className="flex gap-2">
                 <Button
                   size="sm"
