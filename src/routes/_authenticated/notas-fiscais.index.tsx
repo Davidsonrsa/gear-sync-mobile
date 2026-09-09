@@ -252,25 +252,34 @@ function NotasFiscaisPage() {
 
   const fetchFornecedores = async () => {
     try {
-      // Substitua "fornecedores" e "nome" pelos nomes exatos da sua tabela e coluna no Supabase
+      // Teste trocando "fornecedores" pelo nome exato da sua tabela no Supabase se for diferente
       const { data, error } = await supabase
-        .from("fornecedores")
-        .select("*")
-        .order("fornecedor", { ascending: true }); // Se o campo for 'fornecedor' ou 'nome', ajuste aqui
+        .from("fornecedores") 
+        .select("*");
 
-      if (error) throw error;
+      if (error) {
+        console.log("Erro retornado pelo Supabase:", error);
+        toast.error("Erro ao buscar fornecedores: " + error.message);
+        return;
+      }
+
+      console.log("Dados brutos vindos da tabela fornecedores:", data);
+
+      if (!data || data.length === 0) {
+        console.log("A tabela 'fornecedores' está vazia ou retornou 0 linhas.");
+      }
 
       const mappedForn: FornecedorItem[] = (data ?? []).map((item: any) => ({
         id: String(item.id ?? ""),
-        nome: String(item.fornecedor || item.nome || item.razao_social || ""),
+        // Olhe no seu console do navegador (F12) qual é a chave correta e substitua aqui se necessário
+        nome: String(item.fornecedor || item.nome || item.razao_social || item.descricao || ""),
       }));
 
       setFornecedoresList(mappedForn);
     } catch (error: any) {
-      console.error("Erro ao carregar fornecedores:", error);
+      console.error("Erro crítico em fetchFornecedores:", error);
     }
   };
-
   useEffect(() => {
     fetchNotas();
     fetchFornecedores();
