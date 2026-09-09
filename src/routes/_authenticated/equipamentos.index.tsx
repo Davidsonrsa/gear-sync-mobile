@@ -84,6 +84,32 @@ const STATUS_EQUIPAMENTO = [
 function BotaoTacografo() {
   const [open, setOpen] = useState(false);
   const [filtro, setFiltro] = useState("");
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [novaData, setNovaData] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
+
+  const salvarData = async (equipamentoId: string) => {
+    if (!novaData) {
+      toast.error("Informe a nova data de vencimento");
+      return;
+    }
+    setSalvando(true);
+    const { error } = await supabase
+      .from("equipamentos")
+      .update({ afericao_taco: novaData })
+      .eq("id", equipamentoId);
+    setSalvando(false);
+    if (error) {
+      toast.error("Não foi possível salvar a data");
+      return;
+    }
+    toast.success("Data de vencimento atualizada");
+    setEditandoId(null);
+    setNovaData("");
+    queryClient.invalidateQueries({ queryKey: ["tacografos-vencimentos"] });
+  };
 
   const { data: tacografos, isLoading } = useQuery({
     queryKey: ["tacografos-vencimentos"],
@@ -121,6 +147,10 @@ function BotaoTacografo() {
   const todosComStatus = useMemo(() => {
     if (!tacografos) return [];
     return tacografos
+      .filter((item: any) => {
+        const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento;
+        return Boolean(dataVal);
+      })
       .map((item: any) => {
         const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento;
         const diasRestantes = dataVal ? calcularDiasVencimento(dataVal) : null;
@@ -215,7 +245,7 @@ function BotaoTacografo() {
               <p className="text-xs text-slate-500 text-center py-4">Carregando dados...</p>
             ) : listaFiltrada.length === 0 ? (
               <p className="text-xs text-slate-500 text-center py-4">
-                Nenhum equipamento encontrado.
+                Nenhum equipamento com data de vencimento cadastrada.
               </p>
             ) : (
               <div className="space-y-2">
@@ -262,11 +292,56 @@ function BotaoTacografo() {
 
                       <div className="text-right">
                         <p className="text-slate-500 font-medium text-[10px]">Vencimento:</p>
-                        <p className="font-bold font-mono text-slate-900">
-                          {item.dataVal
-                            ? new Date(item.dataVal + "T00:00:00").toLocaleDateString("pt-BR")
-                            : "-"}
-                        </p>
+                        {editandoId === item.id ? (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <Input
+                              type="date"
+                              value={novaData}
+                              onChange={(e) => setNovaData(e.target.value)}
+                              className="h-7 w-[130px] text-xs bg-white border-slate-300 text-slate-900"
+                            />
+                            <Button
+                              size="sm"
+                              className="h-7 px-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px]"
+                              disabled={salvando}
+                              onClick={() => salvarData(item.id)}
+                            >
+                              {salvando ? "..." : "Salvar"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2 text-[10px]"
+                              onClick={() => {
+                                setEditandoId(null);
+                                setNovaData("");
+                              }}
+                            >
+                              X
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 justify-end">
+                            <p className="font-bold font-mono text-slate-900">
+                              {item.dataVal
+                                ? new Date(item.dataVal + "T00:00:00").toLocaleDateString("pt-BR")
+                                : "-"}
+                            </p>
+                            {isAdmin && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-[10px] border-slate-300"
+                                onClick={() => {
+                                  setEditandoId(item.id);
+                                  setNovaData(item.dataVal || "");
+                                }}
+                              >
+                                Editar
+                              </Button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
