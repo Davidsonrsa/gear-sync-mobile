@@ -8,8 +8,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Altere aqui a cor de fundo (bg-...) e a cor do texto (text-...) padrão do sistema
-        default: "!bg-blue-700 !text-black shadow hover:!bg-blue-600 active:!bg-blue-800",
+        default: "!bg-sky-500 !text-white shadow hover:!bg-sky-600 active:!bg-sky-700",
 
         destructive: "!bg-red-600 !text-white shadow-sm hover:!bg-red-700 active:!bg-red-800",
         outline:
