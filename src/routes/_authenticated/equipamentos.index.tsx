@@ -245,7 +245,7 @@ function BotaoTacografo() {
               <p className="text-xs text-slate-500 text-center py-4">Carregando dados...</p>
             ) : listaFiltrada.length === 0 ? (
               <p className="text-xs text-slate-500 text-center py-4">
-                Nenhum equipamento encontrado.
+                Nenhum equipamento com data de vencimento cadastrada.
               </p>
             ) : (
               <div className="space-y-2">
