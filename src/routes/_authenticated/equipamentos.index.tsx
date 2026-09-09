@@ -585,6 +585,14 @@ function BotaoSeguro() {
                         <p className="text-slate-500 font-medium mt-0.5">
                           {item.seguradora || item.empresa || "Seguradora não informada"}
                         </p>
+                        {(item.contato_sinistro_nome || item.contato_sinistro_telefone) && (
+                          <p className="text-[11px] text-slate-600 mt-0.5">
+                            Sinistro: {item.contato_sinistro_nome || "-"}{" "}
+                            {item.contato_sinistro_telefone
+                              ? `• ${item.contato_sinistro_telefone}`
+                              : ""}
+                          </p>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -606,6 +614,8 @@ function BotaoSeguro() {
                               veiculo_equipamento: item.veiculo_equipamento ?? "",
                               seguradora: item.seguradora ?? "",
                               data_vencimento: item.dataVal ?? "",
+                              contato_sinistro_nome: item.contato_sinistro_nome ?? "",
+                              contato_sinistro_telefone: item.contato_sinistro_telefone ?? "",
                             });
                           }}
                         >
