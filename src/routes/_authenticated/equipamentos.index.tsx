@@ -292,11 +292,56 @@ function BotaoTacografo() {
 
                       <div className="text-right">
                         <p className="text-slate-500 font-medium text-[10px]">Vencimento:</p>
-                        <p className="font-bold font-mono text-slate-900">
-                          {item.dataVal
-                            ? new Date(item.dataVal + "T00:00:00").toLocaleDateString("pt-BR")
-                            : "-"}
-                        </p>
+                        {editandoId === item.id ? (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <Input
+                              type="date"
+                              value={novaData}
+                              onChange={(e) => setNovaData(e.target.value)}
+                              className="h-7 w-[130px] text-xs bg-white border-slate-300 text-slate-900"
+                            />
+                            <Button
+                              size="sm"
+                              className="h-7 px-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px]"
+                              disabled={salvando}
+                              onClick={() => salvarData(item.id)}
+                            >
+                              {salvando ? "..." : "Salvar"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2 text-[10px]"
+                              onClick={() => {
+                                setEditandoId(null);
+                                setNovaData("");
+                              }}
+                            >
+                              X
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 justify-end">
+                            <p className="font-bold font-mono text-slate-900">
+                              {item.dataVal
+                                ? new Date(item.dataVal + "T00:00:00").toLocaleDateString("pt-BR")
+                                : "-"}
+                            </p>
+                            {isAdmin && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-[10px] border-slate-300"
+                                onClick={() => {
+                                  setEditandoId(item.id);
+                                  setNovaData(item.dataVal || "");
+                                }}
+                              >
+                                Editar
+                              </Button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
