@@ -290,6 +290,8 @@ function BotaoSeguro() {
     veiculo_equipamento: "",
     seguradora: "",
     data_vencimento: "",
+    contato_sinistro_nome: "",
+    contato_sinistro_telefone: "",
   });
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
@@ -312,7 +314,13 @@ function BotaoSeguro() {
   });
 
   function limpar() {
-    setForm({ veiculo_equipamento: "", seguradora: "", data_vencimento: "" });
+    setForm({
+      veiculo_equipamento: "",
+      seguradora: "",
+      data_vencimento: "",
+      contato_sinistro_nome: "",
+      contato_sinistro_telefone: "",
+    });
     setEditandoId(null);
   }
 
@@ -326,6 +334,8 @@ function BotaoSeguro() {
       veiculo_equipamento: form.veiculo_equipamento.trim(),
       seguradora: form.seguradora.trim(),
       data_vencimento: form.data_vencimento,
+      contato_sinistro_nome: form.contato_sinistro_nome.trim() || null,
+      contato_sinistro_telefone: form.contato_sinistro_telefone.trim() || null,
     };
     const { error } = editandoId
       ? await supabase.from("seguros").update(payload).eq("id", editandoId)
@@ -475,6 +485,29 @@ function BotaoSeguro() {
                 onChange={(e) => setForm({ ...form, data_vencimento: e.target.value })}
                 className="h-8 text-xs bg-white border-slate-300 text-slate-900"
               />
+              <div className="pt-1 border-t border-slate-200">
+                <p className="text-[11px] font-semibold text-slate-600 mb-1.5">
+                  Em caso de sinistro, contactar:
+                </p>
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Nome do contato"
+                    value={form.contato_sinistro_nome}
+                    onChange={(e) =>
+                      setForm({ ...form, contato_sinistro_nome: e.target.value })
+                    }
+                    className="h-8 text-xs bg-white border-slate-300 text-slate-900"
+                  />
+                  <Input
+                    placeholder="Telefone do contato"
+                    value={form.contato_sinistro_telefone}
+                    onChange={(e) =>
+                      setForm({ ...form, contato_sinistro_telefone: e.target.value })
+                    }
+                    className="h-8 text-xs bg-white border-slate-300 text-slate-900"
+                  />
+                </div>
+              </div>
               <div className="flex gap-2">
                 <Button
                   size="sm"
@@ -552,6 +585,14 @@ function BotaoSeguro() {
                         <p className="text-slate-500 font-medium mt-0.5">
                           {item.seguradora || item.empresa || "Seguradora não informada"}
                         </p>
+                        {(item.contato_sinistro_nome || item.contato_sinistro_telefone) && (
+                          <p className="text-[11px] text-slate-600 mt-0.5">
+                            Sinistro: {item.contato_sinistro_nome || "-"}{" "}
+                            {item.contato_sinistro_telefone
+                              ? `• ${item.contato_sinistro_telefone}`
+                              : ""}
+                          </p>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -573,6 +614,8 @@ function BotaoSeguro() {
                               veiculo_equipamento: item.veiculo_equipamento ?? "",
                               seguradora: item.seguradora ?? "",
                               data_vencimento: item.dataVal ?? "",
+                              contato_sinistro_nome: item.contato_sinistro_nome ?? "",
+                              contato_sinistro_telefone: item.contato_sinistro_telefone ?? "",
                             });
                           }}
                         >

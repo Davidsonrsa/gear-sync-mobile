@@ -1264,6 +1264,8 @@ export type Database = {
       }
       seguros: {
         Row: {
+          contato_sinistro_nome: string | null
+          contato_sinistro_telefone: string | null
           created_at: string
           data_vencimento: string
           id: string
@@ -1272,6 +1274,8 @@ export type Database = {
           veiculo_equipamento: string
         }
         Insert: {
+          contato_sinistro_nome?: string | null
+          contato_sinistro_telefone?: string | null
           created_at?: string
           data_vencimento: string
           id?: string
@@ -1280,6 +1284,8 @@ export type Database = {
           veiculo_equipamento: string
         }
         Update: {
+          contato_sinistro_nome?: string | null
+          contato_sinistro_telefone?: string | null
           created_at?: string
           data_vencimento?: string
           id?: string
