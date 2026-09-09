@@ -84,6 +84,32 @@ const STATUS_EQUIPAMENTO = [
 function BotaoTacografo() {
   const [open, setOpen] = useState(false);
   const [filtro, setFiltro] = useState("");
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [novaData, setNovaData] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
+
+  const salvarData = async (equipamentoId: string) => {
+    if (!novaData) {
+      toast.error("Informe a nova data de vencimento");
+      return;
+    }
+    setSalvando(true);
+    const { error } = await supabase
+      .from("equipamentos")
+      .update({ afericao_taco: novaData })
+      .eq("id", equipamentoId);
+    setSalvando(false);
+    if (error) {
+      toast.error("Não foi possível salvar a data");
+      return;
+    }
+    toast.success("Data de vencimento atualizada");
+    setEditandoId(null);
+    setNovaData("");
+    queryClient.invalidateQueries({ queryKey: ["tacografos-vencimentos"] });
+  };
 
   const { data: tacografos, isLoading } = useQuery({
     queryKey: ["tacografos-vencimentos"],
