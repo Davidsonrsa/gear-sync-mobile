@@ -17,6 +17,7 @@ import {
   Trash2,
   Calculator,
   FilterX,
+  Building2,
 } from "lucide-react";
 import {
   Dialog,
@@ -50,7 +51,7 @@ interface NotaFiscalItem {
 
 interface FornecedorItem {
   id: string;
-  nome: string; // Ajuste para o nome da coluna real da sua tabela de fornecedores (ex: "nome", "razao_social")
+  nome: string;
 }
 
 const IMPORT_BATCH_SIZE = 200;
@@ -187,17 +188,24 @@ function formatDate(dateStr: unknown): string {
 function NotasFiscaisPage() {
   const [openModalCadastro, setOpenModalCadastro] = useState(false);
   const [openModalEdicao, setOpenModalEdicao] = useState(false);
+  const [openModalNovoFornecedor, setOpenModalNovoFornecedor] = useState(false);
+  const [openModalConsultaFornecedores, setOpenModalConsultaFornecedores] = useState(false);
+
   const [notaSelecionada, setNotaSelecionada] = useState<NotaFiscalItem | null>(null);
   const [notasList, setNotasList] = useState<NotaFiscalItem[]>([]);
   const [fornecedoresList, setFornecedoresList] = useState<FornecedorItem[]>([]);
+  
+  const [novoNomeFornecedor, setNovoNomeFornecedor] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [submittingForn, setSubmittingForn] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [importTotal, setImportTotal] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [busca, setBusca] = useState("");
+  const [buscaFornecedorModal, setBuscaFornecedorModal] = useState("");
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
 
@@ -252,38 +260,63 @@ function NotasFiscaisPage() {
 
   const fetchFornecedores = async () => {
     try {
-      // Teste trocando "fornecedores" pelo nome exato da sua tabela no Supabase se for diferente
       const { data, error } = await supabase
-        .from("fornecedores") 
-        .select("*");
+        .from("fornecedores")
+        .select("*")
+        .order("fornecedor", { ascending: true });
 
-      if (error) {
-        console.log("Erro retornado pelo Supabase:", error);
-        toast.error("Erro ao buscar fornecedores: " + error.message);
-        return;
-      }
-
-      console.log("Dados brutos vindos da tabela fornecedores:", data);
-
-      if (!data || data.length === 0) {
-        console.log("A tabela 'fornecedores' está vazia ou retornou 0 linhas.");
-      }
+      if (error) throw error;
 
       const mappedForn: FornecedorItem[] = (data ?? []).map((item: any) => ({
         id: String(item.id ?? ""),
-        // Olhe no seu console do navegador (F12) qual é a chave correta e substitua aqui se necessário
-        nome: String(item.fornecedor || item.nome || item.razao_social || item.descricao || ""),
+        nome: String(item.fornecedor || item.nome || item.razao_social || ""),
       }));
 
       setFornecedoresList(mappedForn);
     } catch (error: any) {
-      console.error("Erro crítico em fetchFornecedores:", error);
+      console.error("Erro ao carregar fornecedores:", error);
     }
   };
+
   useEffect(() => {
     fetchNotas();
     fetchFornecedores();
   }, []);
+
+  const handleSalvarNovoFornecedor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!novoNomeFornecedor.trim()) return;
+    setSubmittingForn(true);
+    try {
+      // Ajuste o nome da coluna ('fornecedor' ou 'nome') conforme sua tabela real
+      const { error } = await supabase
+        .from("fornecedores")
+        .insert([{ fornecedor: novoNomeFornecedor.trim() }]);
+
+      if (error) throw error;
+
+      toast.success("Fornecedor cadastrado com sucesso!");
+      setNovoNomeFornecedor("");
+      setOpenModalNovoFornecedor(false);
+      await fetchFornecedores();
+    } catch (error: any) {
+      toast.error("Erro ao cadastrar fornecedor: " + (error?.message || "Erro"));
+    } finally {
+      setSubmittingForn(false);
+    }
+  };
+
+  const handleDeletarFornecedor = async (id: string, nome: string) => {
+    if (!window.confirm(`Deseja excluir o fornecedor "${nome}"?`)) return;
+    try {
+      const { error } = await supabase.from("fornecedores").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Fornecedor excluído!");
+      await fetchFornecedores();
+    } catch (error: any) {
+      toast.error("Erro ao excluir fornecedor.");
+    }
+  };
 
   const handleDeletarNota = async (id: string, numeroNF: string) => {
     if (!window.confirm(`Tem certeza que deseja excluir a nota fiscal #${numeroNF}?`)) return;
@@ -464,6 +497,10 @@ function NotasFiscaisPage() {
     return matchBusca && matchData;
   });
 
+  const fornecedoresFiltradosModal = fornecedoresList.filter((f) =>
+    f.nome.toLowerCase().includes(buscaFornecedorModal.trim().toLowerCase())
+  );
+
   const valorTotalSomatoria = notasFiltradas.reduce((acc, nota) => acc + (nota.valor || 0), 0);
 
   return (
@@ -485,6 +522,14 @@ function NotasFiscaisPage() {
             accept=".xlsx, .xls, .csv"
             className="hidden"
           />
+          <Button
+            variant="outline"
+            onClick={() => setOpenModalConsultaFornecedores(true)}
+            className="rounded-full text-xs"
+          >
+            <Building2 className="w-3.5 h-3.5 text-blue-600" /> Consultar Fornecedores
+          </Button>
+
           <Button
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
@@ -526,9 +571,18 @@ function NotasFiscaisPage() {
                     />
                   </div>
                   <div>
-                    <Label>Fornecedor</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Fornecedor</Label>
+                      <button
+                        type="button"
+                        onClick={() => setOpenModalNovoFornecedor(true)}
+                        className="text-[11px] text-blue-600 hover:underline font-medium"
+                      >
+                        + Novo Fornecedor
+                      </button>
+                    </div>
                     <select
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
                       value={fornecedor}
                       onChange={(e) => setFornecedor(e.target.value)}
                       required
@@ -618,6 +672,104 @@ function NotasFiscaisPage() {
           </Dialog>
         </div>
       </div>
+
+      {/* Modal para Cadastrar Novo Fornecedor */}
+      <Dialog open={openModalNovoFornecedor} onOpenChange={setOpenModalNovoFornecedor}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cadastrar Novo Fornecedor</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSalvarNovoFornecedor} className="space-y-4 pt-2">
+            <div>
+              <Label>Nome do Fornecedor</Label>
+              <Input
+                value={novoNomeFornecedor}
+                onChange={(e) => setNovoNomeFornecedor(e.target.value)}
+                placeholder="Ex: Auto Peças Ltda"
+                required
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpenModalNovoFornecedor(false)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={submittingForn}>
+                {submittingForn ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar Fornecedor"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para Consultar Fornecedores Cadastrados */}
+      <Dialog open={openModalConsultaFornecedores} onOpenChange={setOpenModalConsultaFornecedores}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Fornecedores Cadastrados</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Filtrar fornecedor..."
+                  className="pl-8 text-xs"
+                  value={buscaFornecedorModal}
+                  onChange={(e) => setBuscaFornecedorModal(e.target.value)}
+                />
+              </div>
+              <Button
+                variant="default"
+                size="sm"
+                className="text-xs"
+                onClick={() => setOpenModalNovoFornecedor(true)}
+              >
+                <PlusCircle className="w-3.5 h-3.5 mr-1" /> Novo
+              </Button>
+            </div>
+
+            <div className="border border-slate-200 rounded-md overflow-hidden">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 font-semibold text-slate-700">
+                  <tr>
+                    <th className="p-2.5">Nome do Fornecedor</th>
+                    <th className="p-2.5 text-center w-20">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {fornecedoresFiltradosModal.length === 0 ? (
+                    <tr>
+                      <td colSpan={2} className="p-4 text-center text-slate-500">
+                        Nenhum fornecedor encontrado.
+                      </td>
+                    </tr>
+                  ) : (
+                    fornecedoresFiltradosModal.map((f) => (
+                      <tr key={f.id} className="hover:bg-slate-50">
+                        <td className="p-2.5 font-medium">{f.nome}</td>
+                        <td className="p-2.5 text-center">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-red-600 hover:bg-red-50"
+                            onClick={() => handleDeletarFornecedor(f.id, f.nome)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="flex flex-col md:flex-row gap-2 items-center justify-between bg-white p-3 rounded-lg border border-slate-200">
         <div className="flex flex-col md:flex-row gap-2 items-center w-full md:w-auto">
@@ -768,9 +920,18 @@ function NotasFiscaisPage() {
                 <Input value={numeroNf} onChange={(e) => setNumeroNf(e.target.value)} required />
               </div>
               <div>
-                <Label>Fornecedor</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Fornecedor</Label>
+                  <button
+                    type="button"
+                    onClick={() => setOpenModalNovoFornecedor(true)}
+                    className="text-[11px] text-blue-600 hover:underline font-medium"
+                  >
+                    + Novo Fornecedor
+                  </button>
+                </div>
                 <select
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
                   value={fornecedor}
                   onChange={(e) => setFornecedor(e.target.value)}
                   required
