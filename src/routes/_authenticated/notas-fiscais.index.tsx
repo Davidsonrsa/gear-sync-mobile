@@ -48,6 +48,11 @@ interface NotaFiscalItem {
   venc05: string | null;
 }
 
+interface FornecedorItem {
+  id: string;
+  nome: string; // Ajuste para o nome da coluna real da sua tabela de fornecedores (ex: "nome", "razao_social")
+}
+
 const IMPORT_BATCH_SIZE = 200;
 
 function normalizeHeader(value: unknown): string {
@@ -184,6 +189,7 @@ function NotasFiscaisPage() {
   const [openModalEdicao, setOpenModalEdicao] = useState(false);
   const [notaSelecionada, setNotaSelecionada] = useState<NotaFiscalItem | null>(null);
   const [notasList, setNotasList] = useState<NotaFiscalItem[]>([]);
+  const [fornecedoresList, setFornecedoresList] = useState<FornecedorItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -244,8 +250,30 @@ function NotasFiscaisPage() {
     }
   };
 
+  const fetchFornecedores = async () => {
+    try {
+      // Substitua "fornecedores" e "nome" pelos nomes exatos da sua tabela e coluna no Supabase
+      const { data, error } = await supabase
+        .from("fornecedores")
+        .select("*")
+        .order("fornecedor", { ascending: true }); // Se o campo for 'fornecedor' ou 'nome', ajuste aqui
+
+      if (error) throw error;
+
+      const mappedForn: FornecedorItem[] = (data ?? []).map((item: any) => ({
+        id: String(item.id ?? ""),
+        nome: String(item.fornecedor || item.nome || item.razao_social || ""),
+      }));
+
+      setFornecedoresList(mappedForn);
+    } catch (error: any) {
+      console.error("Erro ao carregar fornecedores:", error);
+    }
+  };
+
   useEffect(() => {
     fetchNotas();
+    fetchFornecedores();
   }, []);
 
   const handleDeletarNota = async (id: string, numeroNF: string) => {
@@ -490,11 +518,19 @@ function NotasFiscaisPage() {
                   </div>
                   <div>
                     <Label>Fornecedor</Label>
-                    <Input
+                    <select
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       value={fornecedor}
                       onChange={(e) => setFornecedor(e.target.value)}
                       required
-                    />
+                    >
+                      <option value="">Selecione um fornecedor...</option>
+                      {fornecedoresList.map((f) => (
+                        <option key={f.id} value={f.nome}>
+                          {f.nome}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -724,11 +760,19 @@ function NotasFiscaisPage() {
               </div>
               <div>
                 <Label>Fornecedor</Label>
-                <Input
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   value={fornecedor}
                   onChange={(e) => setFornecedor(e.target.value)}
                   required
-                />
+                >
+                  <option value="">Selecione um fornecedor...</option>
+                  {fornecedoresList.map((f) => (
+                    <option key={f.id} value={f.nome}>
+                      {f.nome}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
