@@ -566,13 +566,7 @@ function NotasFiscaisPage() {
                     <Input value={valorTotal} onChange={(e) => setValorTotal(e.target.value)} />
                   </div>
                 </div>
-                <div>
-                  <Label>Descrição do Produto</Label>
-                  <Textarea
-                    value={descricaoProduto}
-                    onChange={(e) => setDescricaoProduto(e.target.value)}
-                  />
-                </div>
+               
                 <div className="grid grid-cols-3 gap-2">
                   <div>
                     <Label className="text-xs">Venc 01</Label>
