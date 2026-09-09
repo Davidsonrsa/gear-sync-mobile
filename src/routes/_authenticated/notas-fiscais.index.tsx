@@ -598,7 +598,7 @@ function NotasFiscaisPage() {
                   </div>
                 </div>
                 <div>
-                  <Label>Observação</Label>
+                  <Label>Descrição/Observação</Label>
                   <Textarea value={observacao} onChange={(e) => setObservacao(e.target.value)} />
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
