@@ -1,0 +1,1 @@
+ALTER TABLE public.seguros ADD COLUMN IF NOT EXISTS contato_sinistro_nome text, ADD COLUMN IF NOT EXISTS contato_sinistro_telefone text;
