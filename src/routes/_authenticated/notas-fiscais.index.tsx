@@ -688,7 +688,7 @@ function NotasFiscaisPage() {
                 <th className="p-3">CL</th>
                 <th className="p-3">Emissão</th>
                 <th className="p-3">Vencimentos</th>
-                <th className="p-3">Observação</th>
+                <th className="p-3">Descrição/Observação</th>
                 <th className="p-3 text-right">Valor</th>
                 <th className="p-3 text-center">Ações</th>
               </tr>
