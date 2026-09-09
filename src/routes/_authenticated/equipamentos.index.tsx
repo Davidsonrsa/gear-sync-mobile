@@ -290,6 +290,8 @@ function BotaoSeguro() {
     veiculo_equipamento: "",
     seguradora: "",
     data_vencimento: "",
+    contato_sinistro_nome: "",
+    contato_sinistro_telefone: "",
   });
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
@@ -312,7 +314,13 @@ function BotaoSeguro() {
   });
 
   function limpar() {
-    setForm({ veiculo_equipamento: "", seguradora: "", data_vencimento: "" });
+    setForm({
+      veiculo_equipamento: "",
+      seguradora: "",
+      data_vencimento: "",
+      contato_sinistro_nome: "",
+      contato_sinistro_telefone: "",
+    });
     setEditandoId(null);
   }
 
@@ -326,6 +334,8 @@ function BotaoSeguro() {
       veiculo_equipamento: form.veiculo_equipamento.trim(),
       seguradora: form.seguradora.trim(),
       data_vencimento: form.data_vencimento,
+      contato_sinistro_nome: form.contato_sinistro_nome.trim() || null,
+      contato_sinistro_telefone: form.contato_sinistro_telefone.trim() || null,
     };
     const { error } = editandoId
       ? await supabase.from("seguros").update(payload).eq("id", editandoId)
