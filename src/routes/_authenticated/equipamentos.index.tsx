@@ -147,6 +147,10 @@ function BotaoTacografo() {
   const todosComStatus = useMemo(() => {
     if (!tacografos) return [];
     return tacografos
+      .filter((item: any) => {
+        const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento;
+        return Boolean(dataVal);
+      })
       .map((item: any) => {
         const dataVal = item.data_vencimento || item.vencimento_tacografo || item.vencimento;
         const diasRestantes = dataVal ? calcularDiasVencimento(dataVal) : null;
