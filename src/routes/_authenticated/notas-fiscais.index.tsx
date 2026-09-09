@@ -251,7 +251,7 @@ function NotasFiscaisPage() {
       }));
 
       setNotasList(mapped);
-    } catch (error: any) {
+    } catch {
       toast.error("Erro ao carregar notas fiscais.");
     } finally {
       setLoading(false);
@@ -273,7 +273,7 @@ function NotasFiscaisPage() {
       }));
 
       setFornecedoresList(mappedForn);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro ao carregar fornecedores:", error);
     }
   };
@@ -288,7 +288,6 @@ function NotasFiscaisPage() {
     if (!novoNomeFornecedor.trim()) return;
     setSubmittingForn(true);
     try {
-      // Ajuste o nome da coluna ('fornecedor' ou 'nome') conforme sua tabela real
       const { error } = await supabase
         .from("fornecedores")
         .insert([{ fornecedor: novoNomeFornecedor.trim() }]);
@@ -313,7 +312,7 @@ function NotasFiscaisPage() {
       if (error) throw error;
       toast.success("Fornecedor excluído!");
       await fetchFornecedores();
-    } catch (error: any) {
+    } catch {
       toast.error("Erro ao excluir fornecedor.");
     }
   };
@@ -325,7 +324,7 @@ function NotasFiscaisPage() {
       if (error) throw error;
       toast.success("Nota fiscal excluída com sucesso!");
       await fetchNotas();
-    } catch (error: any) {
+    } catch {
       toast.error("Erro ao excluir nota.");
     }
   };
@@ -839,48 +838,53 @@ function NotasFiscaisPage() {
                 <th className="p-3">Equipamento</th>
                 <th className="p-3">CL</th>
                 <th className="p-3">Emissão</th>
+                <th className="p-3">Valor</th>
                 <th className="p-3">Vencimentos</th>
-                <th className="p-3">Observação</th>
-                <th className="p-3 text-right">Valor</th>
                 <th className="p-3 text-center">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="p-6 text-center text-slate-500">
-                    <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" /> Carregando...
+                  <td colSpan={8} className="p-6 text-center text-slate-500">
+                    <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-600" />
+                    Carregando notas fiscais...
                   </td>
                 </tr>
               ) : notasFiltradas.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="p-6 text-center text-slate-500">
-                    Nenhuma nota encontrada.
+                  <td colSpan={8} className="p-6 text-center text-slate-500">
+                    Nenhuma nota fiscal encontrada.
                   </td>
                 </tr>
               ) : (
                 notasFiltradas.map((nota) => (
-                  <tr key={nota.id} className="hover:bg-slate-50/50">
+                  <tr key={nota.id} className="hover:bg-slate-50">
                     <td className="p-3 font-medium">{nota.nf}</td>
                     <td className="p-3">{nota.fornecedor}</td>
                     <td className="p-3">{nota.identificacao}</td>
-                    <td className="p-3 font-semibold text-blue-600">{nota.cl || "—"}</td>
+                    <td className="p-3">{nota.cl}</td>
                     <td className="p-3">{formatDate(nota.data)}</td>
-                    <td className="p-3 text-[11px] text-slate-600">
-                      {[nota.venc01, nota.venc02, nota.venc03, nota.venc04, nota.venc05]
-                        .filter(Boolean)
-                        .map(formatDate)
-                        .join(", ") || "—"}
+                    <td className="p-3 font-semibold text-slate-900">{formatBRL(nota.valor)}</td>
+                    <td className="p-3">
+                      <div className="flex flex-wrap gap-1 text-[10px]">
+                        {[nota.venc01, nota.venc02, nota.venc03, nota.venc04, nota.venc05]
+                          .filter(Boolean)
+                          .map((v, i) => (
+                            <span key={i} className="px-1.5 py-0.5 bg-slate-100 rounded border border-slate-200">
+                              {formatDate(v)}
+                            </span>
+                          ))}
+                      </div>
                     </td>
-                    <td className="p-3 max-w-[150px] truncate">{nota.observacao || "—"}</td>
-                    <td className="p-3 text-right font-medium">{formatBRL(nota.valor)}</td>
                     <td className="p-3 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
+                      <div className="flex items-center justify-center gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 text-blue-600 hover:bg-blue-50"
                           onClick={() => abrirEdicao(nota)}
+                          title="Editar"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
@@ -889,6 +893,7 @@ function NotasFiscaisPage() {
                           size="icon"
                           className="h-7 w-7 text-red-600 hover:bg-red-50"
                           onClick={() => handleDeletarNota(nota.id, nota.nf)}
+                          title="Excluir"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -902,13 +907,8 @@ function NotasFiscaisPage() {
         </div>
       </div>
 
-      <Dialog
-        open={openModalEdicao}
-        onOpenChange={(open) => {
-          setOpenModalEdicao(open);
-          if (!open) limparFormulario();
-        }}
-      >
+      {/* Modal de Edição */}
+      <Dialog open={openModalEdicao} onOpenChange={setOpenModalEdicao}>
         <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Nota Fiscal #{numeroNf}</DialogTitle>
@@ -917,21 +917,16 @@ function NotasFiscaisPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Número da NF</Label>
-                <Input value={numeroNf} onChange={(e) => setNumeroNf(e.target.value)} required />
+                <Input
+                  value={numeroNf}
+                  onChange={(e) => setNumeroNf(e.target.value)}
+                  required
+                />
               </div>
               <div>
-                <div className="flex items-center justify-between">
-                  <Label>Fornecedor</Label>
-                  <button
-                    type="button"
-                    onClick={() => setOpenModalNovoFornecedor(true)}
-                    className="text-[11px] text-blue-600 hover:underline font-medium"
-                  >
-                    + Novo Fornecedor
-                  </button>
-                </div>
+                <Label>Fornecedor</Label>
                 <select
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1"
                   value={fornecedor}
                   onChange={(e) => setFornecedor(e.target.value)}
                   required
@@ -958,7 +953,11 @@ function NotasFiscaisPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Data de Emissão</Label>
-                <Input type="date" value={emissao} onChange={(e) => setEmissao(e.target.value)} />
+                <Input
+                  type="date"
+                  value={emissao}
+                  onChange={(e) => setEmissao(e.target.value)}
+                />
               </div>
               <div>
                 <Label>Valor Total</Label>
@@ -1004,10 +1003,7 @@ function NotasFiscaisPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  setOpenModalEdicao(false);
-                  limparFormulario();
-                }}
+                onClick={() => setOpenModalEdicao(false)}
               >
                 Cancelar
               </Button>
