@@ -11,9 +11,14 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { adminCreateUser, adminListUsers, adminDeleteUser } from "@/lib/admin.functions";
+import {
+  adminCreateUser,
+  adminListUsers,
+  adminDeleteUser,
+  adminUpdateUser,
+} from "@/lib/admin.functions";
 import { toast } from "sonner";
-import { UserPlus, Plus, Trash2, ShieldCheck, User } from "lucide-react";
+import { UserPlus, Plus, Trash2, ShieldCheck, User, Pencil, Save, X } from "lucide-react";
 import { ImportEquipamentos } from "@/components/ImportEquipamentos";
 import { emailToMat } from "@/lib/mat";
 import { requireAdmin } from "@/lib/route-guards";
@@ -159,10 +164,43 @@ function Usuarios() {
   const list = useServerFn(adminListUsers);
   const create = useServerFn(adminCreateUser);
   const del = useServerFn(adminDeleteUser);
+  const update = useServerFn(adminUpdateUser);
   const qc = useQueryClient();
 
-  const { data: users, isLoading } = useQuery({ queryKey: ["admin-users"], queryFn: () => list() });
+  const {
+    data: users,
+    isLoading,
+    error: listError,
+  } = useQuery({ queryKey: ["admin-users"], queryFn: () => list() });
   const { userId } = useAuth();
+
+  const [editId, setEditId] = useState<string | null>(null);
+  const [edit, setEdit] = useState({
+    fullName: "",
+    phone: "",
+    password: "",
+    role: "colaborador" as "admin" | "colaborador",
+  });
+
+  const u = useMutation({
+    mutationFn: () =>
+      update({
+        data: {
+          userId: editId!,
+          fullName: edit.fullName,
+          phone: edit.phone || null,
+          role: edit.role,
+          password: edit.password ? edit.password : null,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Usuário atualizado");
+      setEditId(null);
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const [f, setF] = useState({
     matricula: "",
@@ -285,47 +323,149 @@ function Usuarios() {
       <Card className="p-4">
         <h3 className="font-semibold text-sm mb-3">Usuários cadastrados</h3>
         {isLoading && <p className="text-xs text-muted-foreground">Carregando...</p>}
+        {listError && (
+          <p className="text-xs text-destructive">
+            {listError instanceof Error ? listError.message : "Não foi possível carregar a lista."}
+          </p>
+        )}
+        {!isLoading && !listError && (users?.length ?? 0) === 0 && (
+          <p className="text-xs text-muted-foreground">Nenhum usuário cadastrado ainda.</p>
+        )}
         <ul className="divide-y divide-border">
-          {users?.map((u) => (
-            <li key={u.id} className="py-2.5 flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                {u.isAdmin ? (
-                  <ShieldCheck className="w-4 h-4 text-accent" />
-                ) : (
-                  <User className="w-4 h-4 text-muted-foreground" />
+          {users?.map((usr) => (
+            <li key={usr.id} className="py-2.5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                  {usr.isAdmin ? (
+                    <ShieldCheck className="w-4 h-4 text-accent" />
+                  ) : (
+                    <User className="w-4 h-4 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {usr.full_name || emailToMat(usr.email)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    MAT {emailToMat(usr.email)}
+                    {usr.phone ? ` • ${usr.phone}` : ""}
+                  </p>
+                </div>
+                <Badge variant={usr.isAdmin ? "default" : "secondary"} className="text-[10px]">
+                  {usr.isAdmin ? "Admin" : "Colab"}
+                </Badge>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8"
+                  onClick={() => {
+                    if (editId === usr.id) {
+                      setEditId(null);
+                      return;
+                    }
+                    setEditId(usr.id);
+                    setEdit({
+                      fullName: usr.full_name || "",
+                      phone: usr.phone || "",
+                      password: "",
+                      role: usr.isAdmin ? "admin" : "colaborador",
+                    });
+                  }}
+                >
+                  <Pencil className="w-4 h-4 text-sky-600" />
+                </Button>
+                {usr.id !== userId && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="icon" variant="ghost" className="h-8 w-8">
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Remover {usr.full_name || emailToMat(usr.email)}?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          O usuário perderá acesso ao aplicativo.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => d.mutate(usr.id)}>
+                          Remover
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 )}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{u.full_name || emailToMat(u.email)}</p>
-                <p className="text-[11px] text-muted-foreground truncate">
-                  MAT {emailToMat(u.email)}
-                </p>
-              </div>
-              <Badge variant={u.isAdmin ? "default" : "secondary"} className="text-[10px]">
-                {u.isAdmin ? "Admin" : "Colab"}
-              </Badge>
-              {u.id !== userId && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button size="icon" variant="ghost" className="h-8 w-8">
-                      <Trash2 className="w-4 h-4 text-destructive" />
+
+              {editId === usr.id && (
+                <div className="mt-3 space-y-3 rounded-md border border-border bg-muted/40 p-3">
+                  <div>
+                    <Label className="text-xs">Nome completo</Label>
+                    <Input
+                      value={edit.fullName}
+                      onChange={(e) => setEdit({ ...edit, fullName: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Telefone</Label>
+                      <Input
+                        value={edit.phone}
+                        onChange={(e) => setEdit({ ...edit, phone: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Nova senha (opcional)</Label>
+                      <Input
+                        type="text"
+                        value={edit.password}
+                        onChange={(e) => setEdit({ ...edit, password: e.target.value })}
+                        placeholder="mín. 8 caracteres"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Perfil</Label>
+                    <select
+                      value={edit.role}
+                      onChange={(e) =>
+                        setEdit({
+                          ...edit,
+                          role: e.target.value as "admin" | "colaborador",
+                        })
+                      }
+                      className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                    >
+                      <option value="colaborador">Colaborador</option>
+                      <option value="admin">Administrador</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      onClick={() => u.mutate()}
+                      disabled={u.isPending || !edit.fullName.trim()}
+                      className="gap-2"
+                    >
+                      <Save className="w-4 h-4" />
+                      {u.isPending ? "Salvando..." : "Salvar"}
                     </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Remover {u.full_name || emailToMat(u.email)}?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        O usuário perderá acesso ao aplicativo.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => d.mutate(u.id)}>Remover</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setEditId(null)}
+                      disabled={u.isPending}
+                      className="gap-2"
+                    >
+                      <X className="w-4 h-4" />
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
               )}
             </li>
           ))}

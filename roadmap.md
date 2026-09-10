@@ -6,3 +6,5 @@
 - [x] Lixeiras vermelhas em medições/contratos (sem apagar dados lançados)
 - [x] Medições: meses do contrato aparecem automaticamente (removido mês/máquina de exemplo)
 - [x] Custos: receita bruta usa o valor real das medições do contrato/mês
+- [x] Botões azuis em tom mais claro com texto/ícone brancos
+- [ ] Admin: listar cadastrados e permitir editar/excluir colaboradores e administradores

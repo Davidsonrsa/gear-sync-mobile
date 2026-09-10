@@ -1,20 +1,25 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { matToEmail } from "@/lib/mat";
 
-const DOMAIN = "sphjhm.app";
-const SUPER_ADMIN_MATRICULA = "0001";
+type AdminCheckContext = {
+  supabase: {
+    from: (table: string) => any;
+  };
+  userId: string;
+};
 
-function matToEmail(mat: string) {
-  const m = mat
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
-  return `mat-${m}@${DOMAIN}`;
-}
-
-function isSuperAdmin(email: string | undefined) {
-  return email?.toLowerCase() === matToEmail(SUPER_ADMIN_MATRICULA);
+async function assertAdmin(context: AdminCheckContext) {
+  const { data: adminRole, error } = await context.supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", context.userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error || !adminRole) {
+    throw new Error("Acesso negado: somente administradores.");
+  }
 }
 
 const createUserSchema = z.object({
@@ -29,18 +34,7 @@ export const adminCreateUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => createUserSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { data: currentUser } = await context.supabase.auth.getUser();
-    if (!isSuperAdmin(currentUser.user?.email)) {
-      throw new Error("Acesso negado: somente o administrador principal pode criar usuários.");
-    }
-
-    const { data: adminRole, error: roleError } = await context.supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", context.userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (roleError || !adminRole) throw new Error("Acesso negado: somente admin.");
+    await assertAdmin(context);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -70,24 +64,17 @@ export const adminCreateUser = createServerFn({ method: "POST" })
 export const adminListUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: currentUser } = await context.supabase.auth.getUser();
-    if (!isSuperAdmin(currentUser.user?.email)) {
-      throw new Error("Acesso negado: somente o administrador principal pode listar usuários.");
-    }
+    await assertAdmin(context);
 
-    const { data: adminRole, error: roleError } = await context.supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", context.userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (roleError || !adminRole) throw new Error("Acesso negado.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: profiles } = await context.supabase
+    const { data: profiles, error } = await supabaseAdmin
       .from("profiles")
       .select("id, full_name, email, phone, created_at")
       .order("created_at", { ascending: false });
-    const { data: roles } = await context.supabase.from("user_roles").select("user_id, role");
+    if (error) throw new Error(error.message);
+
+    const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id, role");
 
     return (profiles ?? []).map((p) => ({
       ...p,
@@ -95,22 +82,68 @@ export const adminListUsers = createServerFn({ method: "GET" })
     }));
   });
 
+const updateUserSchema = z.object({
+  userId: z.string().uuid(),
+  fullName: z.string().min(1),
+  phone: z.string().optional().nullable(),
+  role: z.enum(["admin", "colaborador"]),
+  password: z.string().min(8).optional().nullable(),
+});
+
+export const adminUpdateUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => updateUserSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .update({ full_name: data.fullName, phone: data.phone ?? null })
+      .eq("id", data.userId);
+    if (profileError) throw new Error(profileError.message);
+
+    if (data.password) {
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+        password: data.password,
+      });
+      if (error) throw new Error(error.message);
+    }
+
+    if (data.role === "admin") {
+      const { data: existing } = await supabaseAdmin
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", data.userId)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (!existing) {
+        const { error } = await supabaseAdmin
+          .from("user_roles")
+          .insert({ user_id: data.userId, role: "admin" });
+        if (error) throw new Error(error.message);
+      }
+    } else {
+      if (data.userId === context.userId) {
+        throw new Error("Você não pode remover o seu próprio acesso de administrador.");
+      }
+      const { error } = await supabaseAdmin
+        .from("user_roles")
+        .delete()
+        .eq("user_id", data.userId)
+        .eq("role", "admin");
+      if (error) throw new Error(error.message);
+    }
+
+    return { ok: true };
+  });
+
 export const adminDeleteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ userId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    const { data: currentUser } = await context.supabase.auth.getUser();
-    if (!isSuperAdmin(currentUser.user?.email)) {
-      throw new Error("Acesso negado: somente o administrador principal pode remover usuários.");
-    }
-
-    const { data: adminRole, error: roleError } = await context.supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", context.userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (roleError || !adminRole) throw new Error("Acesso negado.");
+    await assertAdmin(context);
     if (data.userId === context.userId) throw new Error("Você não pode excluir a si mesmo.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
