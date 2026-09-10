@@ -3,12 +3,14 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { matToEmail } from "@/lib/mat";
 
-type AuthContext = { supabase: ReturnType<typeof requireAdminContextType>; userId: string };
-function requireAdminContextType(): never {
-  throw new Error("type-only helper");
-}
+type AdminCheckContext = {
+  supabase: {
+    from: (table: string) => any;
+  };
+  userId: string;
+};
 
-async function assertAdmin(context: { supabase: any; userId: string }) {
+async function assertAdmin(context: AdminCheckContext) {
   const { data: adminRole, error } = await context.supabase
     .from("user_roles")
     .select("role")
