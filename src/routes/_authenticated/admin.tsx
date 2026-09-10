@@ -11,9 +11,14 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { adminCreateUser, adminListUsers, adminDeleteUser } from "@/lib/admin.functions";
+import {
+  adminCreateUser,
+  adminListUsers,
+  adminDeleteUser,
+  adminUpdateUser,
+} from "@/lib/admin.functions";
 import { toast } from "sonner";
-import { UserPlus, Plus, Trash2, ShieldCheck, User } from "lucide-react";
+import { UserPlus, Plus, Trash2, ShieldCheck, User, Pencil, Save, X } from "lucide-react";
 import { ImportEquipamentos } from "@/components/ImportEquipamentos";
 import { emailToMat } from "@/lib/mat";
 import { requireAdmin } from "@/lib/route-guards";
