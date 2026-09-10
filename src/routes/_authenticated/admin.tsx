@@ -164,10 +164,43 @@ function Usuarios() {
   const list = useServerFn(adminListUsers);
   const create = useServerFn(adminCreateUser);
   const del = useServerFn(adminDeleteUser);
+  const update = useServerFn(adminUpdateUser);
   const qc = useQueryClient();
 
-  const { data: users, isLoading } = useQuery({ queryKey: ["admin-users"], queryFn: () => list() });
+  const {
+    data: users,
+    isLoading,
+    error: listError,
+  } = useQuery({ queryKey: ["admin-users"], queryFn: () => list() });
   const { userId } = useAuth();
+
+  const [editId, setEditId] = useState<string | null>(null);
+  const [edit, setEdit] = useState({
+    fullName: "",
+    phone: "",
+    password: "",
+    role: "colaborador" as "admin" | "colaborador",
+  });
+
+  const u = useMutation({
+    mutationFn: () =>
+      update({
+        data: {
+          userId: editId!,
+          fullName: edit.fullName,
+          phone: edit.phone || null,
+          role: edit.role,
+          password: edit.password ? edit.password : null,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Usuário atualizado");
+      setEditId(null);
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const [f, setF] = useState({
     matricula: "",
