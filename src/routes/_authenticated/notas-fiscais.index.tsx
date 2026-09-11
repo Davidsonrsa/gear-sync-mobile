@@ -50,7 +50,7 @@ interface NotaFiscalItem {
 
 interface FornecedorItem {
   id: string;
-  nome: string; // Ajuste para o nome da coluna real da sua tabela de fornecedores (ex: "nome", "razao_social")
+  nome: string;
 }
 
 const IMPORT_BATCH_SIZE = 200;
@@ -215,14 +215,14 @@ function NotasFiscaisPage() {
   const [venc05, setVenc05] = useState("");
   const [observacao, setObservacao] = useState("");
 
- const fetchNotas = async () => {
+  const fetchNotas = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from("notas_fiscais")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(15000); // <-- Aumenta o limite para abranger todas as suas 13 mil notas
+        .limit(15000);
 
       if (error) throw error;
 
@@ -253,7 +253,6 @@ function NotasFiscaisPage() {
 
   const fetchFornecedores = async () => {
     try {
-      // Teste trocando "fornecedores" pelo nome exato da sua tabela no Supabase se for diferente
       const { data, error } = await supabase
         .from("fornecedores") 
         .select("*");
@@ -264,15 +263,8 @@ function NotasFiscaisPage() {
         return;
       }
 
-      console.log("Dados brutos vindos da tabela fornecedores:", data);
-
-      if (!data || data.length === 0) {
-        console.log("A tabela 'fornecedores' está vazia ou retornou 0 linhas.");
-      }
-
       const mappedForn: FornecedorItem[] = (data ?? []).map((item: any) => ({
         id: String(item.id ?? ""),
-        // Olhe no seu console do navegador (F12) qual é a chave correta e substitua aqui se necessário
         nome: String(item.fornecedor || item.nome || item.razao_social || item.descricao || ""),
       }));
 
@@ -281,6 +273,7 @@ function NotasFiscaisPage() {
       console.error("Erro crítico em fetchFornecedores:", error);
     }
   };
+
   useEffect(() => {
     fetchNotas();
     fetchFornecedores();
@@ -378,7 +371,7 @@ function NotasFiscaisPage() {
     }
   };
 
-const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -394,8 +387,6 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         defval: null,
         raw: true,
       });
-
-      console.log("Total de linhas lidas do Excel:", jsonData.length);
 
       const formattedData = jsonData
         .map((row) => ({
@@ -420,13 +411,11 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         }))
         .filter((item) => {
           if (item.nf === "") {
-            console.warn("Linha ignorada por falta de Número de NF válido:", item);
             return false;
           }
           return true;
         });
 
-      console.log("Total de notas válidas para importação:", formattedData.length);
       setImportTotal(formattedData.length);
       let importedCount = 0;
 
@@ -808,13 +797,6 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                 <Input value={valorTotal} onChange={(e) => setValorTotal(e.target.value)} />
               </div>
             </div>
-            <div>
-              <Label>Descrição do Produto</Label>
-              <Textarea
-                value={descricaoProduto}
-                onChange={(e) => setDescricaoProduto(e.target.value)}
-              />
-            </div>
             <div className="grid grid-cols-3 gap-2">
               <div>
                 <Label className="text-xs">Venc 01</Label>
@@ -840,17 +822,17 @@ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
               </div>
             </div>
             <div>
-              <Label>Observação</Label>
-              <Textarea value={observacao} onChange={(e) => setObservacao(e.target.value)} />
+              <Label>Descrição do Produto / Observação</Label>
+              <Textarea
+                value={descricaoProduto}
+                onChange={(e) => setDescricaoProduto(e.target.value)}
+              />
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => {
-                  setOpenModalEdicao(false);
-                  limparFormulario();
-                }}
+                onClick={() => setOpenModalEdicao(false)}
               >
                 Cancelar
               </Button>
