@@ -26,7 +26,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-export const Route = createFileRoute("/_authenticated/notas-fiscais/")({
+export const Route = createFileRoute("/_authenticado/notas-fiscais/")({
   beforeLoad: requireAdmin,
   component: NotasFiscaisPage,
 });
