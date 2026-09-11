@@ -26,7 +26,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-export const Route = createFileRoute("/_authenticado/notas-fiscais/")({
+export const Route = createFileRoute("/_authenticated/notas-fiscais/")({
   beforeLoad: requireAdmin,
   component: NotasFiscaisPage,
 });
@@ -198,6 +198,7 @@ function NotasFiscaisPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [busca, setBusca] = useState("");
+  const [clFiltro, setClFiltro] = useState("");
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
 
@@ -214,19 +215,34 @@ function NotasFiscaisPage() {
   const [venc04, setVenc04] = useState("");
   const [venc05, setVenc05] = useState("");
   const [observacao, setObservacao] = useState("");
+  const [mostrarNovoFornecedor, setMostrarNovoFornecedor] = useState(false);
+  const [novaRazaoSocial, setNovaRazaoSocial] = useState("");
+  const [novoNomeFantasia, setNovoNomeFantasia] = useState("");
+  const [salvandoFornecedor, setSalvandoFornecedor] = useState(false);
 
   const fetchNotas = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("notas_fiscais")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(15000);
+      const pageSize = 1000;
+      const allData: any[] = [];
+      let pageStart = 0;
 
-      if (error) throw error;
+      while (true) {
+        const { data, error } = await supabase
+          .from("notas_fiscais")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
+          .range(pageStart, pageStart + pageSize - 1);
 
-      const mapped: NotaFiscalItem[] = (data ?? []).map((item: any) => ({
+        if (error) throw error;
+
+        allData.push(...(data ?? []));
+        if (!data || data.length < pageSize) break;
+        pageStart += pageSize;
+      }
+
+      const mapped: NotaFiscalItem[] = allData.map((item: any) => ({
         id: String(item.id ?? ""),
         nf: String(item.nf ?? "—"),
         fornecedor: String(item.fornecedor ?? "—"),
@@ -265,10 +281,12 @@ function NotasFiscaisPage() {
 
       const mappedForn: FornecedorItem[] = (data ?? []).map((item: any) => ({
         id: String(item.id ?? ""),
-        nome: String(item.fornecedor || item.nome || item.razao_social || item.descricao || ""),
+        nome: String(
+          item.nome_fantasia || item.razao_social || item.fornecedor || item.nome || item.descricao || "",
+        ),
       }));
 
-      setFornecedoresList(mappedForn);
+      setFornecedoresList(mappedForn.filter((item) => item.nome));
     } catch (error: any) {
       console.error("Erro crítico em fetchFornecedores:", error);
     }
@@ -324,6 +342,48 @@ function NotasFiscaisPage() {
     setVenc05("");
     setObservacao("");
     setNotaSelecionada(null);
+    setMostrarNovoFornecedor(false);
+    setNovaRazaoSocial("");
+    setNovoNomeFantasia("");
+  };
+
+  const handleCadastrarFornecedor = async () => {
+    const razaoSocial = novaRazaoSocial.trim();
+    const nomeFornecedor = (novoNomeFantasia.trim() || razaoSocial).trim();
+    if (!razaoSocial) {
+      toast.error("Informe a razão social do fornecedor.");
+      return;
+    }
+
+    setSalvandoFornecedor(true);
+    try {
+      const { data, error } = await supabase
+        .from("fornecedores")
+        .insert({
+          razao_social: razaoSocial,
+          nome_fantasia: novoNomeFantasia.trim() || null,
+        })
+        .select("id, razao_social, nome_fantasia")
+        .single();
+
+      if (error) throw error;
+
+      const novoFornecedor = { id: String(data.id), nome: nomeFornecedor };
+      setFornecedoresList((listaAtual) =>
+        [...listaAtual.filter((item) => item.id !== novoFornecedor.id), novoFornecedor].sort((a, b) =>
+          a.nome.localeCompare(b.nome),
+        ),
+      );
+      setFornecedor(novoFornecedor.nome);
+      setNovaRazaoSocial("");
+      setNovoNomeFantasia("");
+      setMostrarNovoFornecedor(false);
+      toast.success("Fornecedor cadastrado e selecionado.");
+    } catch (error: any) {
+      toast.error("Erro ao cadastrar fornecedor: " + (error?.message || "Erro desconhecido"));
+    } finally {
+      setSalvandoFornecedor(false);
+    }
   };
 
   const handleSalvarNota = async (e: React.FormEvent) => {
@@ -439,15 +499,18 @@ function NotasFiscaisPage() {
 
   const notasFiltradas = notasList.filter((nota) => {
     const termo = busca.trim().toLowerCase();
+    const clSelecionado = clFiltro.trim().toLowerCase();
     const matchBusca =
       !termo ||
       nota.nf.toLowerCase().includes(termo) ||
       nota.fornecedor.toLowerCase().includes(termo) ||
       nota.identificacao.toLowerCase().includes(termo) ||
       nota.cl.toLowerCase().includes(termo) ||
+      nota.descricao_produto.toLowerCase().includes(termo) ||
       nota.observacao.toLowerCase().includes(termo);
 
     let matchData = true;
+    const matchCl = !clSelecionado || nota.cl.toLowerCase() === clSelecionado;
     const dataNota = nota.data && nota.data !== "—" ? nota.data.split("T")[0] : "";
 
     if (dataInicio && dataNota) {
@@ -460,8 +523,12 @@ function NotasFiscaisPage() {
       matchData = false;
     }
 
-    return matchBusca && matchData;
+    return matchBusca && matchCl && matchData;
   });
+
+  const clsCadastrados = Array.from(
+    new Set(notasList.map((nota) => nota.cl.trim()).filter((valor) => valor && valor !== "—")),
+  ).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
   const valorTotalSomatoria = notasFiltradas.reduce((acc, nota) => acc + (nota.valor || 0), 0);
 
@@ -526,19 +593,53 @@ function NotasFiscaisPage() {
                   </div>
                   <div>
                     <Label>Fornecedor</Label>
-                    <select
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={fornecedor}
-                      onChange={(e) => setFornecedor(e.target.value)}
-                      required
-                    >
-                      <option value="">Selecione um fornecedor...</option>
-                      {fornecedoresList.map((f) => (
-                        <option key={f.id} value={f.nome}>
-                          {f.nome}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex gap-2">
+                      <select
+                        className="flex h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        value={fornecedor}
+                        onChange={(e) => setFornecedor(e.target.value)}
+                        required
+                      >
+                        <option value="">Selecione um fornecedor...</option>
+                        {fornecedoresList.map((f) => (
+                          <option key={f.id} value={f.nome}>
+                            {f.nome}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        title="Cadastrar novo fornecedor"
+                        onClick={() => setMostrarNovoFornecedor((aberto) => !aberto)}
+                      >
+                        <PlusCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {mostrarNovoFornecedor && (
+                      <div className="mt-2 space-y-2 rounded-md border border-slate-200 bg-slate-50 p-2">
+                        <Input
+                          placeholder="Razão social *"
+                          value={novaRazaoSocial}
+                          onChange={(e) => setNovaRazaoSocial(e.target.value)}
+                        />
+                        <Input
+                          placeholder="Nome fantasia (opcional)"
+                          value={novoNomeFantasia}
+                          onChange={(e) => setNovoNomeFantasia(e.target.value)}
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleCadastrarFornecedor}
+                          disabled={salvandoFornecedor}
+                        >
+                          {salvandoFornecedor && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                          Salvar fornecedor
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -623,6 +724,19 @@ function NotasFiscaisPage() {
               onChange={(e) => setBusca(e.target.value)}
             />
           </div>
+          <select
+            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-xs md:w-44"
+            value={clFiltro}
+            onChange={(e) => setClFiltro(e.target.value)}
+            title="Filtrar por CL"
+          >
+            <option value="">Todos os CLs</option>
+            {clsCadastrados.map((valor) => (
+              <option key={valor} value={valor}>
+                CL {valor}
+              </option>
+            ))}
+          </select>
           <div className="flex items-center gap-1.5 w-full md:w-auto">
             <div className="flex flex-col">
               <span className="text-[10px] text-slate-500 font-medium">Data Início</span>
@@ -643,13 +757,14 @@ function NotasFiscaisPage() {
                 onChange={(e) => setDataFim(e.target.value)}
               />
             </div>
-            {(dataInicio || dataFim || busca) && (
+            {(dataInicio || dataFim || busca || clFiltro) && (
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-9 w-9 mt-4 text-slate-500 hover:text-slate-800"
                 onClick={() => {
                   setBusca("");
+                  setClFiltro("");
                   setDataInicio("");
                   setDataFim("");
                 }}
@@ -713,7 +828,11 @@ function NotasFiscaisPage() {
                         .map(formatDate)
                         .join(", ") || "—"}
                     </td>
-                    <td className="p-3 max-w-[150px] truncate">{nota.observacao || "—"}</td>
+                    <td className="p-3 max-w-[150px] truncate">
+                      {nota.descricao_produto !== "—"
+                        ? nota.descricao_produto
+                        : nota.observacao || "—"}
+                    </td>
                     <td className="p-3 text-right font-medium">{formatBRL(nota.valor)}</td>
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-1.5">
@@ -762,19 +881,53 @@ function NotasFiscaisPage() {
               </div>
               <div>
                 <Label>Fornecedor</Label>
-                <select
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={fornecedor}
-                  onChange={(e) => setFornecedor(e.target.value)}
-                  required
-                >
-                  <option value="">Selecione um fornecedor...</option>
-                  {fornecedoresList.map((f) => (
-                    <option key={f.id} value={f.nome}>
-                      {f.nome}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex gap-2">
+                  <select
+                    className="flex h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    value={fornecedor}
+                    onChange={(e) => setFornecedor(e.target.value)}
+                    required
+                  >
+                    <option value="">Selecione um fornecedor...</option>
+                    {fornecedoresList.map((f) => (
+                      <option key={f.id} value={f.nome}>
+                        {f.nome}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    title="Cadastrar novo fornecedor"
+                    onClick={() => setMostrarNovoFornecedor((aberto) => !aberto)}
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+                {mostrarNovoFornecedor && (
+                  <div className="mt-2 space-y-2 rounded-md border border-slate-200 bg-slate-50 p-2">
+                    <Input
+                      placeholder="Razão social *"
+                      value={novaRazaoSocial}
+                      onChange={(e) => setNovaRazaoSocial(e.target.value)}
+                    />
+                    <Input
+                      placeholder="Nome fantasia (opcional)"
+                      value={novoNomeFantasia}
+                      onChange={(e) => setNovoNomeFantasia(e.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleCadastrarFornecedor}
+                      disabled={salvandoFornecedor}
+                    >
+                      {salvandoFornecedor && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                      Salvar fornecedor
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
