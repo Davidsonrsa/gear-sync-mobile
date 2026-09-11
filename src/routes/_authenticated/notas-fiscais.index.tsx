@@ -378,7 +378,7 @@ function NotasFiscaisPage() {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -394,6 +394,8 @@ function NotasFiscaisPage() {
         defval: null,
         raw: true,
       });
+
+      console.log("Total de linhas lidas do Excel:", jsonData.length);
 
       const formattedData = jsonData
         .map((row) => ({
@@ -416,8 +418,15 @@ function NotasFiscaisPage() {
           venc04: parseExcelDate(getExcelValue(row, ["Venc. 04", "Venc04", "venc04"])),
           venc05: parseExcelDate(getExcelValue(row, ["Venc. 05", "Venc05", "venc05"])),
         }))
-        .filter((item) => item.nf !== "");
+        .filter((item) => {
+          if (item.nf === "") {
+            console.warn("Linha ignorada por falta de Número de NF válido:", item);
+            return false;
+          }
+          return true;
+        });
 
+      console.log("Total de notas válidas para importação:", formattedData.length);
       setImportTotal(formattedData.length);
       let importedCount = 0;
 
