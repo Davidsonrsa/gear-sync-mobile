@@ -215,13 +215,14 @@ function NotasFiscaisPage() {
   const [venc05, setVenc05] = useState("");
   const [observacao, setObservacao] = useState("");
 
-  const fetchNotas = async () => {
+ const fetchNotas = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from("notas_fiscais")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(15000); // <-- Aumenta o limite para abranger todas as suas 13 mil notas
 
       if (error) throw error;
 
