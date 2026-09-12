@@ -49,6 +49,7 @@ interface Cotacao {
   setor?: string | null;
   data_cotacao?: string | null;
   observacoes?: string | null;
+  status?: string | null;
 }
 
 interface ItemCotacao {
@@ -70,8 +71,10 @@ interface Fornecedor {
 }
 
 interface CotacaoFornecedor {
+  id: string;
   cotacao_id: string;
   fornecedor_id: string;
+  status?: string | null;
   fornecedores?: Fornecedor;
 }
 
@@ -103,6 +106,7 @@ export default function DetalheCotacaoPage() {
   const [novaSetor, setNovaSetor] = useState("");
   const [novaData, setNovaData] = useState("");
   const [novaObs, setNovaObs] = useState("");
+  const [statusOrcamento, setStatusOrcamento] = useState("aberto");
 
   // Modais
   const [isNovoItemOpen, setIsNovoItemOpen] = useState(false);
@@ -243,7 +247,7 @@ export default function DetalheCotacaoPage() {
             setor: novaSetor.trim() || null,
             data_cotacao: novaData || new Date().toISOString().split("T")[0],
             observacoes: novaObs.trim() || null,
-            status: "RASCUNHO",
+            status: "aberto",
             valor_total: 0,
           },
         ])
@@ -319,7 +323,6 @@ export default function DetalheCotacaoPage() {
           .from("cotacoes")
           .update({
             valor_total: valorTotalOtimo,
-            status: valorTotalOtimo > 0 ? "FINALIZADA" : "RASCUNHO",
           })
           .eq("id", id);
       } catch (e) {
@@ -381,6 +384,7 @@ export default function DetalheCotacaoPage() {
         {
           cotacao_id: id,
           fornecedor_id: fornecedorIdSelecionado,
+          status: "aberto",
         },
       ]);
       if (error) throw error;
@@ -439,6 +443,13 @@ export default function DetalheCotacaoPage() {
 
   function abrirModalOrcamento(fc: CotacaoFornecedor) {
     setFornecedorOrcamentoAtivo(fc);
+    setStatusOrcamento(
+      fc.status === "RASCUNHO"
+        ? "aberto"
+        : fc.status === "FINALIZADA"
+          ? "aprovada"
+          : fc.status || "aberto",
+    );
     setIsOrcamentoOpen(true);
   }
 
@@ -480,6 +491,35 @@ export default function DetalheCotacaoPage() {
     const corpo = encodeURIComponent(gerarTextoOrcamento().replace(/\*/g, ""));
     const url = `mailto:${email}?subject=${assunto}&body=${corpo}`;
     window.open(url, "_blank");
+  }
+
+  async function salvarStatusOrcamento() {
+    if (!fornecedorOrcamentoAtivo) return;
+    try {
+      setSaving(true);
+      const { data, error } = await supabase
+        .from("cotacao_fornecedores")
+        .update({ status: statusOrcamento })
+        .eq("id", fornecedorOrcamentoAtivo.id)
+        .select("*")
+        .single();
+
+      if (error) throw error;
+      setFornecedoresCotacao((fornecedores) =>
+        fornecedores.map((fornecedor) =>
+          fornecedor.id === data.id ? { ...fornecedor, status: data.status } : fornecedor,
+        ),
+      );
+      setFornecedorOrcamentoAtivo((fornecedor) =>
+        fornecedor ? { ...fornecedor, status: data.status } : fornecedor,
+      );
+      toast.success("Status do orçamento atualizado!");
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error("Erro ao atualizar status: " + err.message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleSalvarPrecos(e: React.FormEvent) {
@@ -922,6 +962,33 @@ export default function DetalheCotacaoPage() {
                   <strong>E-mail:</strong> {fornecedorOrcamentoAtivo.fornecedores.email}
                 </p>
               )}
+            </div>
+
+            <div className="flex flex-col gap-2 rounded-lg border border-blue-100 bg-blue-50 p-3 sm:flex-row sm:items-end sm:justify-between">
+              <div className="flex-1">
+                <Label className="text-xs font-semibold text-slate-700">
+                  Status do orçamento
+                </Label>
+                <select
+                  value={statusOrcamento}
+                  onChange={(e) => setStatusOrcamento(e.target.value)}
+                  className="mt-1 h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+                >
+                  <option value="aberto">Em Aberto</option>
+                  <option value="analise">Em Análise</option>
+                  <option value="aprovada">Aprovada</option>
+                  <option value="recusada">Recusada</option>
+                </select>
+              </div>
+              <Button
+                type="button"
+                onClick={salvarStatusOrcamento}
+                disabled={saving}
+                className="bg-blue-600 text-white hover:bg-blue-700"
+              >
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Salvar status
+              </Button>
             </div>
 
             <div>

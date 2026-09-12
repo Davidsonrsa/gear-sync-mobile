@@ -17,6 +17,8 @@ import {
   Trash2,
   Calculator,
   FilterX,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   Dialog,
@@ -201,6 +203,10 @@ function NotasFiscaisPage() {
   const [clFiltro, setClFiltro] = useState("");
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const itensPorPagina = 50;
+  const [totalRegistros, setTotalRegistros] = useState(0);
+  const [clsCadastrados, setClsCadastrados] = useState<string[]>([]);
 
   const [numeroNf, setNumeroNf] = useState("");
   const [fornecedor, setFornecedor] = useState("");
@@ -220,29 +226,33 @@ function NotasFiscaisPage() {
   const [novoNomeFantasia, setNovoNomeFantasia] = useState("");
   const [salvandoFornecedor, setSalvandoFornecedor] = useState(false);
 
-  const fetchNotas = async () => {
+  const fetchNotas = async (termoBusca = "") => {
     setLoading(true);
     try {
-      const pageSize = 1000;
-      const allData: any[] = [];
-      let pageStart = 0;
+      let query = supabase
+        .from("notas_fiscais")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false });
 
-      while (true) {
-        const { data, error } = await supabase
-          .from("notas_fiscais")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .order("id", { ascending: false })
-          .range(pageStart, pageStart + pageSize - 1);
-
-        if (error) throw error;
-
-        allData.push(...(data ?? []));
-        if (!data || data.length < pageSize) break;
-        pageStart += pageSize;
+      const termo = termoBusca.trim().replace(/[(),]/g, " ");
+      if (termo) {
+        query = query.or(
+          `nf.ilike.%${termo}%,fornecedor.ilike.%${termo}%,cl.ilike.%${termo}%,identificacao.ilike.%${termo}%,descricao_produto.ilike.%${termo}%,observacao.ilike.%${termo}%`,
+        );
       }
+      if (clFiltro) query = query.eq("cl", clFiltro);
+      if (dataInicio) query = query.gte("data", dataInicio);
+      if (dataFim) query = query.lte("data", dataFim);
 
-      const mapped: NotaFiscalItem[] = allData.map((item: any) => ({
+      const inicio = (paginaAtual - 1) * itensPorPagina;
+      const fim = inicio + itensPorPagina - 1;
+      const { data, error, count } = await query.range(inicio, fim);
+
+      if (error) throw error;
+      setTotalRegistros(count ?? 0);
+
+      const mapped: NotaFiscalItem[] = (data ?? []).map((item: any) => ({
         id: String(item.id ?? ""),
         nf: String(item.nf ?? "—"),
         fornecedor: String(item.fornecedor ?? "—"),
@@ -292,10 +302,44 @@ function NotasFiscaisPage() {
     }
   };
 
+  const fetchCls = async () => {
+    try {
+      const pageSize = 1000;
+      const cls = new Set<string>();
+      let pageStart = 0;
+
+      while (true) {
+        const { data, error } = await supabase
+          .from("notas_fiscais")
+          .select("cl")
+          .not("cl", "is", null)
+          .range(pageStart, pageStart + pageSize - 1);
+
+        if (error) throw error;
+        (data ?? []).forEach((item: any) => {
+          const valor = String(item.cl ?? "").trim();
+          if (valor) cls.add(valor);
+        });
+        if (!data || data.length < pageSize) break;
+        pageStart += pageSize;
+      }
+
+      setClsCadastrados(
+        Array.from(cls).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+      );
+    } catch {
+      toast.error("Erro ao carregar os CLs cadastrados.");
+    }
+  };
+
   useEffect(() => {
-    fetchNotas();
     fetchFornecedores();
+    fetchCls();
   }, []);
+
+  useEffect(() => {
+    fetchNotas(busca);
+  }, [paginaAtual, busca, clFiltro, dataInicio, dataFim]);
 
   const handleDeletarNota = async (id: string, numeroNF: string) => {
     if (!window.confirm(`Tem certeza que deseja excluir a nota fiscal #${numeroNF}?`)) return;
@@ -526,10 +570,6 @@ function NotasFiscaisPage() {
     return matchBusca && matchCl && matchData;
   });
 
-  const clsCadastrados = Array.from(
-    new Set(notasList.map((nota) => nota.cl.trim()).filter((valor) => valor && valor !== "—")),
-  ).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-
   const valorTotalSomatoria = notasFiltradas.reduce((acc, nota) => acc + (nota.valor || 0), 0);
 
   return (
@@ -721,13 +761,19 @@ function NotasFiscaisPage() {
               placeholder="Buscar..."
               className="pl-8 text-xs h-9"
               value={busca}
-              onChange={(e) => setBusca(e.target.value)}
+              onChange={(e) => {
+                setBusca(e.target.value);
+                setPaginaAtual(1);
+              }}
             />
           </div>
           <select
             className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-xs md:w-44"
             value={clFiltro}
-            onChange={(e) => setClFiltro(e.target.value)}
+            onChange={(e) => {
+              setClFiltro(e.target.value);
+              setPaginaAtual(1);
+            }}
             title="Filtrar por CL"
           >
             <option value="">Todos os CLs</option>
@@ -744,7 +790,10 @@ function NotasFiscaisPage() {
                 type="date"
                 className="text-xs h-9 w-full md:w-36"
                 value={dataInicio}
-                onChange={(e) => setDataInicio(e.target.value)}
+                onChange={(e) => {
+                  setDataInicio(e.target.value);
+                  setPaginaAtual(1);
+                }}
               />
             </div>
             <span className="text-slate-400 mt-4">-</span>
@@ -754,7 +803,10 @@ function NotasFiscaisPage() {
                 type="date"
                 className="text-xs h-9 w-full md:w-36"
                 value={dataFim}
-                onChange={(e) => setDataFim(e.target.value)}
+                onChange={(e) => {
+                  setDataFim(e.target.value);
+                  setPaginaAtual(1);
+                }}
               />
             </div>
             {(dataInicio || dataFim || busca || clFiltro) && (
@@ -767,6 +819,7 @@ function NotasFiscaisPage() {
                   setClFiltro("");
                   setDataInicio("");
                   setDataFim("");
+                  setPaginaAtual(1);
                 }}
                 title="Limpar Filtros"
               >
@@ -859,6 +912,33 @@ function NotasFiscaisPage() {
               )}
             </tbody>
           </table>
+        </div>
+        <div className="flex flex-col gap-2 border-t border-slate-200 px-3 py-2 text-xs text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            Página {paginaAtual} de {Math.max(1, Math.ceil(totalRegistros / itensPorPagina))} ({totalRegistros} registros)
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={paginaAtual === 1 || loading}
+              onClick={() => setPaginaAtual((pagina) => Math.max(1, pagina - 1))}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Anterior
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={paginaAtual >= Math.ceil(totalRegistros / itensPorPagina) || loading}
+              onClick={() => setPaginaAtual((pagina) => pagina + 1)}
+            >
+              Próxima
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 

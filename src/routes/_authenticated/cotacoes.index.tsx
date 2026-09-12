@@ -22,6 +22,22 @@ const formatarData = (dataStr?: string | null) => {
   return dataStr;
 };
 
+const statusConfig = {
+  aberto: { label: "Em Aberto", color: "bg-slate-100 text-slate-700 border-slate-200" },
+  analise: { label: "Em Análise", color: "bg-amber-100 text-amber-700 border-amber-200" },
+  aprovada: { label: "Aprovada", color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+  recusada: { label: "Recusada", color: "bg-rose-100 text-rose-700 border-rose-200" },
+} as const;
+
+type StatusCotacao = keyof typeof statusConfig;
+
+function normalizarStatus(status?: string | null): StatusCotacao {
+  const statusNormalizado = String(status || "").toLowerCase();
+  if (statusNormalizado === "rascunho") return "aberto";
+  if (statusNormalizado === "finalizada") return "aprovada";
+  return statusNormalizado in statusConfig ? (statusNormalizado as StatusCotacao) : "aberto";
+}
+
 interface Cotacao {
   id: string;
   numero: string;
@@ -41,6 +57,7 @@ export default function ListaCotacoesPage() {
   const [filtroPatrimonio, setFiltroPatrimonio] = useState("");
   const [filtroSetor, setFiltroSetor] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("TODOS");
+  const [salvandoStatusId, setSalvandoStatusId] = useState<string | null>(null);
 
   const fetchCotacoes = async () => {
     try {
@@ -74,7 +91,8 @@ export default function ListaCotacoesPage() {
 
       const matchSetor = (cot.setor || "").toLowerCase().includes(filtroSetor.toLowerCase());
 
-      const matchStatus = filtroStatus === "TODOS" || cot.status === filtroStatus;
+      const matchStatus =
+        filtroStatus === "TODOS" || normalizarStatus(cot.status) === filtroStatus;
 
       return matchNumero && matchPatrimonio && matchSetor && matchStatus;
     });
@@ -90,6 +108,32 @@ export default function ListaCotacoesPage() {
     } catch (error: unknown) {
       const err = error as Error;
       toast.error("Erro ao excluir: " + err.message);
+    }
+  }
+
+  async function handleStatusChange(id: string, status: StatusCotacao) {
+    const statusAnterior = cotacoes.find((cotacao) => cotacao.id === id)?.status;
+    setSalvandoStatusId(id);
+    setCotacoes((cotacoesAtuais) =>
+      cotacoesAtuais.map((cotacao) =>
+        cotacao.id === id ? { ...cotacao, status } : cotacao,
+      ),
+    );
+
+    try {
+      const { error } = await supabase.from("cotacoes").update({ status }).eq("id", id);
+      if (error) throw error;
+      toast.success("Status da cotação atualizado!");
+    } catch (error: unknown) {
+      setCotacoes((cotacoesAtuais) =>
+        cotacoesAtuais.map((cotacao) =>
+          cotacao.id === id ? { ...cotacao, status: statusAnterior } : cotacao,
+        ),
+      );
+      const err = error as Error;
+      toast.error("Erro ao atualizar status: " + err.message);
+    } finally {
+      setSalvandoStatusId(null);
     }
   }
 
@@ -171,8 +215,10 @@ export default function ListaCotacoesPage() {
             className="w-full mt-1 border border-slate-300 rounded-md p-2 text-sm bg-white h-10"
           >
             <option value="TODOS">Todos</option>
-            <option value="RASCUNHO">Rascunho</option>
-            <option value="FINALIZADA">Finalizada</option>
+            <option value="aberto">Em Aberto</option>
+            <option value="analise">Em Análise</option>
+            <option value="aprovada">Aprovada</option>
+            <option value="recusada">Recusada</option>
           </select>
         </div>
       </div>
@@ -206,11 +252,20 @@ export default function ListaCotacoesPage() {
                     <td className="p-3 text-slate-800">{cot.patrimonio || "—"}</td>
                     <td className="p-3 text-slate-600">{cot.setor || "—"}</td>
                     <td className="p-3">
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-bold ${cot.status === "FINALIZADA" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}
+                      <select
+                        value={normalizarStatus(cot.status)}
+                        onChange={(e) =>
+                          handleStatusChange(cot.id, e.target.value as StatusCotacao)
+                        }
+                        disabled={salvandoStatusId === cot.id}
+                        title="Selecionar status da cotação"
+                        className={`rounded border px-2 py-1 text-xs font-bold outline-none ${statusConfig[normalizarStatus(cot.status)].color}`}
                       >
-                        {cot.status || "RASCUNHO"}
-                      </span>
+                        <option value="aberto">Em Aberto</option>
+                        <option value="analise">Em Análise</option>
+                        <option value="aprovada">Aprovada</option>
+                        <option value="recusada">Recusada</option>
+                      </select>
                     </td>
                     <td className="p-3 font-semibold text-slate-800">
                       {cot.valor_total ? brl(cot.valor_total) : "R$ 0,00"}
