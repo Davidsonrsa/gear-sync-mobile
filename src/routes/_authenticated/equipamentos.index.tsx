@@ -271,6 +271,74 @@ function BotaoTacografo() {
     janela.document.write(html);
     janela.document.close();
     janela.print();
+
+    const obterStatusSeguro = (item: any) => {
+    if (item.isVencido) return "Vencido";
+    if (item.isVencendoEmBreve) {
+      return item.diasRestantes === 0 ? "Vence hoje" : `Vence em ${item.diasRestantes} dias`;
+    }
+    return "Em dia";
+  };
+
+  const gerarRelatorioSeguros = () => {
+    const linhas = [
+      "RELATÓRIO DE SEGUROS CADASTRADOS",
+      `Emissão: ${new Date().toLocaleString("pt-BR")}`,
+      filtro.trim() ? `Filtro: ${filtro.trim()}` : "Filtro: Todos os seguros",
+      "",
+    ];
+
+    listaFiltrada.forEach((item: any, index: number) => {
+      const equipamento =
+        item.equipamento || item.numero || item.veiculo_equipamento || "Equipamento";
+      const vencimento = item.dataVal
+        ? new Date(item.dataVal + "T00:00:00").toLocaleDateString("pt-BR")
+        : "Não informado";
+      linhas.push(`${index + 1}. ${equipamento}`);
+      linhas.push(`   Seguradora: ${item.seguradora || item.empresa || "Não informada"}`);
+      linhas.push(`   Vencimento: ${vencimento} | Situação: ${obterStatusSeguro(item)}`);
+      if (item.contato_sinistro_nome || item.contato_sinistro_telefone) {
+        linhas.push(
+          `   Contato de sinistro: ${item.contato_sinistro_nome || "Não informado"}${item.contato_sinistro_telefone ? ` - ${item.contato_sinistro_telefone}` : ""}`,
+        );
+      }
+      linhas.push("");
+    });
+
+    if (listaFiltrada.length === 0) linhas.push("Nenhum seguro encontrado.");
+    return linhas.join("\n");
+  };
+
+  const handleEnviarRelatorioWhatsApp = () => {
+    if (listaFiltrada.length === 0) {
+      alert("Não há seguros para enviar.");
+      return;
+    }
+    window.open(`https://wa.me/?text=${encodeURIComponent(gerarRelatorioSeguros())}`, "_blank");
+  };
+
+  const handleImprimirRelatorioSeguros = () => {
+    const janela = window.open("", "", "width=900,height=700");
+    if (!janela) return;
+
+    const itensHtml = listaFiltrada
+      .map((item: any, index: number) => {
+        const equipamento =
+          item.equipamento || item.numero || item.veiculo_equipamento || "Equipamento";
+        const vencimento = item.dataVal
+          ? new Date(item.dataVal + "T00:00:00").toLocaleDateString("pt-BR")
+          : "Não informado";
+        return `<div class="item"><h3>${index + 1}. ${equipamento}</h3><p><strong>Seguradora:</strong> ${item.seguradora || item.empresa || "Não informada"}</p><p><strong>Vencimento:</strong> ${vencimento} | <strong>Situação:</strong> ${obterStatusSeguro(item)}</p><p><strong>Contato de sinistro:</strong> ${item.contato_sinistro_nome || "Não informado"}${item.contato_sinistro_telefone ? ` - ${item.contato_sinistro_telefone}` : ""}</p></div>`;
+      })
+      .join("");
+
+    janela.document.write(`<html><head><title>Relatório de Seguros</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#1f2937}h1{font-size:22px;border-bottom:2px solid #1f2937;padding-bottom:8px}h3{margin:0 0 8px}.meta{color:#6b7280;font-size:12px}.item{border:1px solid #d1d5db;border-radius:6px;padding:12px;margin:10px 0}.item p{margin:4px 0;font-size:13px}</style></head><body><h1>Relatório de Seguros Cadastrados</h1><p class="meta">Emissão: ${new Date().toLocaleString("pt-BR")}</p>${itensHtml || "<p>Nenhum seguro encontrado.</p>"}</body></html>`);
+    janela.document.close();
+    janela.focus();
+    setTimeout(() => {
+      janela.print();
+      janela.close();
+    }, 500);
   };
 
   return (
@@ -746,6 +814,35 @@ function BotaoSeguro() {
                 <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
                 WhatsApp
               </Button>
+
+          <DialogHeader className="p-4 pb-3 border-b border-slate-200 bg-slate-50">
+            <div className="flex items-center justify-between gap-2">
+              <DialogTitle className="text-slate-900 font-bold text-base">
+                Gerenciar Seguros
+              </DialogTitle>
+              <div className="flex items-center gap-1.5">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8 gap-1 text-xs"
+                  onClick={handleImprimirRelatorioSeguros}
+                  disabled={isLoading}
+                  title="Imprimir relatório de seguros"
+                >
+                  <Printer className="h-3.5 w-3.5" /> Imprimir
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 gap-1 bg-emerald-600 text-xs text-white hover:bg-emerald-700"
+                  onClick={handleEnviarRelatorioWhatsApp}
+                  disabled={isLoading || listaFiltrada.length === 0}
+                  title="Enviar relatório via WhatsApp"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                </Button>
+              </div>
             </div>
           </DialogHeader>
 
